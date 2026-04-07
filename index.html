@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,10 +8,17 @@
   <style>
     body {
       margin: 0;
-      background-color: #f6f6f6;
-      color: #111111;
       font-family: Arial, sans-serif;
+      color: white;
       text-align: center;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.18) 1px, transparent 2px),
+        radial-gradient(circle at 80% 30%, rgba(255,255,255,0.12) 1px, transparent 2px),
+        radial-gradient(circle at 30% 70%, rgba(255,255,255,0.14) 1px, transparent 2px),
+        radial-gradient(circle at 70% 80%, rgba(255,255,255,0.10) 1px, transparent 2px),
+        linear-gradient(to bottom, #050816, #0b1026, #11193a);
+      background-size: 180px 180px, 220px 220px, 260px 260px, 320px 320px, cover;
+      min-height: 100vh;
     }
 
     .container {
@@ -27,7 +34,8 @@
       border-radius: 20px;
       display: block;
       margin: 20px auto 30px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      border: 3px solid rgba(255,255,255,0.25);
+      box-shadow: 0 0 30px rgba(124, 154, 255, 0.35);
     }
 
     h1 {
@@ -37,17 +45,19 @@
 
     .intro {
       font-size: 19px;
-      line-height: 1.7;
+      line-height: 1.8;
+      color: #dbe4ff;
       margin-bottom: 40px;
     }
 
     .section {
-      background-color: white;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
       border-radius: 18px;
       padding: 28px 24px;
       margin-bottom: 24px;
       text-align: left;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+      backdrop-filter: blur(6px);
     }
 
     h2 {
@@ -55,6 +65,7 @@
       margin-top: 0;
       margin-bottom: 20px;
       text-align: center;
+      color: #ffffff;
     }
 
     .qa {
@@ -65,18 +76,20 @@
       font-weight: bold;
       margin-bottom: 8px;
       font-size: 18px;
+      color: #ffffff;
     }
 
     .answer {
       font-size: 17px;
       line-height: 1.7;
-      color: #333333;
+      color: #d8def5;
     }
 
     .plan-list {
       padding-left: 20px;
       font-size: 17px;
       line-height: 1.8;
+      color: #d8def5;
     }
 
     .links {
@@ -91,59 +104,60 @@
       display: inline-block;
       padding: 14px 20px;
       border-radius: 12px;
-      background-color: #111111;
-      color: white;
+      background: #ffffff;
+      color: #11193a;
       text-decoration: none;
       font-size: 17px;
+      font-weight: bold;
     }
 
     .link-button:hover {
-      background-color: #333333;
+      background: #dbe4ff;
     }
   </style>
 </head>
 <body>
   <div class="container">
 
-    <!-- 여기에 사진 주소를 넣으면 됩니다 -->
-    <img class="top-image" src="https://via.placeholder.com/400x400.png?text=Your+Photo" alt="홈페이지 대표 사진">
+    <!-- Replace this image later with your real uploaded image -->
+    <img class="top-image" src="https://via.placeholder.com/400x400.png?text=Your+Photo" alt="Profile image">
 
     <h1>ooosimulation</h1>
     <p class="intro">
-      시뮬레이션 영상을 만드는 유튜브 채널입니다.<br>
-      이 홈페이지에서는 채널 소개, 자주 하는 질문, 앞으로의 예정, 그리고 다른 SNS 링크를 볼 수 있습니다.
+      Welcome to my official homepage.<br>
+      I create simulation videos, fun matchups, and experimental content for people who enjoy creative battles and unexpected results.
     </p>
 
     <div class="section">
-      <h2>자주 하는 질문</h2>
+      <h2>Frequently Asked Questions</h2>
 
       <div class="qa">
-        <div class="question">Q. 어떤 영상을 올리나요?</div>
-        <div class="answer">재미있는 시뮬레이션 대결 영상과 실험형 콘텐츠를 올립니다.</div>
+        <div class="question">Q. What kind of videos do you make?</div>
+        <div class="answer">I make simulation videos, battle-style content, and fun experimental matchups.</div>
       </div>
 
       <div class="qa">
-        <div class="question">Q. 새 영상은 언제 올라오나요?</div>
-        <div class="answer">업로드 일정은 상황에 따라 달라질 수 있지만, 최대한 자주 올릴 예정입니다.</div>
+        <div class="question">Q. How often do you upload?</div>
+        <div class="answer">My upload schedule may change, but I always try to keep making new content.</div>
       </div>
 
       <div class="qa">
-        <div class="question">Q. 아이디어 제안은 어디서 하나요?</div>
-        <div class="answer">추후 디스코드나 SNS를 통해 의견을 받을 예정입니다.</div>
+        <div class="question">Q. Can I suggest ideas?</div>
+        <div class="answer">Yes. In the future, I plan to receive ideas and feedback through social platforms and community spaces.</div>
       </div>
     </div>
 
     <div class="section">
-      <h2>앞으로의 예정</h2>
+      <h2>Future Plans</h2>
       <ul class="plan-list">
-        <li>더 다양한 시뮬레이션 영상 업로드</li>
-        <li>팬들이 쉽게 볼 수 있는 정보 정리</li>
-        <li>추후 새로운 프로젝트와 링크 추가</li>
+        <li>Upload more simulation videos.</li>
+        <li>Create bigger and more interesting matchups.</li>
+        <li>Add more links, updates, and community information here.</li>
       </ul>
     </div>
 
     <div class="section">
-      <h2>다른 사이트 바로가기</h2>
+      <h2>Links</h2>
       <div class="links">
         <a class="link-button" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer">YouTube</a>
         <a class="link-button" href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer">TikTok</a>
