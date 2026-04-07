@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ooosimulation</titltle>
+  <title>ooosimulation</title>
 
-  //fonts.googleapis.comom">
-  //fonts.gstatic.com" crossorigigin>
-  //fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
   <style>
     body {
@@ -135,15 +135,6 @@
       line-height: 1.12;
       display: inline-block;
       min-width: max-content;
-    }
-
-    .ascii-char {
-      display: inline;
-      transition: color 0.08s linear;
-    }
-
-    .ascii-char.glitch {
-      color: #dbe4ff;
     }
 
     .section-title {
@@ -279,7 +270,13 @@
     <img class="moon-image" src="deamoon2.png" alt="Moon image">
 
     <div class="ascii-wrap">
-      <pre class="ascii-logo" id="asciiLogo"></pre>
+      <pre class="ascii-logo">  #####    #####    #####    #####    ####    ##   ##  ##   ##  ####       ##     ######    ####     #####   ##   ## 
+ ##   ##  ##   ##  ##   ##  ##   ##    ##     ### ###  ##   ##   ##       ####    # ## #     ##     ##   ##  ###  ## 
+ ##   ##  ##   ##  ##   ##  ##         ##     #######  ##   ##   ##      ##  ##     ##       ##     ##   ##  #### ## 
+ ##   ##  ##   ##  ##   ##   #####     ##     #######  ##   ##   ##      ##  ##     ##       ##     ##   ##  ## #### 
+ ##   ##  ##   ##  ##   ##       ##    ##     ## # ##  ##   ##   ##   #  ######     ##       ##     ##   ##  ##  ### 
+ ##   ##  ##   ##  ##   ##  ##   ##    ##     ##   ##  ##   ##   ##  ##  ##  ##     ##       ##     ##   ##  ##   ## 
+  #####    #####    #####    #####    ####    ##   ##   #####   #######  ##  ##    ####     ####     #####   ##   ##</pre>
     </div>
 
     <h2 class="section-title">FAQ</h2>
@@ -324,52 +321,5 @@
     </div>
 
   </div>
-
-  <script>
-    const asciiArt = String.raw`  #####    #####    #####    #####    ####    ##   ##  ##   ##  ####       ##     ######    ####     #####   ##   ## 
- ##   ##  ##   ##  ##   ##  ##   ##    ##     ### ###  ##   ##   ##       ####    # ## #     ##     ##   ##  ###  ## 
- ##   ##  ##   ##  ##   ##  ##         ##     #######  ##   ##   ##      ##  ##     ##       ##     ##   ##  #### ## 
- ##   ##  ##   ##  ##   ##   #####     ##     #######  ##   ##   ##      ##  ##     ##       ##     ##   ##  ## #### 
- ##   ##  ##   ##  ##   ##       ##    ##     ## # ##  ##   ##   ##   #  ######     ##       ##     ##   ##  ##  ### 
- ##   ##  ##   ##  ##   ##  ##   ##    ##     ##   ##  ##   ##   ##  ##  ##  ##     ##       ##     ##   ##  ##   ## 
-  #####    #####    #####    #####    ####    ##   ##   #####   #######  ##  ##    ####     ####     #####   ##   ##`;
-
-    const asciiLogo = document.getElementById("asciiLogo");
-    const glitchChars = ["#", "@", "%", "&", "*", "+", "?", "X", "▓", "▒"];
-    const spans = [];
-
-    for (const ch of asciiArt) {
-      if (ch === "\n") {
-        asciiLogo.appendChild(document.createTextNode("\n"));
-      } else {
-        const span = document.createElement("span");
-        span.className = "ascii-char";
-        span.textContent = ch;
-        span.dataset.original = ch;
-        asciiLogo.appendChild(span);
-        if (ch !== " ") spans.push(span);
-      }
-    }
-
-    function glitchOneChar() {
-      const target = spans[Math.floor(Math.random() * spans.length)];
-      const original = target.dataset.original;
-      const randomChar = glitchChars[Math.floor(Math.random() * glitchChars.length)];
-
-      target.textContent = randomC     target.classList.add("glitch");
-
-      setTimeout(() => {
-        target.textContent = original;
-        target.classList.remove("glitch");
-      }, 90 + Math.random() * 140);
-    }
-
-    setInterval(() => {
-      const count = Math.random() < 0.58 ? 1 : 2;
-      for (let i = 0; i < count; i++) {
-        setTimeout(glitchOneChar, i * 50);
-      }
-    }, 180);
-  </script>
 </body>
 </html>
