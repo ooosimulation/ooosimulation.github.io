@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ooosimulation</title>
 
-  //fonts.googleapis.com">
-  //fonts.gstatic.com" crossorigin>
-  //fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
   <style>
     body {
@@ -128,45 +128,13 @@
     }
 
     .ascii-char {
-      color: #ffffff;
       display: inline;
+      color: #ffffff;
     }
 
-    .desktop-glitch {
-      animation: glitchShift 2.8s infinite steps(1);
-    }
-
-    .glitch-flash {
+    .ascii-char.glitching {
       color: #d8ebff;
-      text-shadow:
-        -1px 0 rgba(255, 0, 85, 0.6),
-         1px 0 rgba(0, 220, 255, 0.7),
-         0 0 6px rgba(160, 220, 255, 0.45);
-    }
-
-    @keyframes glitchShift {
-      0%, 94%, 100% {
-        text-shadow: none;
-        transform: translate(0, 0);
-      }
-      95% {
-        text-shadow:
-          -2px 0 rgba(255, 0, 85, 0.45),
-           2px 0 rgba(0, 220, 255, 0.45);
-        transform: translate(-1px, 0);
-      }
-      96% {
-        text-shadow:
-          2px 0 rgba(255, 0, 85, 0.45),
-         -2px 0 rgba(0, 220, 255, 0.45);
-        transform: translate(1px, 0);
-      }
-      97% {
-        text-shadow:
-          -1px 0 rgba(255, 0, 85, 0.35),
-           1px 0 rgba(0, 220, 255, 0.35);
-        transform: translate(0, 0);
-      }
+      text-shadow: 0 0 6px rgba(170, 220, 255, 0.55);
     }
 
     .mobile-logo {
@@ -305,10 +273,6 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .desktop-glitch {
-        animation: none;
-      }
-
       .shooting-star {
         animation: none !important;
         opacity: 0.4;
@@ -325,7 +289,7 @@
     <img class="moon-image" src="deamoon2.png" alt="Moon image">
 
     <div class="ascii-wrap">
-      <pre class="ascii-logo desktop-glitch" id="asciiLogo"></pre>
+      <pre class="ascii-logo" id="asciiLogo"></pre>
     </div>
 
     <div class="mobile-logo">OOOSIMULATION</div>
@@ -383,11 +347,11 @@
 
     const asciiLogo = document.getElementById('asciiLogo');
     const glitchChars = ['#', '@', '%', '&', '*', '+', '?', 'X'];
-    const glitchTargets = [];
+    const targets = [];
 
     function buildAscii() {
       asciiLogo.innerHTML = '';
-      glitchTargets.length = 0;
+      targets.length = 0;
 
       for (const ch of asciiText) {
         if (ch === '\n') {
@@ -402,34 +366,36 @@
         asciiLogo.appendChild(span);
 
         if (ch !== ' ') {
-          glitchTargets.push(span);
+          targets.push(span);
         }
       }
     }
 
-    function glitchBurst() {
+    function glitchOne() {
       if (window.innerWidth <= 480) return;
-      if (!glitchTargets.length) return;
+      if (!targets.length) return;
 
-      const burstCount = 6;
+      const target = targets[Math.floor(Math.random() * targets.length)];
+      const original = target.dataset.original;
+      const randomChar = glitchChars[Math.floor(Math.random() * glitchChars.length)];
 
-      for (let i = 0; i < burstCount; i++) {
-        const target = glitchTargets[Math.floor(Math.random() * glitchTargets.length)];
-        const original = target.dataset.original;
-        const randomChar = glitchChars[Math.floor(Math.random() * glitchChars.length)];
+      target.textContent = randomChar;
+      target.classList.add('glitching');
 
-        target.textContent = randomChar;
-        target.classList.add('glitch-flash');
-
-        setTimeout(() => {
-          target.textContent = original;
-          target.classList.remove('glitch-flash');
-        }, 90 + i * 8);
-      }
+      setTimeout(() => {
+        target.textContent = original;
+        target.classList.remove('glitching');
+      }, 120);
     }
 
     buildAscii();
-    setInterval(glitchBurst, 1900);
+
+    setInterval(() => {
+      const times = Math.random() < 0.7 ? 1 : 2;
+      for (let i = 0; i < times; i++) {
+        setTimeout(glitchOne, i * 60);
+      }
+    }, 220);
   </script>
 </body>
 </html>
