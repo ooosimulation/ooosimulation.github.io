@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ooosimulation</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  //fonts.googleapis.com">
+  //fonts.gstatic.com" crossorigin>
+  //fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
   <style>
     body {
@@ -109,15 +109,11 @@
 
     .ascii-wrap {
       width: 100%;
-      overflow: hidden;
+      overflow-x: auto;
+      overflow-y: hidden;
       margin: 0 auto 52px;
-      display: flex;
-      justify-content: center;
-    }
-
-    .ascii-scale {
-      display: inline-block;
-      transform-origin: top center;
+      text-align: center;
+      -webkit-overflow-scrolling: touch;
     }
 
     .ascii-logo {
@@ -129,6 +125,7 @@
       font-size: 11px;
       line-height: 1.12;
       display: inline-block;
+      min-width: max-content;
     }
 
     .ascii-char {
@@ -222,12 +219,9 @@
         padding: 10px 14px 70px;
       }
 
-      .ascii-scale {
-        transform: scale(0.72);
-      }
-
-      .ascii-wrap {
-        margin-bottom: -10px;
+      .ascii-logo {
+        font-size: 8px;
+        line-height: 1.08;
       }
 
       .section-title {
@@ -246,12 +240,9 @@
     }
 
     @media (max-width: 480px) {
-      .ascii-scale {
-        transform: scale(0.5);
-      }
-
-      .ascii-wrap {
-        margin-bottom: -35px;
+      .ascii-logo {
+        font-size: 7px;
+        line-height: 1.05;
       }
 
       .links {
@@ -280,9 +271,7 @@
     <img class="moon-image" src="deamoon2.png" alt="Moon image">
 
     <div class="ascii-wrap">
-      <div class="ascii-scale">
-        <pre class="ascii-logo" id="asciiLogo"></pre>
-      </div>
+      <pre class="ascii-logo" id="asciiLogo"></pre>
     </div>
 
     <h2 class="section-title">FAQ</h2>
@@ -329,7 +318,7 @@
   </div>
 
   <script>
-    const asciiArt =
+    const desktopAscii =
 `  #####    #####    #####    #####    ####    ##   ##  ##   ##  ####       ##     ######    ####     #####   ##   ##
  ##   ##  ##   ##  ##   ##  ##   ##    ##     ### ###  ##   ##   ##       ####    # ## #     ##     ##   ##  ###  ##
  ##   ##  ##   ##  ##   ##  ##         ##     #######  ##   ##   ##      ##  ##     ##       ##     ##   ##  #### ##
@@ -338,15 +327,38 @@
  ##   ##  ##   ##  ##   ##  ##   ##    ##     ##   ##  ##   ##   ##  ##  ##  ##     ##       ##     ##   ##  ##   ##
   #####    #####    #####    #####    ####    ##   ##   #####   #######  ##  ##    ####     ####     #####   ##   ##`;
 
+    const mobileAscii =
+` ####   ####   ####
+##  ## ##  ## ##
+##  ## ##  ##  ####
+##  ## ##  ##    ##
+##  ## ##  ## ## ##
+ ####   ####   ####
+
+ ####  #   # #   # #      ##  ##### ####  #####
+##  ## ### # ## ## #     #  #   #    ##  ##  ##
+##  ## ##### ##### #     ####   #    ##  ##  ##
+##  ## ## ### ## ### #   #  #   #    ##  ##  ##
+ ####  ##  ## #   ## ### #  #   #   ####  #####`;
+
     const asciiLogo = document.getElementById('asciiLogo');
     const glitchChars = ['#', '@', '%', '&', '*', '+', '?', 'X'];
     const activeChars = [];
+    let currentAscii = '';
+
+    function getAsciiByScreen() {
+      return window.innerWidth <= 480 ? mobileAscii : desktopAscii;
+    }
 
     function buildAscii() {
+      const selectedAscii = getAsciiByScreen();
+      if (selectedAscii === currentAscii) return;
+
+      currentAscii = selectedAscii;
       asciiLogo.innerHTML = '';
       activeChars.length = 0;
 
-      for (const ch of asciiArt) {
+      for (const ch of selectedAscii) {
         if (ch === '\n') {
           asciiLogo.appendChild(document.createTextNode('\n'));
         } else {
@@ -380,6 +392,7 @@
     }
 
     buildAscii();
+    window.addEventListener('resize', buildAscii);
 
     setInterval(() => {
       const count = Math.random() < 0.58 ? 1 : 2;
