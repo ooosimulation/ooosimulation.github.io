@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ooosimulation</title>
+  <title>ooosimulation</titltle>
 
-  //fonts.googleapis.com">
-  //fonts.gstatic.com" crossorigin>
+  //fonts.googleapis.comom">
+  //fonts.gstatic.com" crossorigigin>
   //fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
   <style>
@@ -128,6 +128,17 @@
       min-width: max-content;
     }
 
+    .mobile-logo {
+      display: none;
+      margin: 0 auto 52px;
+      font-size: 18px;
+      line-height: 1.8;
+      color: #ffffff;
+      text-align: center;
+      letter-spacing: 1px;
+      text-shadow: 0 0 8px rgba(180, 220, 255, 0.25);
+    }
+
     .ascii-char {
       display: inline;
       color: #ffffff;
@@ -240,9 +251,12 @@
     }
 
     @media (max-width: 480px) {
-      .ascii-logo {
-        font-size: 7px;
-        line-height: 1.05;
+      .ascii-wrap {
+        display: none;
+      }
+
+      .mobile-logo {
+        display: block;
       }
 
       .links {
@@ -273,6 +287,8 @@
     <div class="ascii-wrap">
       <pre class="ascii-logo" id="asciiLogo"></pre>
     </div>
+
+    <div class="mobile-logo" id="mobileLogo">OOOSIMULATION</div>
 
     <h2 class="section-title">FAQ</h2>
     <div class="faq-area">
@@ -327,38 +343,17 @@
  ##   ##  ##   ##  ##   ##  ##   ##    ##     ##   ##  ##   ##   ##  ##  ##  ##     ##       ##     ##   ##  ##   ##
   #####    #####    #####    #####    ####    ##   ##   #####   #######  ##  ##    ####     ####     #####   ##   ##`;
 
-    const mobileAscii =
-` ####   ####   ####
-##  ## ##  ## ##
-##  ## ##  ##  ####
-##  ## ##  ##    ##
-##  ## ##  ## ## ##
- ####   ####   ####
-
- ####  #   # #   # #      ##  ##### ####  #####
-##  ## ### # ## ## #     #  #   #    ##  ##  ##
-##  ## ##### ##### #     ####   #    ##  ##  ##
-##  ## ## ### ## ### #   #  #   #    ##  ##  ##
- ####  ##  ## #   ## ### #  #   #   ####  #####`;
-
     const asciiLogo = document.getElementById('asciiLogo');
+    const mobileLogo = document.getElementById('mobileLogo');
     const glitchChars = ['#', '@', '%', '&', '*', '+', '?', 'X'];
     const activeChars = [];
-    let currentAscii = '';
-
-    function getAsciiByScreen() {
-      return window.innerWidth <= 480 ? mobileAscii : desktopAscii;
-    }
+    const mobileText = 'OOOSIMULATION';
 
     function buildAscii() {
-      const selectedAscii = getAsciiByScreen();
-      if (selectedAscii === currentAscii) return;
-
-      currentAscii = selectedAscii;
       asciiLogo.innerHTML = '';
       activeChars.length = 0;
 
-      for (const ch of selectedAscii) {
+      for (const ch of desktopAscii) {
         if (ch === '\n') {
           asciiLogo.appendChild(document.createTextNode('\n'));
         } else {
@@ -376,6 +371,26 @@
     }
 
     function glitchOneChar() {
+      if (window.innerWidth <= 480) {
+        const chars = mobileText.split('');
+        const validIndexes = chars
+          .map((ch, idx) => ch !== ' ' ? idx : -1)
+          .filter(idx => idx !== -1);
+
+        const pick = validIndexes[Math.floor(Math.random() * validIndexes.length)];
+        const original = chars[pick];
+        const randomChar = glitchChars[Math.floor(Math.random() * glitchChars.length)];
+        chars[pick] = randomChar;
+        mobileLogo.textContent = chars.join('');
+
+        setTimeout(() => {
+          chars[pick] = original;
+          mobileLogo.textContent = mobileText;
+        }, 120);
+
+        return;
+      }
+
       if (!activeChars.length) return;
 
       const target = activeChars[Math.floor(Math.random() * activeChars.length)];
@@ -392,10 +407,9 @@
     }
 
     buildAscii();
-    window.addEventListener('resize', buildAscii);
 
     setInterval(() => {
-      const count = Math.random() < 0.58 ? 1 : 2;
+      const count = andom() < 0.58 ? 1 : 2;
       for (let i = 0; i < count; i++) {
         setTimeout(glitchOneChar, i * 45);
       }
