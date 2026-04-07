@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ooosimulation</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  //fonts.googleapis.com">
+  //fonts.gstatic.com" crossorigin>
+  //fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
   <style>
     body {
@@ -135,6 +135,16 @@
       line-height: 1.12;
       display: inline-block;
       min-width: max-content;
+    }
+
+    .ascii-char {
+      display: inline;
+      color: #ffffff;
+    }
+
+    .ascii-char.glitch {
+      color: #cfe3ff;
+      text-shadow: 0 0 6px rgba(180, 220, 255, 0.7);
     }
 
     .section-title {
@@ -270,13 +280,7 @@
     <img class="moon-image" src="deamoon2.png" alt="Moon image">
 
     <div class="ascii-wrap">
-      <pre class="ascii-logo">  #####    #####    #####    #####    ####    ##   ##  ##   ##  ####       ##     ######    ####     #####   ##   ## 
- ##   ##  ##   ##  ##   ##  ##   ##    ##     ### ###  ##   ##   ##       ####    # ## #     ##     ##   ##  ###  ## 
- ##   ##  ##   ##  ##   ##  ##         ##     #######  ##   ##   ##      ##  ##     ##       ##     ##   ##  #### ## 
- ##   ##  ##   ##  ##   ##   #####     ##     #######  ##   ##   ##      ##  ##     ##       ##     ##   ##  ## #### 
- ##   ##  ##   ##  ##   ##       ##    ##     ## # ##  ##   ##   ##   #  ######     ##       ##     ##   ##  ##  ### 
- ##   ##  ##   ##  ##   ##  ##   ##    ##     ##   ##  ##   ##   ##  ##  ##  ##     ##       ##     ##   ##  ##   ## 
-  #####    #####    #####    #####    ####    ##   ##   #####   #######  ##  ##    ####     ####     #####   ##   ##</pre>
+      <pre class="ascii-logo" id="asciiLogo"></pre>
     </div>
 
     <h2 class="section-title">FAQ</h2>
@@ -321,5 +325,66 @@
     </div>
 
   </div>
+
+  <script>
+    const asciiArt =
+`  #####    #####    #####    #####    ####    ##   ##  ##   ##  ####       ##     ######    ####     #####   ##   ##
+ ##   ##  ##   ##  ##   ##  ##   ##    ##     ### ###  ##   ##   ##       ####    # ## #     ##     ##   ##  ###  ##
+ ##   ##  ##   ##  ##   ##  ##         ##     #######  ##   ##   ##      ##  ##     ##       ##     ##   ##  #### ##
+ ##   ##  ##   ##  ##   ##   #####     ##     #######  ##   ##   ##      ##  ##     ##       ##     ##   ##  ## ####
+ ##   ##  ##   ##  ##   ##       ##    ##     ## # ##  ##   ##   ##   #  ######     ##       ##     ##   ##  ##  ###
+ ##   ##  ##   ##  ##   ##  ##   ##    ##     ##   ##  ##   ##   ##  ##  ##  ##     ##       ##     ##   ##  ##   ##
+  #####    #####    #####    #####    ####    ##   ##   #####   #######  ##  ##    ####     ####     #####   ##   ##`;
+
+    const asciiLogo = document.getElementById('asciiLogo');
+    const glitchChars = ['#', '@', '%', '&', '*', '+', '?', 'X'];
+    const activeChars = [];
+
+    function buildAscii() {
+      asciiLogo.innerHTML = '';
+      activeChars.length = 0;
+
+      for (const ch of asciiArt) {
+        if (ch === '\n') {
+          asciiLogo.appendChild(document.createTextNode('\n'));
+        } else {
+          const span = document.createElement('span');
+          span.className = 'ascii-char';
+          span.textContent = ch;
+          span.dataset.original = ch;
+          asciiLogo.appendChild(span);
+
+          if (ch !== ' ') {
+            activeChars.push(span);
+          }
+        }
+      }
+    }
+
+    function glitchOneChar() {
+      if (!activeChars.length) return;
+
+      const target = activeChars[Math.floor(Math.random() * activeChars.length)];
+      const original = target.dataset.original;
+      const randomChar = glitchChars[Math.floor(Math.random() * glitchChars.length)];
+
+      target.textContent = randomChar;
+      target.classList.add('glitch');
+
+      setTimeout(() => {
+        target.textContent = original;
+        target.classList.remove('glitch');
+      }, 120);
+    }
+
+    buildAscii();
+
+    setInterval(() => {
+      const count = Math.random() < 0.58 ? 1 : 2;
+      for (let i = 0; i < count; i++) {
+        setTimeout(glitchOneChar, i * 45);
+      }
+    }, 180);
+  </script>
 </body>
 </html>
