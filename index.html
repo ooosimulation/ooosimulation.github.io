@@ -109,20 +109,15 @@
 
     .ascii-wrap {
       width: 100%;
-      overflow-x: auto;
-      overflow-y: hidden;
+      overflow: hidden;
       margin: 0 auto 52px;
-      text-align: center;
-      -webkit-overflow-scrolling: touch;
+      display: flex;
+      justify-content: center;
     }
 
-    .ascii-wrap::-webkit-scrollbar {
-      height: 6px;
-    }
-
-    .ascii-wrap::-webkit-scrollbar-thumb {
-      background: rgba(255,255,255,0.25);
-      border-radius: 999px;
+    .ascii-scale {
+      display: inline-block;
+      transform-origin: top center;
     }
 
     .ascii-logo {
@@ -134,7 +129,6 @@
       font-size: 11px;
       line-height: 1.12;
       display: inline-block;
-      min-width: max-content;
     }
 
     .ascii-char {
@@ -228,9 +222,12 @@
         padding: 10px 14px 70px;
       }
 
-      .ascii-logo {
-        font-size: 8px;
-        line-height: 1.1;
+      .ascii-scale {
+        transform: scale(0.72);
+      }
+
+      .ascii-wrap {
+        margin-bottom: -10px;
       }
 
       .section-title {
@@ -249,9 +246,12 @@
     }
 
     @media (max-width: 480px) {
-      .ascii-logo {
-        font-size: 6px;
-        line-height: 1.05;
+      .ascii-scale {
+        transform: scale(0.5);
+      }
+
+      .ascii-wrap {
+        margin-bottom: -35px;
       }
 
       .links {
@@ -280,7 +280,9 @@
     <img class="moon-image" src="deamoon2.png" alt="Moon image">
 
     <div class="ascii-wrap">
-      <pre class="ascii-logo" id="asciiLogo"></pre>
+      <div class="ascii-scale">
+        <pre class="ascii-logo" id="asciiLogo"></pre>
+      </div>
     </div>
 
     <h2 class="section-title">FAQ</h2>
