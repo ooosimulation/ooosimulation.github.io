@@ -38,7 +38,7 @@
     }
 
     .moon-image {
-      width: 5200px;
+      width: 8000px;
       max-width: 98%;
       display: block;
       margin: 10px auto 18px;
@@ -55,52 +55,13 @@
       font-size: 19px;
       line-height: 1.8;
       color: #dbe4ff;
-      margin-bottom: 40px;
+      margin-bottom: 34px;
     }
 
-    .section {
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.14);
-      border-radius: 18px;
-      padding: 28px 24px;
-      margin-bottom: 24px;
-      text-align: left;
-      backdrop-filter: blur(6px);
-    }
-
-    h2 {
+    .section-title {
       font-size: 30px;
-      margin-top: 0;
-      margin-bottom: 22px;
-      text-align: center;
+      margin: 42px 0 20px;
       color: #ffffff;
-    }
-
-    details {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.10);
-      border-radius: 14px;
-      padding: 18px 20px;
-      margin-bottom: 14px;
-    }
-
-    summary {
-      cursor: pointer;
-      font-size: 22px;
-      font-weight: bold;
-      color: #ffffff;
-      list-style: none;
-    }
-
-    summary::-webkit-details-marker {
-      display: none;
-    }
-
-    .faq-answer {
-      margin-top: 14px;
-      font-size: 17px;
-      line-height: 1.8;
-      color: #d8def5;
     }
 
     .links {
@@ -108,7 +69,7 @@
       flex-wrap: wrap;
       gap: 18px;
       justify-content: center;
-      margin-top: 10px;
+      margin: 10px 0 34px;
     }
 
     .icon-link {
@@ -133,6 +94,38 @@
       width: 34px;
       height: 34px;
     }
+
+    .faq-area {
+      text-align: left;
+      margin-top: 10px;
+    }
+
+    details {
+      margin-bottom: 20px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-size: 28px;
+      font-weight: bold;
+      color: #ffffff;
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .faq-answer {
+      margin-top: 12px;
+      font-size: 19px;
+      line-height: 1.8;
+      color: #dbe4ff;
+    }
+
+    .faq-answer a {
+      color: #ffffff;
+    }
   </style>
 </head>
 <body>
@@ -146,60 +139,46 @@
       I create simulation videos, fun matchups, and experimental content for people who enjoy creative battles and unexpected results.
     </p>
 
-    <div class="section">
-      <h2>Frequently Asked Questions</h2>
+    <h2 class="section-title">Links</h2>
+    <div class="links">
+      <a class="icon-link" href="https://www.youtube.com/@OOOsimulation" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+        <img src="https://cdn.simpleicons.org/youtube/white" alt="YouTube logo">
+      </a>
 
-      <details>
-        <summary>What kind of videos do you make?</summary>
-        <div class="faq-answer">
-          I make simulation videos, battle-style content, and fun experimental matchups.
-        </div>
-      </details>
+      <a class="icon-link" href="https://www.tiktok.com/@ooosimulation" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+        <img src="https://cdn.simpleicons.org/tiktok/white" alt="TikTok logo">
+      </a>
 
-      <details>
-        <summary>How often do you upload?</summary>
-        <div class="faq-answer">
-          My upload schedule may change, but I always try to keep making new content.
-        </div>
-      </details>
-
-      <details>
-        <summary>Can I suggest ideas?</summary>
-        <div class="faq-answer">
-          Yes. In the future, I plan to receive ideas and feedback through my social platforms.
-        </div>
-      </details>
-
-      <details>
-        <summary>What is ooosimulation about?</summary>
-        <div class="faq-answer">
-          It is a channel focused on creative simulations, surprising outcomes, and entertaining matchups.
-        </div>
-      </details>
-
-      <details>
-        <summary>Will more links and updates be added later?</summary>
-        <div class="faq-answer">
-          Yes. This homepage will continue to grow with more information, updates, and new links.
-        </div>
-      </details>
+      <a class="icon-link" href="https://www.instagram.com/ooosimulation/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+        <img src="https://cdn.simpleicons.org/instagram/white" alt="Instagram logo">
+      </a>
     </div>
 
-    <div class="section">
-      <h2>Links</h2>
-      <div class="links">
-        <a class="icon-link" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
-          <img src="https://cdn.simpleicons.org/youtube/white" alt="YouTube logo">
-        </a>
+    <h2 class="section-title">Frequently Asked Questions</h2>
+    <div class="faq-area">
+      <details>
+        <summary>1. Is this a game?</summary>
+        <div class="faq-answer">
+          No, it is not a game. It is a custom simulation made by me.<br>
+          But I am working on turning it into a game, and I already have a lot of ideas.
+        </div>
+      </details>
 
-        <a class="icon-link" href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
-          <img src="https://cdn.simpleicons.org/tiktok/white" alt="TikTok logo">
-        </a>
+      <details>
+        <summary>2. How do you make it?</summary>
+        <div class="faq-answer">
+          I make it with HTML and JavaScript.
+        </div>
+      </details>
 
-        <a class="icon-link" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-          <img src="https://cdn.simpleicons.org/instagram/white" alt="Instagram logo">
-        </a>
-      </div>
+      <details>
+        <summary>3. Can I suggest ideas?</summary>
+        <div class="faq-answer">
+          Of course. You can share your ideas in the comments or send them to
+          <a href="mailto:000simulationgames@gmail.com">000simulationgames@gmail.com</a>.
+          I will keep them in mind.
+        </div>
+      </details>
     </div>
 
   </div>
