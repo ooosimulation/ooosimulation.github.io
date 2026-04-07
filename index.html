@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ooosimulation</title>
+  <title>ooosimulation</titltle>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  //fonts.googleapis.comom">
+  //fonts.gstatic.com" crossorigigin>
+  //fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
   <style>
     body {
@@ -110,8 +110,19 @@
     .ascii-wrap {
       width: 100%;
       overflow-x: auto;
+      overflow-y: hidden;
       margin: 0 auto 52px;
       text-align: center;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .ascii-wrap::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .ascii-wrap::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.25);
+      border-radius: 999px;
     }
 
     .ascii-logo {
@@ -123,7 +134,7 @@
       font-size: 11px;
       line-height: 1.12;
       display: inline-block;
-      max-width: none;
+      min-width: max-content;
     }
 
     .ascii-char {
@@ -209,6 +220,52 @@
     .icon-link img {
       width: 34px;
       height: 34px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px 14px 70px;
+      }
+
+      .ascii-logo {
+        font-size: 8px;
+        line-height: 1.1;
+      }
+
+      .section-title {
+        font-size: 26px;
+      }
+
+      summary {
+        font-size: 18px;
+        line-height: 1.7;
+      }
+
+      .faq-answer {
+        font-size: 12px;
+        line-height: 1.9;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .ascii-logo {
+        font-size: 6px;
+        line-height: 1.05;
+      }
+
+      .links {
+        gap: 14px;
+      }
+
+      .icon-link {
+        width: 64px;
+        height: 64px;
+      }
+
+      .icon-link img {
+        width: 30px;
+        height: 30px;
+      }
     }
   </style>
 </head>
@@ -299,8 +356,7 @@
       const original = target.dataset.original;
       const randomChar = glitchChars[Math.floor(Math.random() * glitchChars.length)];
 
-      target.textContent = randomChar;
-      target.classList.add("glitch");
+      target.textContent = randomC     target.classList.add("glitch");
 
       setTimeout(() => {
         target.textContent = original;
@@ -309,9 +365,9 @@
     }
 
     setInterval(() => {
-      const count = Math.random() < 0.65 ? 1 : 2;
+      const count = Math.random() < 0.58 ? 1 : 2;
       for (let i = 0; i < count; i++) {
-        setTimeout(glitchOneChar, i * 60);
+        setTimeout(glitchOneChar, i * 50);
       }
     }, 180);
   </script>
