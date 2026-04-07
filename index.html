@@ -35,65 +35,55 @@
 
     .shooting-star {
       position: fixed;
-      top: -10%;
-      left: -10%;
-      width: 180px;
-      height: 2px;
-      background: linear-gradient(90deg, rgba(255,255,255,1), rgba(255,255,255,0));
-      border-radius: 999px;
-      transform: rotate(25deg);
+      width: 7px;
+      height: 7px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(255,255,255,0.9);
       opacity: 0;
       pointer-events: none;
       z-index: 1;
     }
 
-    .shooting-star::before {
-      content: "";
-      position: absolute;
-      right: 0;
-      top: -2px;
-      width: 8px;
-      height: 8px;
-      background: white;
-      border-radius: 50%;
-      box-shadow: 0 0 12px rgba(255,255,255,0.9);
-    }
-
     .star-1 {
-      top: 14%;
-      left: 62%;
-      animation: shoot 8s linear infinite;
-      animation-delay: 1s;
+      top: 10%;
+      left: 78%;
+      animation: shoot 4.2s linear infinite;
+      animation-delay: 0.8s;
     }
 
     .star-2 {
-      top: 26%;
-      left: 18%;
-      animation: shoot 11s linear infinite;
-      animation-delay: 5s;
+      top: 22%;
+      left: 35%;
+      animation: shoot 5.1s linear infinite;
+      animation-delay: 2.7s;
     }
 
     .star-3 {
-      top: 8%;
-      left: 78%;
-      animation: shoot 13s linear infinite;
-      animation-delay: 9s;
+      top: 6%;
+      left: 58%;
+      animation: shoot 6s linear infinite;
+      animation-delay: 4.4s;
     }
 
     @keyframes shoot {
       0% {
-        transform: translate(0, 0) rotate(25deg);
+        transform: translate(0, 0) scale(0.7);
         opacity: 0;
       }
-      8% {
+      10% {
         opacity: 1;
       }
-      18% {
-        transform: translate(-420px, 260px) rotate(25deg);
+      35% {
+        transform: translate(-520px, 340px) scale(1);
+        opacity: 1;
+      }
+      45% {
+        transform: translate(-620px, 420px) scale(0.9);
         opacity: 0;
       }
       100% {
-        transform: translate(-420px, 260px) rotate(25deg);
+        transform: translate(-620px, 420px) scale(0.9);
         opacity: 0;
       }
     }
