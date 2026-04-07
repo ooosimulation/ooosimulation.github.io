@@ -1,55 +1,157 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ooosimulation</title>
 
   <style>
     body {
-      background-color: #f4f8fb;
-      color: #222222;
-      text-align: center;
+      margin: 0;
+      background-color: #f6f6f6;
+      color: #111111;
       font-family: Arial, sans-serif;
-      margin-top: 60px;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+
+    .top-image {
+      width: 220px;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 20px;
+      display: block;
+      margin: 20px auto 30px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
     }
 
     h1 {
-      color: #1d4ed8;
-      font-size: 40px;
+      font-size: 42px;
+      margin-bottom: 10px;
+    }
+
+    .intro {
+      font-size: 19px;
+      line-height: 1.7;
+      margin-bottom: 40px;
+    }
+
+    .section {
+      background-color: white;
+      border-radius: 18px;
+      padding: 28px 24px;
+      margin-bottom: 24px;
+      text-align: left;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.06);
     }
 
     h2 {
-      color: #333333;
       font-size: 28px;
-      margin-top: 40px;
+      margin-top: 0;
+      margin-bottom: 20px;
+      text-align: center;
     }
 
-    p {
-      font-size: 20px;
+    .qa {
+      margin-bottom: 20px;
+    }
+
+    .question {
+      font-weight: bold;
+      margin-bottom: 8px;
+      font-size: 18px;
+    }
+
+    .answer {
+      font-size: 17px;
+      line-height: 1.7;
+      color: #333333;
+    }
+
+    .plan-list {
+      padding-left: 20px;
+      font-size: 17px;
       line-height: 1.8;
     }
 
-    a {
-      color: white;
-      background-color: #2563eb;
-      text-decoration: none;
-      padding: 12px 20px;
-      border-radius: 10px;
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .link-button {
       display: inline-block;
-      margin-top: 20px;
-      font-size: 18px;
+      padding: 14px 20px;
+      border-radius: 12px;
+      background-color: #111111;
+      color: white;
+      text-decoration: none;
+      font-size: 17px;
+    }
+
+    .link-button:hover {
+      background-color: #333333;
     }
   </style>
 </head>
 <body>
+  <div class="container">
 
-  <h1>ooosimulation</h1>
-  <p>재미있는 시뮬레이션 영상을 올리는 유튜브 채널입니다.</p>
+    <!-- 여기에 사진 주소를 넣으면 됩니다 -->
+    <img class="top-image" src="https://via.placeholder.com/400x400.png?text=Your+Photo" alt="홈페이지 대표 사진">
 
-  <h2>채널 소개</h2>
-  <p>여러 가지 대결과 실험, 흥미로운 결과를 보여주는 영상을 만들고 있습니다.</p>
+    <h1>ooosimulation</h1>
+    <p class="intro">
+      시뮬레이션 영상을 만드는 유튜브 채널입니다.<br>
+      이 홈페이지에서는 채널 소개, 자주 하는 질문, 앞으로의 예정, 그리고 다른 SNS 링크를 볼 수 있습니다.
+    </p>
 
-  <a href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer">유튜브 채널 보러 가기</a>
+    <div class="section">
+      <h2>자주 하는 질문</h2>
 
+      <div class="qa">
+        <div class="question">Q. 어떤 영상을 올리나요?</div>
+        <div class="answer">재미있는 시뮬레이션 대결 영상과 실험형 콘텐츠를 올립니다.</div>
+      </div>
+
+      <div class="qa">
+        <div class="question">Q. 새 영상은 언제 올라오나요?</div>
+        <div class="answer">업로드 일정은 상황에 따라 달라질 수 있지만, 최대한 자주 올릴 예정입니다.</div>
+      </div>
+
+      <div class="qa">
+        <div class="question">Q. 아이디어 제안은 어디서 하나요?</div>
+        <div class="answer">추후 디스코드나 SNS를 통해 의견을 받을 예정입니다.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>앞으로의 예정</h2>
+      <ul class="plan-list">
+        <li>더 다양한 시뮬레이션 영상 업로드</li>
+        <li>팬들이 쉽게 볼 수 있는 정보 정리</li>
+        <li>추후 새로운 프로젝트와 링크 추가</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>다른 사이트 바로가기</h2>
+      <div class="links">
+        <a class="link-button" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer">YouTube</a>
+        <a class="link-button" href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer">TikTok</a>
+        <a class="link-button" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">Instagram</a>
+        <a class="link-button" href="https://discord.com/" target="_blank" rel="noopener noreferrer">Discord</a>
+      </div>
+    </div>
+
+  </div>
 </body>
 </html>
