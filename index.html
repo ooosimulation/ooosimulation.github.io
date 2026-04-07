@@ -107,16 +107,32 @@
       margin: 0 auto 10px;
     }
 
-    .ascii-logo {
-      margin: 0 auto 46px;
-      color: #ffffff;
+    .ascii-wrap {
+      width: 100%;
+      overflow-x: auto;
+      margin: 0 auto 52px;
       text-align: center;
+    }
+
+    .ascii-logo {
+      margin: 0 auto;
+      color: #ffffff;
+      text-align: left;
       white-space: pre;
       font-family: "Courier New", Courier, monospace;
-      font-size: 10px;
-      line-height: 1.15;
+      font-size: 11px;
+      line-height: 1.12;
       display: inline-block;
-      max-width: 100%;
+      max-width: none;
+    }
+
+    .ascii-char {
+      display: inline;
+      transition: color 0.08s linear;
+    }
+
+    .ascii-char.glitch {
+      color: #dbe4ff;
     }
 
     .section-title {
@@ -205,15 +221,9 @@
 
     <img class="moon-image" src="deamoon2.png" alt="Moon image">
 
-    <pre class="ascii-logo">
-  #####    #####    #####    #####    ####    ##   ##  ##   ##  ####       ##     ######    ####     #####   ##   ## 
- ##   ##  ##   ##  ##   ##  ##   ##    ##     ### ###  ##   ##   ##       ####    # ## #     ##     ##   ##  ###  ## 
- ##   ##  ##   ##  ##   ##  ##         ##     #######  ##   ##   ##      ##  ##     ##       ##     ##   ##  #### ## 
- ##   ##  ##   ##  ##   ##   #####     ##     #######  ##   ##   ##      ##  ##     ##       ##     ##   ##  ## #### 
- ##   ##  ##   ##  ##   ##       ##    ##     ## # ##  ##   ##   ##   #  ######     ##       ##     ##   ##  ##  ### 
- ##   ##  ##   ##  ##   ##  ##   ##    ##     ##   ##  ##   ##   ##  ##  ##  ##     ##       ##     ##   ##  ##   ## 
-  #####    #####    #####    #####    ####    ##   ##   #####   #######  ##  ##    ####     ####     #####   ##   ##
-    </pre>
+    <div class="ascii-wrap">
+      <pre class="ascii-logo" id="asciiLogo"></pre>
+    </div>
 
     <h2 class="section-title">FAQ</h2>
     <div class="faq-area">
@@ -257,5 +267,53 @@
     </div>
 
   </div>
+
+  <script>
+    const asciiArt = String.raw`  #####    #####    #####    #####    ####    ##   ##  ##   ##  ####       ##     ######    ####     #####   ##   ## 
+ ##   ##  ##   ##  ##   ##  ##   ##    ##     ### ###  ##   ##   ##       ####    # ## #     ##     ##   ##  ###  ## 
+ ##   ##  ##   ##  ##   ##  ##         ##     #######  ##   ##   ##      ##  ##     ##       ##     ##   ##  #### ## 
+ ##   ##  ##   ##  ##   ##   #####     ##     #######  ##   ##   ##      ##  ##     ##       ##     ##   ##  ## #### 
+ ##   ##  ##   ##  ##   ##       ##    ##     ## # ##  ##   ##   ##   #  ######     ##       ##     ##   ##  ##  ### 
+ ##   ##  ##   ##  ##   ##  ##   ##    ##     ##   ##  ##   ##   ##  ##  ##  ##     ##       ##     ##   ##  ##   ## 
+  #####    #####    #####    #####    ####    ##   ##   #####   #######  ##  ##    ####     ####     #####   ##   ##`;
+
+    const asciiLogo = document.getElementById("asciiLogo");
+    const glitchChars = ["#", "@", "%", "&", "*", "+", "?", "X", "▓", "▒"];
+    const spans = [];
+
+    for (const ch of asciiArt) {
+      if (ch === "\n") {
+        asciiLogo.appendChild(document.createTextNode("\n"));
+      } else {
+        const span = document.createElement("span");
+        span.className = "ascii-char";
+        span.textContent = ch;
+        span.dataset.original = ch;
+        asciiLogo.appendChild(span);
+        if (ch !== " ") spans.push(span);
+      }
+    }
+
+    function glitchOneChar() {
+      const target = spans[Math.floor(Math.random() * spans.length)];
+      const original = target.dataset.original;
+      const randomChar = glitchChars[Math.floor(Math.random() * glitchChars.length)];
+
+      target.textContent = randomChar;
+      target.classList.add("glitch");
+
+      setTimeout(() => {
+        target.textContent = original;
+        target.classList.remove("glitch");
+      }, 90 + Math.random() * 140);
+    }
+
+    setInterval(() => {
+      const count = Math.random() < 0.65 ? 1 : 2;
+      for (let i = 0; i < count; i++) {
+        setTimeout(glitchOneChar, i * 60);
+      }
+    }, 220);
+  </script>
 </body>
 </html>
