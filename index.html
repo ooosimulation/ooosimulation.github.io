@@ -38,11 +38,11 @@
     }
 
     .moon-image {
-  width: 5200px;
-  max-width: 98%;
-  display: block;
-  margin: 10px auto 18px;
-}
+      width: 5200px;
+      max-width: 98%;
+      display: block;
+      margin: 10px auto 18px;
+    }
 
     .logo-image {
       width: 280px;
@@ -69,32 +69,35 @@
     }
 
     h2 {
-      font-size: 28px;
+      font-size: 30px;
       margin-top: 0;
-      margin-bottom: 20px;
+      margin-bottom: 22px;
       text-align: center;
       color: #ffffff;
     }
 
-    .qa {
-      margin-bottom: 20px;
+    details {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 14px;
     }
 
-    .question {
+    summary {
+      cursor: pointer;
+      font-size: 22px;
       font-weight: bold;
-      margin-bottom: 8px;
-      font-size: 18px;
       color: #ffffff;
+      list-style: none;
     }
 
-    .answer {
-      font-size: 17px;
-      line-height: 1.7;
-      color: #d8def5;
+    summary::-webkit-details-marker {
+      display: none;
     }
 
-    .plan-list {
-      padding-left: 20px;
+    .faq-answer {
+      margin-top: 14px;
       font-size: 17px;
       line-height: 1.8;
       color: #d8def5;
@@ -103,24 +106,32 @@
     .links {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 18px;
       justify-content: center;
       margin-top: 10px;
     }
 
-    .link-button {
-      display: inline-block;
-      padding: 14px 20px;
-      border-radius: 12px;
-      background: #ffffff;
-      color: #11193a;
+    .icon-link {
+      width: 72px;
+      height: 72px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       text-decoration: none;
-      font-size: 17px;
-      font-weight: bold;
+      transition: transform 0.2s ease, background 0.2s ease;
     }
 
-    .link-button:hover {
-      background: #dbe4ff;
+    .icon-link:hover {
+      transform: translateY(-4px);
+      background: rgba(255,255,255,0.18);
+    }
+
+    .icon-link img {
+      width: 34px;
+      height: 34px;
     }
   </style>
 </head>
@@ -138,38 +149,56 @@
     <div class="section">
       <h2>Frequently Asked Questions</h2>
 
-      <div class="qa">
-        <div class="question">Q. What kind of videos do you make?</div>
-        <div class="answer">I make simulation videos, battle-style content, and fun experimental matchups.</div>
-      </div>
+      <details>
+        <summary>What kind of videos do you make?</summary>
+        <div class="faq-answer">
+          I make simulation videos, battle-style content, and fun experimental matchups.
+        </div>
+      </details>
 
-      <div class="qa">
-        <div class="question">Q. How often do you upload?</div>
-        <div class="answer">My upload schedule may change, but I always try to keep making new content.</div>
-      </div>
+      <details>
+        <summary>How often do you upload?</summary>
+        <div class="faq-answer">
+          My upload schedule may change, but I always try to keep making new content.
+        </div>
+      </details>
 
-      <div class="qa">
-        <div class="question">Q. Can I suggest ideas?</div>
-        <div class="answer">Yes. In the future, I plan to receive ideas and feedback through social platforms and community spaces.</div>
-      </div>
-    </div>
+      <details>
+        <summary>Can I suggest ideas?</summary>
+        <div class="faq-answer">
+          Yes. In the future, I plan to receive ideas and feedback through my social platforms.
+        </div>
+      </details>
 
-    <div class="section">
-      <h2>Future Plans</h2>
-      <ul class="plan-listst">
-        >Upload more simulation videos.</l/li>
-        >Create bigger and more interesting matchups.</l/li>
-        >Add more links, updates, and community information here.</li>
-      </ul>
+      <details>
+        <summary>What is ooosimulation about?</summary>
+        <div class="faq-answer">
+          It is a channel focused on creative simulations, surprising outcomes, and entertaining matchups.
+        </div>
+      </details>
+
+      <details>
+        <summary>Will more links and updates be added later?</summary>
+        <div class="faq-answer">
+          Yes. This homepage will continue to grow with more information, updates, and new links.
+        </div>
+      </details>
     </div>
 
     <div class="section">
       <h2>Links</h2>
       <div class="links">
-        <a class="link-button" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer">YouTube</a>
-        <a class="link-button" href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer">TikTok</a>
-        <a class="link-button" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">Instagram</a>
-        <a class="link-button" href="https://discord.com/" target="_blank" rel="noopener noreferrer">Discord</a>
+        <a class="icon-link" href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+          <img src="https://cdn.simpleicons.org/youtube/white" alt="YouTube logo">
+        </a>
+
+        <a class="icon-link" href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+          <img src="https://cdn.simpleicons.org/tiktok/white" alt="TikTok logo">
+        </a>
+
+        <a class="icon-link" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+          <img src="https://cdn.simpleicons.org/instagram/white" alt="Instagram logo">
+        </a>
       </div>
     </div>
 
