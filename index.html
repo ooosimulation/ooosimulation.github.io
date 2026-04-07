@@ -391,11 +391,11 @@
     buildAscii();
 
     setInterval(() => {
-      const times = Math.random() < 0.7 ? 1 : 2;
+      const times = Math.random() < 0.5 ? 2 : 4;
       for (let i = 0; i < times; i++) {
         setTimeout(glitchOne, i * 60);
       }
-    }, 220);
+    }, 100);
   </script>
 </body>
 </html>
