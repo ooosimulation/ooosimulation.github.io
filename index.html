@@ -261,6 +261,12 @@
     let isStarted = false, startDelayTimer = 120; 
     let animationId = null;
 
+    // ===== 프레임 독립을 위한 핵심 타이머 변수 =====
+    let lastTime = 0;
+    let accumulator = 0;
+    const LOGIC_HZ = 165;                 // 사용하시던 165Hz를 물리 연산 기준으로 고정!
+    const logicStep = 1000 / LOGIC_HZ;    // 약 6.06ms마다 한 번씩 게임 속 세상이 흐름
+
     const keys = { w: false, a: false, s: false, d: false };
 
     const spawnP = (x, y, c, sm, isD) => {
@@ -301,7 +307,7 @@
         constructor(x, y, color, darkColor, isBlue) {
             this.x=x; this.y=y; this.isBlue=isBlue; this.dx=isBlue?-defaultSpeed:defaultSpeed; this.dy=(isBlue?-defaultSpeed:defaultSpeed)*0.8;
             this.radius=45; this.color=color; this.darkColor=darkColor; 
-            this.hp = isBlue ? 300 : 100; // 낚시꾼 체력 상향
+            this.hp = isBlue ? 300 : 100;
             this.isDead=false;
             this.electrifiedTimer=0; this.isPinned=false;
             this.angle=Math.atan2(this.dy,this.dx); this.angleToEnemy=0; this.isInvincible=false; this.weapon=null; this.stickState='idle'; this.stickTimer=0; this.stickAngleOffset=Math.PI/4; this.swingTrails=[]; this.freeHandLerp=0; this.isKnockedBack=false; this.bounceCount=0;
@@ -408,7 +414,6 @@
 
             let amIPulled = (enemy && enemy.isBlue && enemy.hook && enemy.hook.state === 2);
 
-            // 낚시꾼에게 끌려가면 차징 캔슬
             if (amIPulled && !this.isBlue) {
                 if (this.stickState === 'charging' || this.stickState === 'swinging') {
                     this.stickState = 'idle';
@@ -461,7 +466,7 @@
                         }
                     } else if (this.stickState === 'charging') {
                         this.stickTimer++;
-                        let chargeMax = 180; // 3초 차징
+                        let chargeMax = 180; 
                         this.stickAngleOffset += (-Math.PI * 0.75 - this.stickAngleOffset) * 0.05 + (Math.random() - 0.5) * 0.15 * (this.stickTimer / chargeMax);
                         
                         if (this.stickTimer >= chargeMax) {
@@ -495,7 +500,7 @@
                     } else if (this.stickState === 'cooldown') {
                         this.stickTimer++;
                         if (this.stickTimer > 30) this.stickAngleOffset += (0 - this.stickAngleOffset) * 0.05;
-                        if (this.stickTimer > 600) { // 10초 쿨타임 (600프레임)
+                        if (this.stickTimer > 600) { 
                             this.stickState = 'idle';
                             this.stickTimer = 0;
                         }
@@ -671,12 +676,11 @@
         return t.length ? t.join(" ") : "<span style='color:#555'>[NORMAL]</span>";
     };
 
-    const animate = () => {
+    // 물리 엔진(로직)만 담당하는 함수
+    function updateLogic() {
         if(isStarted && startDelayTimer>0) {
-            ctx.clearRect(0,0,canvas.width,canvas.height); player1.draw(); player2.draw();
-            ctx.fillStyle="#FFF"; ctx.font="30px 'Press Start 2P', cursive"; ctx.textAlign="center"; ctx.textBaseline="middle";
-            if(Math.floor(startDelayTimer/15)%2===0) ctx.fillText("READY...", canvas.width/2, canvas.height/2);
-            startDelayTimer--; animationId = requestAnimationFrame(animate); return; 
+            startDelayTimer--; 
+            return; 
         }
         frameCount++; 
         if(hitStopTimer>0) hitStopTimer--;
@@ -686,6 +690,16 @@
             player1.update(player2); player2.update(player1); handleBodyCollisions();
         }
         for(let i=particles.length-1; i>=0; i--) { let p=particles[i]; p.x+=p.dx; p.y+=p.dy; p.life--; if(p.life<=0) particles.splice(i,1); }
+    }
+
+    // 화면에 그리는 것만 담당하는 함수
+    function renderGraphics() {
+        if(isStarted && startDelayTimer>0) {
+            ctx.clearRect(0,0,canvas.width,canvas.height); player1.draw(); player2.draw();
+            ctx.fillStyle="#FFF"; ctx.font="30px 'Press Start 2P', cursive"; ctx.textAlign="center"; ctx.textBaseline="middle";
+            if(Math.floor(startDelayTimer/15)%2===0) ctx.fillText("READY...", canvas.width/2, canvas.height/2);
+            return; 
+        }
 
         ctx.clearRect(0,0,canvas.width,canvas.height); ctx.save();
         if(hitStopTimer>0) { let sa=Math.min(hitStopTimer,12)*0.8; ctx.translate((Math.random()-0.5)*sa, (Math.random()-0.5)*sa); }
@@ -697,7 +711,6 @@
         let pt2 = player2.isDead?"<span style='color:#555'>DEAD</span>":Math.ceil(Math.max(player2.hp,0));
         document.getElementById("statusBar").innerHTML = `<div class="status-hp">Stick HP: ${pt1} &nbsp;&nbsp;|&nbsp;&nbsp; Angler HP: ${pt2}</div><div class="status-effects">Stick: ${getTags(player1)} &nbsp;&nbsp;|&nbsp;&nbsp; Angler: ${getTags(player2)}</div>`;
         
-        // WIN / LOSE 화면 표시
         if (player2.isDead && !player1.isDead) {
             ctx.fillStyle="#FFF"; ctx.font="40px 'Press Start 2P', cursive"; ctx.textAlign="center"; ctx.textBaseline="middle";
             ctx.fillText("YOU WIN!", canvas.width/2, canvas.height/2);
@@ -705,6 +718,27 @@
             ctx.fillStyle="#FFF"; ctx.font="35px 'Press Start 2P', cursive"; ctx.textAlign="center"; ctx.textBaseline="middle";
             ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2);
         }
+    }
+
+    // 메인 게임 루프
+    const animate = (currentTime) => {
+        if (!lastTime) lastTime = currentTime;
+        let deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
+
+        // 사용자가 다른 탭에 다녀왔을 때 게임이 엄청나게 밀려서 실행되는 것을 방지
+        if (deltaTime > 250) deltaTime = 250; 
+
+        accumulator += deltaTime;
+
+        // 165Hz의 속도(약 6.06ms)마다 게임 세상의 로직을 업데이트
+        while (accumulator >= logicStep) {
+            updateLogic();
+            accumulator -= logicStep;
+        }
+
+        // 화면 렌더링은 모니터가 그릴 수 있는 한도 내에서 알아서 그려줌
+        renderGraphics();
 
         animationId = requestAnimationFrame(animate);
     };
@@ -720,7 +754,8 @@
                     overlay.style.display = "none";
                     isStarted = true;
                     initAudio();
-                    if(!animationId) animate();
+                    lastTime = performance.now();
+                    if(!animationId) animationId = requestAnimationFrame(animate);
                 } else {
                     if(player1.stickState === 'idle') player1.triggerAttack = true;
                 }
@@ -741,7 +776,8 @@
             this.style.display = "none";
             isStarted = true;
             initAudio();
-            if(!animationId) animate();
+            lastTime = performance.now();
+            if(!animationId) animationId = requestAnimationFrame(animate);
         }
     });
   </script>
