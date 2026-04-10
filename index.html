@@ -288,6 +288,10 @@
     const loadSnd = s => new Audio(s);
     const chargeSound = loadSnd("spear charging.mp3"), hitSound = loadSnd("baseball.mp3"), swingSound = loadSnd("swing.mp3"), throwSound = loadSnd("through2.mp3"), breakSound = loadSnd("break2.mp3"), poisonSound = loadSnd("poison.mp3"), freezeSound = loadSnd("freeze.mp3");
     const anglerMp3 = loadSnd('angler.mp3');
+    
+    // 추가된 사운드 파일
+    const readySound = loadSnd("ready.mp3");
+    const fightSound = loadSnd("fight.mp3");
 
     let audioCtx;
     function playExternalSound(audioObj, vol) { if(!audioObj) return; let snd = audioObj.cloneNode(); snd.volume = vol; snd.play().catch(e => {}); }
@@ -309,7 +313,7 @@
 
     const defaultSpeed = 2.5, MAX_HP = 100, COLLISION_DMG = 0.7; 
     let frameCount = 0, particles = [], projectiles = [], pools = [], hitStopTimer = 0, collisionCooldown = 0; 
-    let isStarted = false, startDelayTimer = 120; 
+    let isStarted = false, startDelayTimer = 250; // 약 1.5초(165Hz 기준) 대기 시간
     let animationId = null;
 
     let lastTime = 0;
@@ -317,12 +321,12 @@
     const LOGIC_HZ = 165;
     const logicStep = 1000 / LOGIC_HZ;
 
-    // 게임 상태 변수 (타이머 및 리스타트용)
+    // 게임 상태 변수
     let isGameOver = false;
     let isWin = false;
     let gameStartTime = 0;
     let finalClearTime = 0;
-    let unlockedAchievements = []; // 도전과제 저장 배열
+    let unlockedAchievements = []; 
 
     const keys = { w: false, a: false, s: false, d: false };
 
@@ -725,7 +729,6 @@
         frameCount = 0;
         hitStopTimer = 0;
         collisionCooldown = 0;
-        startDelayTimer = 120;
         
         isGameOver = false;
         isWin = false;
@@ -733,6 +736,10 @@
         gameStartTime = 0;
         unlockedAchievements = [];
         keys.w = false; keys.a = false; keys.s = false; keys.d = false;
+
+        // 재시작 시 딜레이 타이머 및 레디 사운드 설정
+        startDelayTimer = 250;
+        playCustomSound(readySound);
     }
 
     function handleBodyCollisions() {
@@ -768,7 +775,10 @@
     function updateLogic() {
         if(isStarted && startDelayTimer>0) {
             startDelayTimer--; 
-            if(startDelayTimer === 0) gameStartTime = performance.now();
+            if(startDelayTimer === 0) {
+                gameStartTime = performance.now();
+                playCustomSound(fightSound); // 파이트 사운드 재생
+            }
             return; 
         }
         frameCount++; 
@@ -780,7 +790,6 @@
         }
         for(let i=particles.length-1; i>=0; i--) { let p=particles[i]; p.x+=p.dx; p.y+=p.dy; p.life--; if(p.life<=0) particles.splice(i,1); }
 
-        // 게임 오버 상태 체크 및 업적 달성 확인
         if ((player1.isDead || player2.isDead) && !isGameOver) {
             isGameOver = true;
             finalClearTime = performance.now() - gameStartTime;
@@ -789,11 +798,8 @@
             unlockedAchievements = [];
             if (isWin) {
                 let endHp = Math.ceil(Math.max(player1.hp, 0));
-                // 조건 1: 체력 100
                 if (endHp === 100) unlockedAchievements.push("FLAWLESS (100 HP)");
-                // 조건 2: 체력 1
                 if (endHp === 1) unlockedAchievements.push("CLUTCH (1 HP LEFT)");
-                // 조건 3: 1분(60,000ms) 내에 클리어
                 if (finalClearTime <= 60000) unlockedAchievements.push("SPEEDRUNNER (< 1 MIN)");
             }
         }
@@ -803,7 +809,8 @@
         if(isStarted && startDelayTimer>0) {
             ctx.clearRect(0,0,canvas.width,canvas.height); player1.draw(); player2.draw();
             ctx.fillStyle="#FFF"; ctx.font="30px 'Press Start 2P', cursive"; ctx.textAlign="center"; ctx.textBaseline="middle";
-            if(Math.floor(startDelayTimer/15)%2===0) ctx.fillText("READY...", canvas.width/2, canvas.height/2);
+            // 깜빡임 연출
+            if(Math.floor(startDelayTimer/20)%2===0) ctx.fillText("READY...", canvas.width/2, canvas.height/2);
             return; 
         }
 
@@ -817,7 +824,6 @@
         let pt2 = player2.isDead?"<span style='color:#555'>DEAD</span>":Math.ceil(Math.max(player2.hp,0));
         document.getElementById("statusBar").innerHTML = `<div class="status-hp">Stick HP: ${pt1} &nbsp;&nbsp;|&nbsp;&nbsp; Angler HP: ${pt2}</div><div class="status-effects">Stick: ${getTags(player1)} &nbsp;&nbsp;|&nbsp;&nbsp; Angler: ${getTags(player2)}</div>`;
         
-        // 타이머 렌더링
         let currentTimeText = "00:00.00";
         if (isStarted && startDelayTimer <= 0) {
             if (!isGameOver) {
@@ -830,7 +836,6 @@
             ctx.fillText(currentTimeText, canvas.width/2, 15);
         }
 
-        // 게임 오버 및 업적 연출
         if (isGameOver) {
             ctx.fillStyle="rgba(0,0,0,0.5)";
             ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -841,10 +846,9 @@
                 ctx.font="15px 'Press Start 2P', cursive";
                 ctx.fillText("CLEAR TIME: " + formatTime(finalClearTime), canvas.width/2, canvas.height/2 - 10);
 
-                // 업적 출력
                 if (unlockedAchievements.length > 0) {
                     ctx.font="12px 'Press Start 2P', cursive";
-                    ctx.fillStyle="#FFD700"; // 금색
+                    ctx.fillStyle="#FFD700"; 
                     ctx.fillText("- ACHIEVEMENTS -", canvas.width/2, canvas.height/2 + 30);
                     
                     ctx.font="10px 'Press Start 2P', cursive";
@@ -895,12 +899,13 @@
                     isStarted = true;
                     initAudio();
                     lastTime = performance.now();
+                    startDelayTimer = 250;
+                    playCustomSound(readySound); // 시작 시 레디 사운드
                     if(!animationId) animationId = requestAnimationFrame(animate);
                 } else {
                     if(player1.stickState === 'idle' && !isGameOver) player1.triggerAttack = true;
                 }
             } else if (isStarted) {
-                // 게임오버 시 J키로 재시작하지 않고 무시함
                 if (!isGameOver && player1.stickState === 'idle') {
                     player1.triggerAttack = true;
                 }
@@ -920,13 +925,15 @@
             isStarted = true;
             initAudio();
             lastTime = performance.now();
+            startDelayTimer = 250;
+            playCustomSound(readySound); // 시작 시 레디 사운드
             if(!animationId) animationId = requestAnimationFrame(animate);
         }
     });
 
     canvas.addEventListener('click', () => {
         if (isStarted && isGameOver) {
-            resetGame(); // 마우스 클릭으로만 게임 재시작 가능
+            resetGame(); // 마우스 클릭으로만 게임 재시작
         }
     });
   </script>
