@@ -87,10 +87,12 @@
     #statusBar { width: 100%; margin-top: 15px; font-family: 'Press Start 2P', cursive; color: #FFF; text-align: center; display: flex; flex-direction: column; line-height: 1.5; }
     .status-hp { font-size: 11px; margin-bottom: 5px; text-shadow: 1px 1px 0 #000; }
     .status-effects { font-size: 9px; color: #CCC; }
+    
     #startOverlay { position: absolute; top: 35px; left: 0; width: 100%; height: calc(100% - 95px); background-color: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; border: 2px solid #fff; cursor: pointer;}
     .start-text { color: #FFF; font-size: 14px; animation: blink 1s infinite; text-align: center; line-height: 1.5; }
     .start-sub { color: #AAA; font-size: 10px; margin-top: 15px; text-align: center; line-height: 1.5; padding: 0 10px;}
-    .controls-info { color: #8F4; font-size: 9px; margin-top: 25px; line-height: 1.8; }
+    .pc-only { color: #FF5555; font-size: 10px; margin-top: 20px; letter-spacing: 1px; animation: blink 2s infinite; }
+    .controls-info { color: #8F4; font-size: 9px; margin-top: 15px; line-height: 1.8; }
     @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
     @media (max-width: 768px) {
@@ -164,6 +166,7 @@
                 <div id="startOverlay">
                     <div class="start-text">CLICK TO START</div>
                     <div class="start-sub">Knockback Stick VS Angler Hook!</div>
+                    <div class="pc-only">* CURRENTLY PC ONLY *</div>
                     <div class="controls-info">[WASD]: Move<br><br>[J]: Auto-Charge Attack</div>
                 </div>
                 <canvas id="gameCanvas" width="550" height="550"></canvas>
@@ -261,11 +264,10 @@
     let isStarted = false, startDelayTimer = 120; 
     let animationId = null;
 
-    // ===== 프레임 독립을 위한 핵심 타이머 변수 =====
     let lastTime = 0;
     let accumulator = 0;
-    const LOGIC_HZ = 165;                 // 사용하시던 165Hz를 물리 연산 기준으로 고정!
-    const logicStep = 1000 / LOGIC_HZ;    // 약 6.06ms마다 한 번씩 게임 속 세상이 흐름
+    const LOGIC_HZ = 165;
+    const logicStep = 1000 / LOGIC_HZ;
 
     const keys = { w: false, a: false, s: false, d: false };
 
@@ -676,7 +678,6 @@
         return t.length ? t.join(" ") : "<span style='color:#555'>[NORMAL]</span>";
     };
 
-    // 물리 엔진(로직)만 담당하는 함수
     function updateLogic() {
         if(isStarted && startDelayTimer>0) {
             startDelayTimer--; 
@@ -692,7 +693,6 @@
         for(let i=particles.length-1; i>=0; i--) { let p=particles[i]; p.x+=p.dx; p.y+=p.dy; p.life--; if(p.life<=0) particles.splice(i,1); }
     }
 
-    // 화면에 그리는 것만 담당하는 함수
     function renderGraphics() {
         if(isStarted && startDelayTimer>0) {
             ctx.clearRect(0,0,canvas.width,canvas.height); player1.draw(); player2.draw();
@@ -720,24 +720,20 @@
         }
     }
 
-    // 메인 게임 루프
     const animate = (currentTime) => {
         if (!lastTime) lastTime = currentTime;
         let deltaTime = currentTime - lastTime;
         lastTime = currentTime;
 
-        // 사용자가 다른 탭에 다녀왔을 때 게임이 엄청나게 밀려서 실행되는 것을 방지
         if (deltaTime > 250) deltaTime = 250; 
 
         accumulator += deltaTime;
 
-        // 165Hz의 속도(약 6.06ms)마다 게임 세상의 로직을 업데이트
         while (accumulator >= logicStep) {
             updateLogic();
             accumulator -= logicStep;
         }
 
-        // 화면 렌더링은 모니터가 그릴 수 있는 한도 내에서 알아서 그려줌
         renderGraphics();
 
         animationId = requestAnimationFrame(animate);
