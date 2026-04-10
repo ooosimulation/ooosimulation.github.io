@@ -75,22 +75,22 @@
     #gameWrapper { 
         width: 100%; max-width: 550px; margin: 20px auto 0; 
         background-color: #000; padding: 15px; border-radius: 10px;
-        font-family: 'Impact', 'Arial Black', sans-serif;
+        font-family: 'Press Start 2P', cursive;
         box-shadow: 0 0 20px rgba(255,255,255,0.1);
     }
     #gameContainer { position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; }
-    #titleBar { width: 100%; display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
-    .title-left { font-size: 24px; color: #22CC44; text-shadow: 2px 2px 0 #000; } 
-    .title-vs { font-size: 16px; color: #FFFFFF; padding-bottom: 3px; }
-    .title-right { font-size: 24px; color: #88CCFF; text-shadow: 2px 2px 0 #000; } 
+    #titleBar { width: 100%; display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px; letter-spacing: 1px; }
+    .title-left { font-size: 14px; color: #22CC44; text-shadow: 2px 2px 0 #000; } 
+    .title-vs { font-size: 10px; color: #FFFFFF; padding-bottom: 2px; }
+    .title-right { font-size: 14px; color: #88CCFF; text-shadow: 2px 2px 0 #000; } 
     #gameCanvas { background-color: #000; border: 2px solid #FFF; display: block; box-shadow: 0 0 15px rgba(255,255,255,0.2); width: 100%; height: auto; aspect-ratio: 1/1; cursor: crosshair; }
-    #statusBar { width: 100%; margin-top: 15px; font-family: 'Courier New', Courier, monospace; color: #FFF; text-align: center; letter-spacing: 0.5px; display: flex; flex-direction: column; }
-    .status-hp { font-size: 13px; font-weight: bold; margin-bottom: 5px; text-shadow: 1px 1px 0 #000; }
-    .status-effects { font-size: 10px; color: #CCC; }
-    #startOverlay { position: absolute; top: 45px; left: 0; width: 100%; height: calc(100% - 95px); background-color: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; border: 2px solid #fff; cursor: pointer;}
-    .start-text { color: #FFF; font-size: 20px; letter-spacing: 1px; animation: blink 1s infinite; text-align: center; }
-    .start-sub { color: #AAA; font-size: 12px; margin-top: 10px; font-family: sans-serif; text-align: center; line-height: 1.5; padding: 0 10px;}
-    .controls-info { color: #8F4; font-size: 11px; margin-top: 15px; font-family: sans-serif; }
+    #statusBar { width: 100%; margin-top: 15px; font-family: 'Press Start 2P', cursive; color: #FFF; text-align: center; display: flex; flex-direction: column; line-height: 1.5; }
+    .status-hp { font-size: 11px; margin-bottom: 5px; text-shadow: 1px 1px 0 #000; }
+    .status-effects { font-size: 9px; color: #CCC; }
+    #startOverlay { position: absolute; top: 35px; left: 0; width: 100%; height: calc(100% - 95px); background-color: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; border: 2px solid #fff; cursor: pointer;}
+    .start-text { color: #FFF; font-size: 14px; animation: blink 1s infinite; text-align: center; line-height: 1.5; }
+    .start-sub { color: #AAA; font-size: 10px; margin-top: 15px; text-align: center; line-height: 1.5; padding: 0 10px;}
+    .controls-info { color: #8F4; font-size: 9px; margin-top: 25px; line-height: 1.8; }
     @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
     @media (max-width: 768px) {
@@ -99,7 +99,7 @@
       .section-title { font-size: 26px; }
       summary { font-size: 18px; line-height: 1.7; }
       .faq-answer { font-size: 12px; line-height: 1.9; }
-      .title-left, .title-right { font-size: 18px; }
+      .title-left, .title-right { font-size: 12px; }
     }
     @media (max-width: 480px) {
       .ascii-wrap { display: none; }
@@ -156,15 +156,15 @@
       <details id="gameDetails">
         <summary>4. TEST GAME</summary>
         <div class="faq-answer">
-          여기를 클릭하여 데모 버전을 테스트 해보세요. 낚시꾼을 격파하세요!
+          Click here to test the demo version. Defeat the angler!
           
           <div id="gameWrapper">
             <div id="gameContainer">
-                <div id="titleBar"><div class="title-left">GREEN (YOU)</div><div class="title-vs">VS</div><div class="title-right">BLUE (CPU)</div></div>
+                <div id="titleBar"><div class="title-left">STICK (YOU)</div><div class="title-vs">VS</div><div class="title-right">ANGLER (CPU)</div></div>
                 <div id="startOverlay">
-                    <div class="start-text">CLICK OR SPACE TO START</div>
+                    <div class="start-text">CLICK TO START</div>
                     <div class="start-sub">Knockback Stick VS Angler Hook!</div>
-                    <div class="controls-info">[WASD]: 이동 &nbsp;&nbsp;|&nbsp;&nbsp; [SPACE]: 누르고 있으면 기모으기, 떼면 공격</div>
+                    <div class="controls-info">[WASD]: Move<br><br>[J]: Auto-Charge Attack</div>
                 </div>
                 <canvas id="gameCanvas" width="550" height="550"></canvas>
                 <div id="statusBar"></div>
@@ -189,7 +189,6 @@
   </div>
 
   <script>
-    // ===== 1. 기존 아스키 아트 애니메이션 스크립트 =====
     const asciiText = `  #####    #####    #####    #####    ####    ##   ##  ##   ##  ####       ##     ######    ####     #####   ##   ##
  ##   ##  ##   ##  ##   ##  ##   ##    ##     ### ###  ##   ##   ##        ####    # ## #     ##     ##   ##  ###  ##
  ##   ##  ##   ##  ##   ##  ##         ##     #######  ##   ##   ##       ##  ##     ##       ##     ##   ##  #### ##
@@ -229,7 +228,7 @@
       for (let i = 0; i < times; i++) setTimeout(glitchOne, i * 60);
     }, 100);
 
-    // ===== 2. 게임 스크립트 추가 =====
+    // ===== GAME SCRIPT =====
     const canvas = document.getElementById("gameCanvas"), ctx = canvas.getContext("2d");
     const loadImg = s => { let i = new Image(); i.src = s; return i; };
     const stickImg = loadImg("knockback stick.gif"), fishBucketImg = loadImg('fish bucket.png'), snowImg = loadImg('snow.png'), lavaImg = loadImg('lava.png');
@@ -262,8 +261,7 @@
     let isStarted = false, startDelayTimer = 120; 
     let animationId = null;
 
-    // 플레이어 조작 입력 키
-    const keys = { w: false, a: false, s: false, d: false, space: false };
+    const keys = { w: false, a: false, s: false, d: false };
 
     const spawnP = (x, y, c, sm, isD) => {
         let cnt = isD ? 50 : 20 * sm; if(isD) playSound('death');
@@ -307,6 +305,8 @@
             this.angle=Math.atan2(this.dy,this.dx); this.angleToEnemy=0; this.isInvincible=false; this.weapon=null; this.stickState='idle'; this.stickTimer=0; this.stickAngleOffset=Math.PI/4; this.swingTrails=[]; this.freeHandLerp=0; this.isKnockedBack=false; this.bounceCount=0;
             this.poisonTimer=0; this.burnTimer=0; this.slowTimer=0; this.snowSlowTimer=0; this.freezeTimer=0; this.freezeAccum=0; this.activePoisonSound=null; this.activeFreezeSound=null;
 
+            this.triggerAttack = false;
+
             if (this.isBlue) {
                 this.hook = { state: 0, x: this.x, y: this.y, dx: 0, dy: 0, path: [], pauseTimer: 0, life: 0, cooldown: 120 };
                 this.hookAngle = Math.random() * Math.PI * 2;
@@ -319,7 +319,7 @@
                 for(let t of this.swingTrails) { ctx.save(); ctx.globalAlpha=(t.life/15)*0.4; ctx.translate(this.x,this.y); ctx.rotate(t.angle); ctx.translate(0,35); ctx.rotate(Math.PI/4); ctx.drawImage(stickImg,5,-120,110,110); ctx.restore(); }
                 ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(bsa); 
                 if(this.stickState==='charging') {
-                    let cr=this.stickTimer/180; ctx.shadowColor="#B040FF"; ctx.shadowBlur=15+cr*30; ctx.beginPath(); ctx.arc(80,35,15+Math.random()*25*cr,0,Math.PI*2); ctx.fillStyle=`rgba(180,50,255,${cr*0.8})`; ctx.fill(); ctx.lineWidth=2;
+                    let cr=this.stickTimer/120; ctx.shadowColor="#B040FF"; ctx.shadowBlur=15+cr*30; ctx.beginPath(); ctx.arc(80,35,15+Math.random()*25*cr,0,Math.PI*2); ctx.fillStyle=`rgba(180,50,255,${cr*0.8})`; ctx.fill(); ctx.lineWidth=2;
                     for(let i=0;i<5;i++) { let ea=Math.random()*Math.PI*2, ed=70-cr*50; ctx.beginPath(); ctx.moveTo(80+Math.cos(ea)*ed, 35+Math.sin(ea)*ed); ctx.lineTo(80,35); ctx.strokeStyle=`rgba(220,100,255,${Math.random()*cr})`; ctx.stroke(); }
                 } else ctx.shadowBlur=0;
                 ctx.save(); ctx.translate(0,35); ctx.rotate(Math.PI/4); ctx.drawImage(stickImg,5,-120,110,110); ctx.restore();
@@ -329,7 +329,9 @@
             if(this.poisonTimer>0) { ctx.shadowBlur=20; ctx.shadowColor="#4A0"; ctx.fillStyle="rgba(68,170,0,0.4)"; ctx.beginPath(); ctx.arc(0,0,this.radius+6,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0; }
             ctx.save(); ctx.rotate(this.angle); ctx.beginPath(); ctx.arc(0,0,this.radius,0,Math.PI*2); ctx.fillStyle=this.color; ctx.fill(); ctx.lineWidth=3; ctx.strokeStyle=this.darkColor; ctx.stroke(); ctx.closePath();
             if(this.burnTimer>0 && frameCount%10<5) { ctx.fillStyle="rgba(255,136,0,0.4)"; ctx.beginPath(); ctx.arc(0,0,this.radius,0,Math.PI*2); ctx.fill(); }
-            ctx.rotate(-this.angle); ctx.font="900 26px 'Arial Black',sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.lineWidth=3; ctx.strokeStyle="#000"; let dHp=Math.ceil(Math.max(this.hp,0)); ctx.strokeText(dHp,0,0); ctx.fillStyle="#FFF"; ctx.fillText(dHp,0,0); ctx.restore(); 
+            
+            // HP Text
+            ctx.rotate(-this.angle); ctx.font="14px 'Press Start 2P', cursive"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.lineWidth=3; ctx.strokeStyle="#000"; let dHp=Math.ceil(Math.max(this.hp,0)); ctx.strokeText(dHp,0,0); ctx.fillStyle="#FFF"; ctx.fillText(dHp,0,0); ctx.restore(); 
             ctx.restore(); 
             
             if(this.electrifiedTimer>0) {
@@ -379,7 +381,6 @@
             }
             if(this.isDead) return;
 
-            // 적 방향 계산 및 무적 초기화
             if(enemy && !enemy.isDead) { this.isInvincible=false; }
             else {
                 this.angleToEnemy+=0.02; this.isInvincible=true; this.poisonTimer=this.burnTimer=this.slowTimer=this.snowSlowTimer=this.freezeTimer=this.freezeAccum=0;
@@ -404,18 +405,16 @@
 
             if(this.isPinned) { this.dx=0; this.dy=0; if(this.stickState==='charging'||this.stickState==='swinging'){stopCustomSound(chargeSound);} this.stickState='idle'; this.stickTimer=0; }
 
-            // =============== 1P (초록 공) WASD 조작 및 스페이스바 공격 처리 ===============
+            // =============== 1P (STICK) ===============
             if (!this.isBlue && !this.isKnockedBack && this.freezeTimer <= 0 && !this.isPinned) {
                 let ax = 0, ay = 0;
                 let speedMulti = (this.snowSlowTimer > 0 || this.slowTimer > 0) ? 0.45 : 1;
                 
-                // 이동 키보드 맵핑
                 if (keys.w) ay -= defaultSpeed * speedMulti;
                 if (keys.s) ay += defaultSpeed * speedMulti;
                 if (keys.a) ax -= defaultSpeed * speedMulti;
                 if (keys.d) ax += defaultSpeed * speedMulti;
 
-                // 대각선 이동 시 속도 정규화
                 if (ax !== 0 && ay !== 0) {
                     let len = Math.hypot(ax, ay);
                     ax = (ax / len) * defaultSpeed * speedMulti;
@@ -425,7 +424,6 @@
                 this.dx = ax;
                 this.dy = ay;
 
-                // 움직이는 방향으로 바라보기, 안 움직일 땐 적 바라보기
                 if (ax !== 0 || ay !== 0) {
                     this.angleToEnemy = Math.atan2(ay, ax);
                 } else if (enemy && !enemy.isDead) {
@@ -436,23 +434,24 @@
                 while(diff<-Math.PI) diff+=Math.PI*2; while(diff>Math.PI) diff-=Math.PI*2;
                 this.angle += diff * (this.stickState==='charging'?0.3:0.15);
 
-                // 무기 조작 (스페이스바)
                 if (this.weapon === 'knockback_stick') {
                     this.freeHandLerp = this.stickState === 'charging' ? Math.min(1, this.freeHandLerp + 0.15) : Math.max(0, this.freeHandLerp - 0.15);
                     
                     if (this.stickState === 'idle') {
-                        if (keys.space) {
+                        if (this.triggerAttack) {
                             this.stickState = 'charging';
                             this.stickTimer = 0;
                             playCustomSound(chargeSound);
+                            this.triggerAttack = false;
                         } else {
                             this.stickAngleOffset += (0 - this.stickAngleOffset) * 0.1;
                         }
                     } else if (this.stickState === 'charging') {
                         this.stickTimer++;
-                        this.stickAngleOffset += (-Math.PI * 0.75 - this.stickAngleOffset) * 0.05 + (Math.random() - 0.5) * 0.15 * (this.stickTimer / 180);
-                        // 스페이스바를 떼거나 최대로 모으면 공격
-                        if (!keys.space || this.stickTimer >= 180) {
+                        let chargeMax = 90; // 자동 차지 시간
+                        this.stickAngleOffset += (-Math.PI * 0.75 - this.stickAngleOffset) * 0.05 + (Math.random() - 0.5) * 0.15 * (this.stickTimer / chargeMax);
+                        
+                        if (this.stickTimer >= chargeMax) {
                             this.stickState = 'swinging';
                             this.stickTimer = 0;
                             stopCustomSound(chargeSound);
@@ -483,7 +482,7 @@
                     } else if (this.stickState === 'cooldown') {
                         this.stickTimer++;
                         if (this.stickTimer > 30) this.stickAngleOffset += (0 - this.stickAngleOffset) * 0.05;
-                        if (this.stickTimer > 45) { // 플레이어용 쿨다운 짧게
+                        if (this.stickTimer > 45) {
                             this.stickState = 'idle';
                             this.stickTimer = 0;
                         }
@@ -491,7 +490,7 @@
                 }
             }
 
-            // =============== AI (파란 공 - 낚시꾼) 처리 로직 ===============
+            // =============== AI (ANGLER) ===============
             if (this.isBlue) {
                 if(enemy && !enemy.isDead) this.angleToEnemy = Math.atan2(enemy.y-this.y, enemy.x-this.x);
                 let diff = this.angleToEnemy - this.angle; while(diff<-Math.PI) diff+=Math.PI*2; while(diff>Math.PI) diff-=Math.PI*2;
@@ -584,26 +583,23 @@
                 }
             }
 
-            // =============== 공통 물리 효과 및 위치 갱신 ===============
+            // =============== PHYSICS ===============
             let amIPulled = (enemy && enemy.isBlue && enemy.hook && enemy.hook.state === 2);
 
             if(this.freezeTimer>0 && !this.isKnockedBack) { this.dx=0; this.dy=0; }
             else if(!this.isPinned && !amIPulled) { 
                 let cm = (this.snowSlowTimer>0||this.slowTimer>0)?defaultSpeed*0.45:defaultSpeed;
                 
-                // AI 전용 무작위 방향 갱신 로직 (플레이어는 스킵)
                 if(this.isBlue) {
                     if(this.stickState==='charging') {
                         let cr = this.stickTimer/180, ms=0.5-(cr*0.4);
                         if(this.snowSlowTimer>0||this.slowTimer>0) ms*=0.45; this.x+=this.dx*ms; this.y+=this.dy*ms;
                     } else { this.x+=this.dx; this.y+=this.dy; }
                 } else {
-                    // 플레이어는 위에서 적용한 dx, dy로 바로 갱신
                     this.x += this.dx;
                     this.y += this.dy;
                 }
 
-                // 벽 충돌 (공통)
                 let hw=false, r=this.radius;
                 if(this.x+r>=canvas.width){this.x=canvas.width-r; this.dx=-Math.abs(this.dx); hw=true;}
                 if(this.x-r<=0){this.x=r; this.dx=Math.abs(this.dx); hw=true;}
@@ -617,7 +613,6 @@
                     } else playSound('bounce');
                 }
 
-                // 넉백되지 않았을 때 AI 속도 제어
                 if(this.isBlue && !this.isKnockedBack) {
                     let sp = Math.hypot(this.dx,this.dy);
                     if(sp===0) { this.dx=Math.cos(this.angle)*cm; this.dy=Math.sin(this.angle)*cm; }
@@ -667,7 +662,7 @@
     const animate = () => {
         if(isStarted && startDelayTimer>0) {
             ctx.clearRect(0,0,canvas.width,canvas.height); player1.draw(); player2.draw();
-            ctx.fillStyle="#FFF"; ctx.font="bold 50px 'Impact'"; ctx.textAlign="center"; ctx.textBaseline="middle";
+            ctx.fillStyle="#FFF"; ctx.font="30px 'Press Start 2P', cursive"; ctx.textAlign="center"; ctx.textBaseline="middle";
             if(Math.floor(startDelayTimer/15)%2===0) ctx.fillText("READY...", canvas.width/2, canvas.height/2);
             startDelayTimer--; animationId = requestAnimationFrame(animate); return; 
         }
@@ -688,29 +683,27 @@
 
         let pt1 = player1.isDead?"<span style='color:#555'>DEAD</span>":Math.ceil(Math.max(player1.hp,0));
         let pt2 = player2.isDead?"<span style='color:#555'>DEAD</span>":Math.ceil(Math.max(player2.hp,0));
-        document.getElementById("statusBar").innerHTML = `<div class="status-hp">Green HP: ${pt1} &nbsp;&nbsp;|&nbsp;&nbsp; Blue HP: ${pt2}</div><div class="status-effects">Green: ${getTags(player1)} &nbsp;&nbsp;|&nbsp;&nbsp; Blue: ${getTags(player2)}</div>`;
+        document.getElementById("statusBar").innerHTML = `<div class="status-hp">Stick HP: ${pt1} &nbsp;&nbsp;|&nbsp;&nbsp; Angler HP: ${pt2}</div><div class="status-effects">Stick: ${getTags(player1)} &nbsp;&nbsp;|&nbsp;&nbsp; Angler: ${getTags(player2)}</div>`;
         animationId = requestAnimationFrame(animate);
     };
 
-    // 키보드 입력 및 게임 시작 이벤트
     window.addEventListener('keydown', e => {
         let k = e.key.toLowerCase();
         if(['w','a','s','d'].includes(k)) keys[k] = true;
 
-        if (e.code === 'Space') {
-            // 게임 영역이 보여질 때만 스페이스바가 스크롤 내리는 걸 방지
+        if (k === 'j') {
             const overlay = document.getElementById("startOverlay");
             if (overlay && overlay.offsetParent !== null) {
-                e.preventDefault();
                 if (!isStarted) {
                     overlay.style.display = "none";
                     isStarted = true;
-                    keys.space = false; // 시작하자마자 공격 방지
                     initAudio();
                     if(!animationId) animate();
                 } else {
-                    keys.space = true;
+                    if(player1.stickState === 'idle') player1.triggerAttack = true;
                 }
+            } else if (isStarted) {
+                if(player1.stickState === 'idle') player1.triggerAttack = true;
             }
         }
     });
@@ -718,16 +711,13 @@
     window.addEventListener('keyup', e => {
         let k = e.key.toLowerCase();
         if(['w','a','s','d'].includes(k)) keys[k] = false;
-        if(e.code === 'Space') keys.space = false;
     });
 
-    // 화면(오버레이) 클릭으로도 시작 가능하게 지원
     document.getElementById("startOverlay").addEventListener('click', function(e) {
         if(!isStarted) {
             e.preventDefault();
             this.style.display = "none";
             isStarted = true;
-            keys.space = false;
             initAudio();
             if(!animationId) animate();
         }
