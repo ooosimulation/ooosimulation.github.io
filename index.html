@@ -84,7 +84,7 @@
     #gameContainer { position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; }
     #titleBar { 
         width: 100%; display: flex; justify-content: space-around; align-items: center; 
-        background-color: #000; /* 제목 바 배경색을 맵과 동일하게 흑색으로 수정 */
+        background-color: #000; 
         padding: 15px 0; 
         border-bottom: 2px solid #555; 
         letter-spacing: 1px; 
@@ -104,8 +104,8 @@
     #statusBar { 
         width: 100%; 
         margin-top: 0; 
-        padding: 15px 10px 10px; /* 구분선 아래 여백 확보 */
-        border-top: 2px solid #555; /* 상태창과 맵 사이의 구분선 추가 */
+        padding: 15px 10px 10px; 
+        border-top: 2px solid #555; 
         font-family: 'Press Start 2P', cursive; 
         color: #FFF; text-align: center; 
         display: flex; flex-direction: column; 
@@ -184,7 +184,8 @@
     <h2 class="section-title">GAME PLAY</h2>
     <div class="faq-area">
       <details id="gameDetails">
-        <summary>PLAYER VS ANLGER</summary> <div class="faq-answer">
+        <summary>PLAYER VS ANGLER</summary> 
+        <div class="faq-answer">
           <div id="gameWrapper">
             <div id="gameContainer">
                 <div id="titleBar">
@@ -321,6 +322,7 @@
     let isWin = false;
     let gameStartTime = 0;
     let finalClearTime = 0;
+    let unlockedAchievements = []; // 도전과제 저장 배열
 
     const keys = { w: false, a: false, s: false, d: false };
 
@@ -729,6 +731,7 @@
         isWin = false;
         finalClearTime = 0;
         gameStartTime = 0;
+        unlockedAchievements = [];
         keys.w = false; keys.a = false; keys.s = false; keys.d = false;
     }
 
@@ -777,11 +780,22 @@
         }
         for(let i=particles.length-1; i>=0; i--) { let p=particles[i]; p.x+=p.dx; p.y+=p.dy; p.life--; if(p.life<=0) particles.splice(i,1); }
 
-        // 게임 오버 상태 체크
+        // 게임 오버 상태 체크 및 업적 달성 확인
         if ((player1.isDead || player2.isDead) && !isGameOver) {
             isGameOver = true;
             finalClearTime = performance.now() - gameStartTime;
             isWin = player2.isDead && !player1.isDead;
+
+            unlockedAchievements = [];
+            if (isWin) {
+                let endHp = Math.ceil(Math.max(player1.hp, 0));
+                // 조건 1: 체력 100
+                if (endHp === 100) unlockedAchievements.push("FLAWLESS (100 HP)");
+                // 조건 2: 체력 1
+                if (endHp === 1) unlockedAchievements.push("CLUTCH (1 HP LEFT)");
+                // 조건 3: 1분(60,000ms) 내에 클리어
+                if (finalClearTime <= 60000) unlockedAchievements.push("SPEEDRUNNER (< 1 MIN)");
+            }
         }
     }
 
@@ -816,16 +830,28 @@
             ctx.fillText(currentTimeText, canvas.width/2, 15);
         }
 
-        // 게임 오버 연출
+        // 게임 오버 및 업적 연출
         if (isGameOver) {
             ctx.fillStyle="rgba(0,0,0,0.5)";
             ctx.fillRect(0,0,canvas.width,canvas.height);
             ctx.fillStyle="#FFF"; ctx.font="40px 'Press Start 2P', cursive"; ctx.textAlign="center"; ctx.textBaseline="middle";
             
             if (isWin) {
-                ctx.fillText("YOU WIN!", canvas.width/2, canvas.height/2 - 20);
+                ctx.fillText("YOU WIN!", canvas.width/2, canvas.height/2 - 60);
                 ctx.font="15px 'Press Start 2P', cursive";
-                ctx.fillText("CLEAR TIME: " + formatTime(finalClearTime), canvas.width/2, canvas.height/2 + 30);
+                ctx.fillText("CLEAR TIME: " + formatTime(finalClearTime), canvas.width/2, canvas.height/2 - 10);
+
+                // 업적 출력
+                if (unlockedAchievements.length > 0) {
+                    ctx.font="12px 'Press Start 2P', cursive";
+                    ctx.fillStyle="#FFD700"; // 금색
+                    ctx.fillText("- ACHIEVEMENTS -", canvas.width/2, canvas.height/2 + 30);
+                    
+                    ctx.font="10px 'Press Start 2P', cursive";
+                    for(let i=0; i<unlockedAchievements.length; i++) {
+                        ctx.fillText("[ " + unlockedAchievements[i] + " ]", canvas.width/2, canvas.height/2 + 55 + (i*18));
+                    }
+                }
             } else {
                 ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2 - 20);
             }
@@ -833,7 +859,7 @@
             ctx.font="12px 'Press Start 2P', cursive";
             ctx.fillStyle="#AAA";
             if (Math.floor(Date.now() / 500) % 2 === 0) {
-                ctx.fillText("PRESS 'J' TO RESTART", canvas.width/2, canvas.height/2 + 80);
+                ctx.fillText("CLICK TO RESTART", canvas.width/2, canvas.height/2 + 130);
             }
         }
     }
@@ -871,13 +897,12 @@
                     lastTime = performance.now();
                     if(!animationId) animationId = requestAnimationFrame(animate);
                 } else {
-                    if(player1.stickState === 'idle') player1.triggerAttack = true;
+                    if(player1.stickState === 'idle' && !isGameOver) player1.triggerAttack = true;
                 }
             } else if (isStarted) {
-                if (isGameOver) {
-                    resetGame();
-                } else {
-                    if(player1.stickState === 'idle') player1.triggerAttack = true;
+                // 게임오버 시 J키로 재시작하지 않고 무시함
+                if (!isGameOver && player1.stickState === 'idle') {
+                    player1.triggerAttack = true;
                 }
             }
         }
@@ -901,7 +926,7 @@
 
     canvas.addEventListener('click', () => {
         if (isStarted && isGameOver) {
-            resetGame();
+            resetGame(); // 마우스 클릭으로만 게임 재시작 가능
         }
     });
   </script>
