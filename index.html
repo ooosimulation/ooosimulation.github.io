@@ -132,7 +132,7 @@
     <h2 class="section-title">GAME PLAY</h2>
     <div class="faq-area">
       <details id="gameDetails">
-        <summary>PLAYER VS ANGLER</summary>
+        <summary>TEST DEMO</summary>
         <div class="faq-answer">
           Click here to test the demo version. Defeat the angler!
           
@@ -264,7 +264,22 @@
     const LOGIC_HZ = 165;
     const logicStep = 1000 / LOGIC_HZ;
 
+    // 게임 상태 변수 (타이머 및 리스타트용)
+    let isGameOver = false;
+    let isWin = false;
+    let gameStartTime = 0;
+    let finalClearTime = 0;
+
     const keys = { w: false, a: false, s: false, d: false };
+
+    // 시간 포맷 변환 함수 (00:00.00)
+    const formatTime = ms => {
+        let t = Math.floor(ms);
+        let m = Math.floor(t / 60000).toString().padStart(2, '0');
+        let s = Math.floor((t % 60000) / 1000).toString().padStart(2, '0');
+        let msPart = Math.floor((t % 1000) / 10).toString().padStart(2, '0');
+        return `${m}:${s}.${msPart}`;
+    };
 
     const spawnP = (x, y, c, sm, isD) => {
         let cnt = isD ? 50 : 20 * sm; if(isD) playSound('death');
@@ -623,7 +638,8 @@
                     if(this.isKnockedBack) {
                         this.bounceCount--; if(!this.isInvincible) this.hp-=2; createHitEffect(this.x,this.y,"#FF5555",1.5); playSound('heavyHit'); hitStopTimer=15; 
                         if(this.bounceCount<=0 || this.hp<=0) { this.isKnockedBack=false; let sp=Math.hypot(this.dx,this.dy); if(sp>0){ this.dx=(this.dx/sp)*cm*6; this.dy=(this.dy/sp)*cm*6; } }
-                    } else playSound('bounce');
+                    } 
+                    // 벽 덜덜거림 소리 제거 완료!
                 }
 
                 if(this.isBlue && !this.isKnockedBack) {
@@ -642,6 +658,28 @@
     let ryo = (Math.random()-0.5)*350, rsa = (Math.random()-0.5)*Math.PI*0.8;
     player1.y = 275+ryo; player2.y = 275-ryo; player1.dx = 0; player1.dy = 0; player1.angle = rsa;
     player2.dx = Math.cos(rsa+Math.PI)*defaultSpeed; player2.dy = Math.sin(rsa+Math.PI)*defaultSpeed; player2.angle = rsa+Math.PI;
+
+    function resetGame() {
+        player1 = new Ball(100, 275, "#22CC44", "#147A28", false); player1.weapon = 'knockback_stick';
+        player2 = new Ball(450, 275, "#88CCFF", "#4488CC", true);
+        let ryo = (Math.random()-0.5)*350, rsa = (Math.random()-0.5)*Math.PI*0.8;
+        player1.y = 275+ryo; player2.y = 275-ryo; player1.dx = 0; player1.dy = 0; player1.angle = rsa;
+        player2.dx = Math.cos(rsa+Math.PI)*defaultSpeed; player2.dy = Math.sin(rsa+Math.PI)*defaultSpeed; player2.angle = rsa+Math.PI;
+
+        projectiles = [];
+        pools = [];
+        particles = [];
+        frameCount = 0;
+        hitStopTimer = 0;
+        collisionCooldown = 0;
+        startDelayTimer = 120;
+        
+        isGameOver = false;
+        isWin = false;
+        finalClearTime = 0;
+        gameStartTime = 0;
+        keys.w = false; keys.a = false; keys.s = false; keys.d = false;
+    }
 
     function handleBodyCollisions() {
         if (player2.hook && player2.hook.state === 2) return;
@@ -676,6 +714,7 @@
     function updateLogic() {
         if(isStarted && startDelayTimer>0) {
             startDelayTimer--; 
+            if(startDelayTimer === 0) gameStartTime = performance.now();
             return; 
         }
         frameCount++; 
@@ -686,6 +725,12 @@
             player1.update(player2); player2.update(player1); handleBodyCollisions();
         }
         for(let i=particles.length-1; i>=0; i--) { let p=particles[i]; p.x+=p.dx; p.y+=p.dy; p.life--; if(p.life<=0) particles.splice(i,1); }
+
+        if ((player1.isDead || player2.isDead) && !isGameOver) {
+            isGameOver = true;
+            finalClearTime = performance.now() - gameStartTime;
+            isWin = player2.isDead && !player1.isDead;
+        }
     }
 
     function renderGraphics() {
@@ -706,12 +751,38 @@
         let pt2 = player2.isDead?"<span style='color:#555'>DEAD</span>":Math.ceil(Math.max(player2.hp,0));
         document.getElementById("statusBar").innerHTML = `<div class="status-hp">Stick HP: ${pt1} &nbsp;&nbsp;|&nbsp;&nbsp; Angler HP: ${pt2}</div><div class="status-effects">Stick: ${getTags(player1)} &nbsp;&nbsp;|&nbsp;&nbsp; Angler: ${getTags(player2)}</div>`;
         
-        if (player2.isDead && !player1.isDead) {
+        // 스톱워치 렌더링
+        let currentTimeText = "00:00.00";
+        if (isStarted && startDelayTimer <= 0) {
+            if (!isGameOver) {
+                let currentMs = performance.now() - gameStartTime;
+                currentTimeText = formatTime(currentMs);
+            } else {
+                currentTimeText = formatTime(finalClearTime);
+            }
+            ctx.fillStyle="#FFF"; ctx.font="16px 'Press Start 2P', cursive"; ctx.textAlign="center"; ctx.textBaseline="top";
+            ctx.fillText(currentTimeText, canvas.width/2, 15);
+        }
+
+        // 게임 오버 & 클리어 연출
+        if (isGameOver) {
+            ctx.fillStyle="rgba(0,0,0,0.5)";
+            ctx.fillRect(0,0,canvas.width,canvas.height);
             ctx.fillStyle="#FFF"; ctx.font="40px 'Press Start 2P', cursive"; ctx.textAlign="center"; ctx.textBaseline="middle";
-            ctx.fillText("YOU WIN!", canvas.width/2, canvas.height/2);
-        } else if (player1.isDead) {
-            ctx.fillStyle="#FFF"; ctx.font="35px 'Press Start 2P', cursive"; ctx.textAlign="center"; ctx.textBaseline="middle";
-            ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2);
+            
+            if (isWin) {
+                ctx.fillText("YOU WIN!", canvas.width/2, canvas.height/2 - 20);
+                ctx.font="15px 'Press Start 2P', cursive";
+                ctx.fillText("CLEAR TIME: " + formatTime(finalClearTime), canvas.width/2, canvas.height/2 + 30);
+            } else {
+                ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2 - 20);
+            }
+
+            ctx.font="12px 'Press Start 2P', cursive";
+            ctx.fillStyle="#AAA";
+            if (Math.floor(Date.now() / 500) % 2 === 0) {
+                ctx.fillText("PRESS 'J' TO RESTART", canvas.width/2, canvas.height/2 + 80);
+            }
         }
     }
 
@@ -751,7 +822,11 @@
                     if(player1.stickState === 'idle') player1.triggerAttack = true;
                 }
             } else if (isStarted) {
-                if(player1.stickState === 'idle') player1.triggerAttack = true;
+                if (isGameOver) {
+                    resetGame(); // J키로 재시작
+                } else {
+                    if(player1.stickState === 'idle') player1.triggerAttack = true;
+                }
             }
         }
     });
@@ -761,6 +836,7 @@
         if(['w','a','s','d'].includes(k)) keys[k] = false;
     });
 
+    // 시작 오버레이 클릭
     document.getElementById("startOverlay").addEventListener('click', function(e) {
         if(!isStarted) {
             e.preventDefault();
@@ -769,6 +845,13 @@
             initAudio();
             lastTime = performance.now();
             if(!animationId) animationId = requestAnimationFrame(animate);
+        }
+    });
+
+    // 게임 화면 클릭 시 재시작
+    canvas.addEventListener('click', () => {
+        if (isStarted && isGameOver) {
+            resetGame();
         }
     });
   </script>
