@@ -6,12 +6,14 @@
   <title>ooosimulation - Discord Game</title>
   <link rel="icon" type="image/png" href="../favicon2.png">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-  
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    @font-face {
+      font-family: 'Press Start 2P';
+      src: url('./PressStart2P-Regular.ttf') format('truetype');
+      font-weight: 400;
+      font-style: normal;
+      font-display: block;
+    }
   </style>
 
   <style>
@@ -112,6 +114,13 @@
     const loadSnd = s => new Audio("../" + s);
     const chargeSound = loadSnd("spear charging.mp3"), hitSound = loadSnd("baseball.mp3"), swingSound = loadSnd("swing.mp3"), throwSound = loadSnd("through2.mp3"), breakSound = loadSnd("break2.mp3"), poisonSound = loadSnd("poison.mp3"), freezeSound = loadSnd("freeze.mp3");
     const anglerMp3 = loadSnd('angler.mp3'), readySound = loadSnd("ready.mp3"), fightSound = loadSnd("fight.mp3");
+
+    // 폰트 로딩 완료 대기
+    let isFontReady = false;
+    document.fonts.ready.then(() => {
+        isFontReady = true;
+        renderGraphics();
+    });
 
     // ==========================================
     // 여기서부터 사용자님의 오리지널 게임 스크립트 그대로 시작
@@ -503,6 +512,7 @@
     }
 
     function renderGraphics() {
+        if(!isFontReady) return;
         if(isStarted && startDelayTimer>0) { ctx.clearRect(0,0,canvas.width,canvas.height); player1.draw(); player2.draw(); ctx.fillStyle="#FFF"; ctx.font="30px 'Press Start 2P', cursive"; ctx.textAlign="center"; ctx.textBaseline="middle"; if(Math.floor(startDelayTimer/20)%2===0) ctx.fillText("READY...", canvas.width/2, canvas.height/2); return; }
         ctx.clearRect(0,0,canvas.width,canvas.height); ctx.save();
         if(hitStopTimer>0) { let sa=Math.min(hitStopTimer,12)*0.8; ctx.translate((Math.random()-0.5)*sa, (Math.random()-0.5)*sa); }
