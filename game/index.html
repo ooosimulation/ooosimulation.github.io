@@ -72,125 +72,49 @@
   </style>
 
   <script type="module">
-import { DiscordSDK } from 'https://esm.sh/@discord/embedded-app-sdk';
+    import { DiscordSDK } from "https://esm.sh/@discord/embedded-app-sdk";
+    const discordSdk = new DiscordSDK("1492558716027797574");
 
-const discordSdk = new DiscordSDK('1492558716027797574');
-window.discordSdk = discordSdk;
-window.discordUserName = 'Unknown Player';
+    window.discordSdk = discordSdk;
+    window.discordUserName = "Unknown Player";
 
-const nameOverlay = document.createElement('div');
-nameOverlay.id = 'nameOverlay';
-nameOverlay.style.cssText = `
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.72);
-  z-index: 99999;
-`;
+    async function setupDiscord() {
+      await discordSdk.ready();
 
-nameOverlay.innerHTML = `
-  <div style="
-    width: min(88vw, 360px);
-    background: #000;
-    border: 3px solid #fff;
-    border-radius: 12px;
-    padding: 22px 18px;
-    box-shadow: 0 0 24px rgba(255,255,255,0.18);
-    color: #fff;
-    font-family: 'Press Start 2P', cursive;
-    text-align: center;
-  ">
-    <div style="
-      font-size: 14px;
-      line-height: 1.5;
-      margin-bottom: 14px;
-      color: #88ccff;
-    ">ENTER NAME</div>
+      try {
+        const instanceUser = discordSdk.instanceManager?.currentUser;
+        if (instanceUser) {
+          window.discordUserName = instanceUser.global_name || instanceUser.username || "Unknown Player";
+        }
+      } catch (e) {
+        console.error("Failed to get Discord user from instanceManager", e);
+      }
+    }
 
-    <div style="
-      font-size: 10px;
-      line-height: 1.7;
-      margin-bottom: 16px;
-      color: #ccc;
-    ">클리어 기록에 표시될 이름입니다</div>
-
-    <input
-      id="playerNameInput"
-      type="text"
-      maxlength="32"
-      placeholder="예: mintdogs"
-      style="
-        width: 100%;
-        box-sizing: border-box;
-        padding: 12px 10px;
-        border: 2px solid #666;
-        border-radius: 8px;
-        background: #111;
-        color: #fff;
-        font-family: 'Press Start 2P', cursive;
-        font-size: 10px;
-        text-align: center;
-        outline: none;
-      "
-    />
-
-    <div style="
-      font-size: 8px;
-      line-height: 1.6;
-      margin-top: 12px;
-      margin-bottom: 16px;
-      color: #999;
-    ">비워두면 Unknown Player로 전송됩니다</div>
-
-    <button
-      id="startNameButton"
-      style="
-        width: 100%;
-        padding: 12px 10px;
-        border: 2px solid #22cc44;
-        border-radius: 8px;
-        background: #0b2a12;
-        color: #22cc44;
-        font-family: 'Press Start 2P', cursive;
-        font-size: 10px;
-        cursor: pointer;
-      "
-    >CONFIRM</button>
+    setupDiscord();
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div id="gameWrapper">
+      <div id="gameContainer">
+          <div id="titleBar">
+              <div class="title-left">STICK (YOU)</div>
+              <div class="title-vs">VS</div>
+              <div class="title-right">ANGLER (CPU)</div>
+          </div>
+          <div id="startOverlay">
+              <div class="start-text">CLICK TO START</div>
+              <div class="start-sub">Stick VS Angler</div>
+              <div class="controls-info">[WASD]: Move<br><br>[J]: Auto-Charge Attack</div>
+          </div>
+          <canvas id="gameCanvas" width="550" height="550"></canvas>
+          <div id="statusBar"></div>
+      </div>
+    </div>
   </div>
-`;
 
-document.body.appendChild(nameOverlay);
-
-async function setupDiscord() {
-  try {
-    await discordSdk.ready();
-  } catch (e) {
-    console.warn('Discord SDK ready failed:', e);
-  }
-}
-
-function confirmPlayerName() {
-  const input = document.getElementById('playerNameInput');
-  const typedName = (input?.value || '').trim();
-
-  window.discordUserName = typedName ? typedName.substring(0, 32) : 'Unknown Player';
-  console.log('Player name set to:', window.discordUserName);
-
-  nameOverlay.remove();
-}
-
-document.getElementById('startNameButton').addEventListener('click', confirmPlayerName);
-
-document.getElementById('playerNameInput').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    confirmPlayerName();
-  }
-});
-
-setupDiscord();
-</script>
+  <script>
     const canvas = document.getElementById("gameCanvas"), ctx = canvas.getContext("2d");
     
     const loadImg = s => { let i = new Image(); i.src = "../" + s; return i; };
@@ -764,5 +688,129 @@ setupDiscord();
     buildAscii();
     setInterval(() => { const times = Math.random() < 0.5 ? 2 : 4; for (let i = 0; i < times; i++) setTimeout(glitchOne, i * 60); }, 100);
   </script>
+  <script type="module">
+import { DiscordSDK } from 'https://esm.sh/@discord/embedded-app-sdk';
+
+const discordSdk = new DiscordSDK('1492558716027797574');
+window.discordSdk = discordSdk;
+window.discordUserName = 'Unknown Player';
+
+function createNameOverlay() {
+  const nameOverlay = document.createElement('div');
+  nameOverlay.id = 'nameOverlay';
+  nameOverlay.style.cssText = `
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.72);
+    z-index: 99999;
+  `;
+
+  nameOverlay.innerHTML = `
+    <div style="
+      width: min(88vw, 360px);
+      background: #000;
+      border: 3px solid #fff;
+      border-radius: 12px;
+      padding: 22px 18px;
+      box-shadow: 0 0 24px rgba(255,255,255,0.18);
+      color: #fff;
+      font-family: 'Press Start 2P', cursive;
+      text-align: center;
+    ">
+      <div style="
+        font-size: 14px;
+        line-height: 1.5;
+        margin-bottom: 14px;
+        color: #88ccff;
+      ">ENTER YOUR NAME</div>
+
+      <div style="
+        font-size: 10px;
+        line-height: 1.7;
+        margin-bottom: 16px;
+        color: #ccc;
+      ">This name will be shown in the clear record.</div>
+
+      <input
+        id="playerNameInput"
+        type="text"
+        maxlength="32"
+        placeholder="e.g. mintdogs"
+        style="
+          width: 100%;
+          box-sizing: border-box;
+          padding: 12px 10px;
+          border: 2px solid #666;
+          border-radius: 8px;
+          background: #111;
+          color: #fff;
+          font-family: 'Press Start 2P', cursive;
+          font-size: 10px;
+          text-align: center;
+          outline: none;
+        "
+      />
+
+      <div style="
+        font-size: 8px;
+        line-height: 1.6;
+        margin-top: 12px;
+        margin-bottom: 16px;
+        color: #999;
+      ">Leave it blank to use Unknown Player.</div>
+
+      <button
+        id="startNameButton"
+        style="
+          width: 100%;
+          padding: 12px 10px;
+          border: 2px solid #22cc44;
+          border-radius: 8px;
+          background: #0b2a12;
+          color: #22cc44;
+          font-family: 'Press Start 2P', cursive;
+          font-size: 10px;
+          cursor: pointer;
+        "
+      >CONFIRM</button>
+    </div>
+  `;
+
+  document.body.appendChild(nameOverlay);
+
+  function confirmPlayerName() {
+    const input = document.getElementById('playerNameInput');
+    const typedName = (input?.value || '').trim();
+
+    window.discordUserName = typedName ? typedName.substring(0, 32) : 'Unknown Player';
+    console.log('Player name set to:', window.discordUserName);
+
+    nameOverlay.remove();
+  }
+
+  document.getElementById('startNameButton').addEventListener('click', confirmPlayerName);
+
+  document.getElementById('playerNameInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      confirmPlayerName();
+    }
+  });
+}
+
+async function setupDiscord() {
+  try {
+    await discordSdk.ready();
+  } catch (e) {
+    console.warn('Discord SDK ready failed:', e);
+  }
+
+  createNameOverlay();
+}
+
+setupDiscord();
+</script>
 </body>
 </html>
