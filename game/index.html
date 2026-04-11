@@ -74,9 +74,23 @@
   <script type="module">
     import { DiscordSDK } from "https://esm.sh/@discord/embedded-app-sdk";
     const discordSdk = new DiscordSDK("1492558716027797574");
+
+    window.discordSdk = discordSdk;
+    window.discordUserName = "Unknown Player";
+
     async function setupDiscord() {
       await discordSdk.ready();
+
+      try {
+        const instanceUser = discordSdk.instanceManager?.currentUser;
+        if (instanceUser) {
+          window.discordUserName = instanceUser.global_name || instanceUser.username || "Unknown Player";
+        }
+      } catch (e) {
+        console.error("Failed to get Discord user from instanceManager", e);
+      }
     }
+
     setupDiscord();
   </script>
 </head>
@@ -179,7 +193,7 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    player: 'mintdogs',
+                    player: window.discordUserName || 'Unknown Player',
                     clearTime: (finalClearTime / 1000).toFixed(2),
                     matchup: 'Stick vs Angler'
                 })
