@@ -17,7 +17,6 @@
   </style>
 
   <style>
-    /* 사용자님의 오리지널 배경 스타일 그대로 유지 */
     body {
       margin: 0;
       font-family: 'Press Start 2P', cursive;
@@ -48,8 +47,6 @@
     }
 
     .container { width: 100%; max-width: 550px; padding: 10px; position: relative; z-index: 2; }
-
-    /* 게임 Wrapper 및 내부 스타일 그대로 유지 */
     #gameWrapper { 
         width: 100%; max-width: 550px; 
         background-color: #000;
@@ -104,7 +101,6 @@
   </div>
 
   <script>
-    // 2. 이미지/사운드 파일 경로 수정 (game 폴더 밖의 파일을 불러오기 위해 ../ 추가)
     const canvas = document.getElementById("gameCanvas"), ctx = canvas.getContext("2d");
     
     const loadImg = s => { let i = new Image(); i.src = "../" + s; return i; };
@@ -115,16 +111,12 @@
     const chargeSound = loadSnd("spear charging.mp3"), hitSound = loadSnd("baseball.mp3"), swingSound = loadSnd("swing.mp3"), throwSound = loadSnd("through2.mp3"), breakSound = loadSnd("break2.mp3"), poisonSound = loadSnd("poison.mp3"), freezeSound = loadSnd("freeze.mp3");
     const anglerMp3 = loadSnd('angler.mp3'), readySound = loadSnd("ready.mp3"), fightSound = loadSnd("fight.mp3");
 
-    // 폰트 로딩 완료 대기
     let isFontReady = false;
     document.fonts.ready.then(() => {
         isFontReady = true;
         renderGraphics();
     });
 
-    // ==========================================
-    // 여기서부터 사용자님의 오리지널 게임 스크립트 그대로 시작
-    // ==========================================
     let audioCtx;
     function playExternalSound(audioObj, vol) { if(!audioObj) return; let snd = audioObj.cloneNode(); snd.volume = vol; snd.play().catch(e => {}); }
     const playCustomSound = o => { if(o){ o.currentTime=0; o.play().catch(e=>{}); } };
@@ -157,7 +149,11 @@
     let isWin = false;
     let gameStartTime = 0;
     let finalClearTime = 0;
-    let unlockedAchievements = []; 
+    let unlockedAchievements = [];
+    let hasSharedRecord = false;
+    let shareStatusMessage = '';
+    let shareStatusTimer = 0;
+    let shareButtonBounds = null;
 
     const keys = { w: false, a: false, s: false, d: false };
 
@@ -168,6 +164,43 @@
         let msPart = Math.floor((t % 1000) / 10).toString().padStart(2, '0');
         return `${m}:${s}.${msPart}`;
     };
+
+    async function shareRecordToDiscord() {
+        if (!isGameOver || !isWin || hasSharedRecord) return;
+
+        hasSharedRecord = true;
+        shareStatusMessage = 'SHARING...';
+        shareStatusTimer = 180;
+
+        try {
+            const response = await fetch('http://localhost:3000/submit-record', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    player: 'mintdogs',
+                    clearTime: (finalClearTime / 1000).toFixed(2),
+                    matchup: 'Stick vs Angler'
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.ok) {
+                shareStatusMessage = 'SHARED TO DISCORD!';
+            } else {
+                hasSharedRecord = false;
+                shareStatusMessage = 'SHARE FAILED';
+            }
+        } catch (error) {
+            hasSharedRecord = false;
+            shareStatusMessage = 'SHARE FAILED';
+            console.error(error);
+        }
+
+        shareStatusTimer = 240;
+    }
 
     const spawnP = (x, y, c, sm, isD) => {
         let cnt = isD ? 50 : 20 * sm; if(isD) playSound('death');
@@ -462,7 +495,9 @@
         player1.y = 275+ryo; player2.y = 275-ryo; player1.dx = 0; player1.dy = 0; player1.angle = rsa;
         player2.dx = Math.cos(rsa+Math.PI)*defaultSpeed; player2.dy = Math.sin(rsa+Math.PI)*defaultSpeed; player2.angle = rsa+Math.PI;
         projectiles = []; pools = []; particles = []; frameCount = 0; hitStopTimer = 0; collisionCooldown = 0;
-        isGameOver = false; isWin = false; finalClearTime = 0; gameStartTime = 0; unlockedAchievements = []; keys.w = false; keys.a = false; keys.s = false; keys.d = false;
+        isGameOver = false; isWin = false; finalClearTime = 0; gameStartTime = 0; unlockedAchievements = [];
+        hasSharedRecord = false; shareStatusMessage = ''; shareStatusTimer = 0; shareButtonBounds = null;
+        keys.w = false; keys.a = false; keys.s = false; keys.d = false;
         startDelayTimer = 250; playCustomSound(readySound);
     }
 
@@ -498,7 +533,9 @@
 
     function updateLogic() {
         if(isStarted && startDelayTimer>0) { startDelayTimer--; if(startDelayTimer === 0) { gameStartTime = performance.now(); playCustomSound(fightSound); } return; }
-        frameCount++; if(hitStopTimer>0) hitStopTimer--;
+        frameCount++;
+        if (shareStatusTimer > 0) shareStatusTimer--;
+        if(hitStopTimer>0) hitStopTimer--;
         else {
             for(let i=projectiles.length-1; i>=0; i--) { projectiles[i].update(); if(projectiles[i].isDead) projectiles.splice(i,1); }
             for(let i=pools.length-1; i>=0; i--) { pools[i].update(); if(pools[i].life<=0) pools.splice(i,1); }
@@ -513,6 +550,8 @@
 
     function renderGraphics() {
         if(!isFontReady) return;
+        shareButtonBounds = null;
+
         if(isStarted && startDelayTimer>0) { ctx.clearRect(0,0,canvas.width,canvas.height); player1.draw(); player2.draw(); ctx.fillStyle="#FFF"; ctx.font="30px 'Press Start 2P', cursive"; ctx.textAlign="center"; ctx.textBaseline="middle"; if(Math.floor(startDelayTimer/20)%2===0) ctx.fillText("READY...", canvas.width/2, canvas.height/2); return; }
         ctx.clearRect(0,0,canvas.width,canvas.height); ctx.save();
         if(hitStopTimer>0) { let sa=Math.min(hitStopTimer,12)*0.8; ctx.translate((Math.random()-0.5)*sa, (Math.random()-0.5)*sa); }
@@ -530,9 +569,51 @@
         if (isGameOver) {
             ctx.fillStyle="rgba(0,0,0,0.5)"; ctx.fillRect(0,0,canvas.width,canvas.height);
             ctx.fillStyle="#FFF"; ctx.font="40px 'Press Start 2P', cursive"; ctx.textAlign="center"; ctx.textBaseline="middle";
-            if (isWin) { ctx.fillText("YOU WIN!", canvas.width/2, canvas.height/2 - 60); ctx.font="15px 'Press Start 2P', cursive"; ctx.fillText("CLEAR TIME: " + formatTime(finalClearTime), canvas.width/2, canvas.height/2 - 10); if (unlockedAchievements.length > 0) { ctx.font="12px 'Press Start 2P', cursive"; ctx.fillStyle="#FFD700"; ctx.fillText("- ACHIEVEMENTS -", canvas.width/2, canvas.height/2 + 30); ctx.font="10px 'Press Start 2P', cursive"; for(let i=0; i<unlockedAchievements.length; i++) { ctx.fillText("[ " + unlockedAchievements[i] + " ]", canvas.width/2, canvas.height/2 + 55 + (i*18)); } } }
+
+            if (isWin) {
+                ctx.fillText("YOU WIN!", canvas.width/2, canvas.height/2 - 60);
+
+                ctx.font="15px 'Press Start 2P', cursive";
+                ctx.fillStyle="#FFF";
+                ctx.fillText("CLEAR TIME: " + formatTime(finalClearTime), canvas.width/2, canvas.height/2 - 10);
+
+                if (unlockedAchievements.length > 0) {
+                    ctx.font="12px 'Press Start 2P', cursive";
+                    ctx.fillStyle="#FFD700";
+                    ctx.fillText("- ACHIEVEMENTS -", canvas.width/2, canvas.height/2 + 30);
+
+                    ctx.font="10px 'Press Start 2P', cursive";
+                    for(let i=0; i<unlockedAchievements.length; i++) {
+                        ctx.fillText("[ " + unlockedAchievements[i] + " ]", canvas.width/2, canvas.height/2 + 55 + (i*18));
+                    }
+                }
+
+                const buttonX = canvas.width / 2 - 110;
+                const buttonY = canvas.height / 2 + 92;
+                const buttonW = 220;
+                const buttonH = 28;
+
+                shareButtonBounds = { x: buttonX, y: buttonY, w: buttonW, h: buttonH };
+
+                ctx.fillStyle = hasSharedRecord ? "rgba(80,180,120,0.28)" : "rgba(80,140,255,0.22)";
+                ctx.strokeStyle = hasSharedRecord ? "#66FFAA" : "#88CCFF";
+                ctx.lineWidth = 2;
+                ctx.fillRect(buttonX, buttonY, buttonW, buttonH);
+                ctx.strokeRect(buttonX, buttonY, buttonW, buttonH);
+
+                ctx.font="11px 'Press Start 2P', cursive";
+                ctx.fillStyle = hasSharedRecord ? "#66FFAA" : "#88CCFF";
+                ctx.fillText(hasSharedRecord ? "RECORD SHARED" : "CLICK TO SHARE", canvas.width/2, buttonY + 15);
+
+                if (shareStatusTimer > 0 && shareStatusMessage) {
+                    ctx.font="10px 'Press Start 2P', cursive";
+                    ctx.fillStyle = shareStatusMessage === 'SHARED TO DISCORD!' ? "#AAFFAA" : (shareStatusMessage === 'SHARING...' ? "#FFD700" : "#FF8888");
+                    ctx.fillText(shareStatusMessage, canvas.width/2, canvas.height/2 + 135);
+                }
+            }
             else { ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2 - 20); }
-            ctx.font="12px 'Press Start 2P', cursive"; ctx.fillStyle="#AAA"; if (Math.floor(Date.now() / 500) % 2 === 0) { ctx.fillText("CLICK TO RESTART", canvas.width/2, canvas.height/2 + 130); }
+
+            ctx.font="12px 'Press Start 2P', cursive"; ctx.fillStyle="#AAA"; if (Math.floor(Date.now() / 500) % 2 === 0) { ctx.fillText("CLICK TO RESTART", canvas.width/2, canvas.height/2 + 165); }
         }
     }
 
@@ -553,9 +634,31 @@
     });
     window.addEventListener('keyup', e => { let k = e.key.toLowerCase(); if(['w','a','s','d'].includes(k)) keys[k] = false; });
     document.getElementById("startOverlay").addEventListener('click', function(e) { if(!isStarted) { e.preventDefault(); this.style.display = "none"; isStarted = true; initAudio(); lastTime = performance.now(); startDelayTimer = 250; playCustomSound(readySound); if(!animationId) animationId = requestAnimationFrame(animate); } });
-    canvas.addEventListener('click', () => { if (isStarted && isGameOver) { resetGame(); } });
+    
+    canvas.addEventListener('click', (e) => {
+        if (isStarted && isGameOver && isWin && shareButtonBounds && !hasSharedRecord) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mx = (e.clientX - rect.left) * scaleX;
+            const my = (e.clientY - rect.top) * scaleY;
 
-    // 3. 아스키 로고 애니메이션 (사용자 코드 그대로 유지)
+            if (
+                mx >= shareButtonBounds.x &&
+                mx <= shareButtonBounds.x + shareButtonBounds.w &&
+                my >= shareButtonBounds.y &&
+                my <= shareButtonBounds.y + shareButtonBounds.h
+            ) {
+                shareRecordToDiscord();
+                return;
+            }
+        }
+
+        if (isStarted && isGameOver) {
+            resetGame();
+        }
+    });
+
     const asciiText = `     #####      #####      #####      #####      ####    ##   ##   ##   ##   ####        ##      ######    ####      #####      ##   ## 
  ##   ##    ##   ##    ##   ##    ##   ##      ##     ### ###   ##   ##    ##        ####      # ## #      ##     ##   ##    ###  ## 
  ##   ##    ##   ##    ##   ##    ##            ##     #######   ##   ##    ##       ##  ##      ##        ##     ##   ##    #### ## 
