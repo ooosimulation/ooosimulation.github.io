@@ -3,24 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ooosimulation - Discord Game</title>
-  <link rel="icon" type="image/png" href="../favicon2.png">
-  
+  <title>ooosimulation</title>
+  <link rel="icon" type="image/png" href="favicon2.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
   <style>
-    /* 1. 디스코드 보안 우회를 위해 CDN 주소를 살짝 변경하여 로드 */
-    @font-face {
-      font-family: 'Press Start 2P';
-      src: url('https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/pressstart2p/PressStart2P-Regular.ttf') format('truetype');
-      font-display: swap;
-    }
-
-    /* 2. 모든 요소에 최우선적으로 폰트 적용 */
-    * {
-      font-family: 'Press Start 2P', cursive !important;
-    }
-
     body {
       margin: 0;
+      font-family: 'Press Start 2P', cursive;
       color: white;
       text-align: center;
       min-height: 100vh;
@@ -42,117 +34,912 @@
       background-repeat: no-repeat;
       background-attachment: fixed;
       overflow-x: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      position: relative;
     }
 
-    .container { width: 100%; max-width: 550px; padding: 10px; position: relative; z-index: 2; }
+    .shooting-star { position: fixed; width: 7px; height: 7px; background: white; border-radius: 50%; box-shadow: 0 0 10px rgba(255,255,255,0.9); opacity: 0; pointer-events: none; z-index: 1; }
+    .star-1 { top: 10%; left: 78%; animation: shoot 4.2s linear infinite; animation-delay: 0.8s; }
+    .star-2 { top: 22%; left: 35%; animation: shoot 5.1s linear infinite; animation-delay: 2.7s; }
+    .star-3 { top: 6%; left: 58%; animation: shoot 6s linear infinite; animation-delay: 4.4s; }
 
+    @keyframes shoot {
+      0% { transform: translate(0, 0) scale(0.7); opacity: 0; }
+      10% { opacity: 1; }
+      35% { transform: translate(-520px, 340px) scale(1); opacity: 1; }
+      45% { transform: translate(-620px, 420px) scale(0.9); opacity: 0; }
+      100% { transform: translate(-620px, 420px) scale(0.9); opacity: 0; }
+    }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 10px 20px 80px; position: relative; z-index: 2; }
+    .moon-image { max-width: 100%; display: block; margin: 0 auto 10px; }
+    .ascii-wrap { width: 100%; overflow-x: auto; overflow-y: hidden; margin: 0 auto 52px; text-align: center; -webkit-overflow-scrolling: touch; }
+    .ascii-logo { margin: 0 auto; color: #ffffff; text-align: left; white-space: pre; font-family: "Courier New", Courier, monospace; font-size: 11px; line-height: 1.12; display: inline-block; min-width: max-content; }
+    .ascii-char { display: inline; color: #ffffff; }
+    .ascii-char.glitching { color: #d8ebff; text-shadow: 0 0 6px rgba(170, 220, 255, 0.55); }
+    .mobile-logo { display: none; margin: 0 auto 52px; font-size: 18px; line-height: 1.8; color: #ffffff; text-align: center; letter-spacing: 1px; text-shadow: 0 0 8px rgba(180, 220, 255, 0.25); }
+    .section-title { font-size: 34px; margin: 58px 0 34px; color: #ffffff; text-align: left; line-height: 1.4; }
+    .faq-area { text-align: left; margin-top: 26px; }
+    
+    details { margin-bottom: 28px; padding-bottom: 24px; border-bottom: 1px solid rgba(255,255,255,0.22); }
+    summary { cursor: pointer; font-size: 24px; color: #ffffff; list-style: none; text-align: left; line-height: 1.8; }
+    summary::-webkit-details-marker { display: none; }
+    .faq-answer { margin-top: 18px; font-size: 15px; line-height: 2.1; color: #dbe4ff; text-align: left; }
+    .faq-answer a { color: #ffffff; }
+
+    .links { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; margin: 58px 0 20px; }
+    .icon-link { width: 72px; height: 72px; border-radius: 18px; background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; text-decoration: none; transition: transform 0.2s ease, background 0.2s ease; }
+    .icon-link:hover { transform: translateY(-4px); background: rgba(255,255,255,0.18); }
+    .icon-link img { width: 34px; height: 34px; }
+
+    /* ==== 수정된 게임 전용 CSS ==== */
     #gameWrapper { 
-        width: 100%; max-width: 550px; 
+        width: 100%; max-width: 550px; margin: 20px auto 0; 
         background-color: #000;
         border: 4px solid #FFF; 
         border-radius: 10px;
+        font-family: 'Press Start 2P', cursive;
         box-shadow: 0 0 20px rgba(255,255,255,0.15);
         overflow: hidden; 
-        position: relative;
     }
     #gameContainer { position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; }
-    #titleBar { width: 100%; display: flex; justify-content: space-around; align-items: center; background-color: #000; padding: 15px 0; border-bottom: 2px solid #555; letter-spacing: 1px; }
+    #titleBar { 
+        width: 100%; display: flex; justify-content: space-around; align-items: center; 
+        background-color: #000; 
+        padding: 15px 0; 
+        border-bottom: 2px solid #555; 
+        letter-spacing: 1px; 
+    }
     .title-left { font-size: 18px; color: #22CC44; text-shadow: 2px 2px 0 #000; } 
     .title-vs { font-size: 14px; color: #FFFFFF; }
     .title-right { font-size: 18px; color: #88CCFF; text-shadow: 2px 2px 0 #000; } 
-    #gameCanvas { background-color: #000; display: block; width: 100%; height: auto; aspect-ratio: 1/1; cursor: crosshair; border: none; }
-    #statusBar { width: 100%; padding: 15px 10px 10px; border-top: 2px solid #555; color: #FFF; text-align: center; display: flex; flex-direction: column; line-height: 1.5; box-sizing: border-box; }
+    
+    #gameCanvas { 
+        background-color: #000; 
+        display: block; 
+        width: 100%; height: auto; aspect-ratio: 1/1; 
+        cursor: crosshair; 
+        border: none; 
+    }
+    
+    #statusBar { 
+        width: 100%; 
+        margin-top: 0; 
+        padding: 15px 10px 10px; 
+        border-top: 2px solid #555; 
+        font-family: 'Press Start 2P', cursive; 
+        color: #FFF; text-align: center; 
+        display: flex; flex-direction: column; 
+        line-height: 1.5; 
+        box-sizing: border-box;
+    }
+    
     .status-hp { font-size: 11px; margin-bottom: 5px; text-shadow: 1px 1px 0 #000; }
     .status-effects { font-size: 9px; color: #CCC; }
-    #startOverlay { position: absolute; top: 60px; left: 0; width: 100%; height: calc(100% - 115px); background-color: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; cursor: pointer; }
-    .start-text { color: #FFF; font-size: 18px; text-align: center; line-height: 1.5; }
-    .start-sub { color: #BBB; font-size: 12px; margin-top: 20px; text-align: center; }
-    .controls-info { color: #AAFFAA; font-size: 12px; margin-top: 30px; line-height: 2; background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; }
-  </style>
-
-  <script type="module">
-    import { DiscordSDK } from "https://esm.sh/@discord/embedded-app-sdk";
-    const discordSdk = new DiscordSDK("1492558716027797574");
-    async function setupDiscord() {
-      await discordSdk.ready();
+    
+    #startOverlay { 
+        position: absolute; 
+        top: 60px; 
+        left: 0; width: 100%; height: calc(100% - 115px); 
+        background-color: rgba(0, 0, 0, 0.9); 
+        display: flex; flex-direction: column; align-items: center; justify-content: center; 
+        z-index: 10; 
+        border: none; 
+        cursor: pointer;
     }
-    setupDiscord();
-  </script>
+    .start-text { 
+        color: #FFF; font-size: 18px; 
+        animation: none; 
+        text-align: center; line-height: 1.5; 
+    }
+    .start-sub { color: #BBB; font-size: 12px; margin-top: 20px; text-align: center; line-height: 1.5; padding: 0 10px;}
+    
+    .pc-only { 
+        color: #FF6666; font-size: 14px; margin-top: 30px; letter-spacing: 1px; 
+        animation: none; 
+    }
+    
+    .controls-info { 
+        color: #AAFFAA; font-size: 12px; margin-top: 30px; line-height: 2; 
+        background-color: rgba(255,255,255,0.05); 
+        padding: 15px; border-radius: 8px;
+    }
+
+    @media (max-width: 768px) {
+      .container { padding: 10px 14px 70px; }
+      .ascii-logo { font-size: 8px; line-height: 1.08; }
+      .section-title { font-size: 26px; }
+      summary { font-size: 18px; line-height: 1.7; }
+      .faq-answer { font-size: 12px; line-height: 1.9; }
+      .title-left, .title-right { font-size: 14px; }
+      .start-text { font-size: 14px; }
+      .pc-only { font-size: 10px; }
+      .controls-info { font-size: 9px; }
+    }
+    @media (max-width: 480px) {
+      .ascii-wrap { display: none; }
+      .mobile-logo { display: block; }
+      .links { gap: 14px; }
+      .icon-link { width: 64px; height: 64px; }
+      .icon-link img { width: 30px; height: 30px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .shooting-star { animation: none !important; opacity: 0.4; }
+    }
+  </style>
 </head>
 <body>
+  <div class="shooting-star star-1"></div>
+  <div class="shooting-star star-2"></div>
+  <div class="shooting-star star-3"></div>
+
   <div class="container">
-    <div id="gameWrapper">
-      <div id="gameContainer">
-          <div id="titleBar">
-              <div class="title-left">STICK (YOU)</div>
-              <div class="title-vs">VS</div>
-              <div class="title-right">ANGLER (CPU)</div>
+    <img class="moon-image" src="deamoon2.png" alt="Moon image">
+
+    <div class="ascii-wrap">
+      <pre class="ascii-logo" id="asciiLogo"></pre>
+    </div>
+
+    <div class="mobile-logo">OOOSIMULATION</div>
+
+    <h2 class="section-title">GAME PLAY</h2>
+    <div class="faq-area">
+      <details id="gameDetails">
+        <summary>PLAYER VS ANGLER</summary> 
+        <div class="faq-answer">
+          <div id="gameWrapper">
+            <div id="gameContainer">
+                <div id="titleBar">
+                    <div class="title-left">STICK (YOU)</div>
+                    <div class="title-vs">VS</div>
+                    <div class="title-right">ANGLER (CPU)</div>
+                </div>
+                <div id="startOverlay">
+                    <div class="start-text">CLICK TO START</div>
+                    <div class="start-sub">Stick VS Angler</div>
+                    <div class="pc-only">* CURRENTLY PC ONLY *</div>
+                    <div class="controls-info">[WASD]: Move<br><br>[J]: Auto-Charge Attack</div>
+                </div>
+                <canvas id="gameCanvas" width="550" height="550"></canvas>
+                <div id="statusBar"></div>
+            </div>
           </div>
-          <div id="startOverlay">
-              <div class="start-text">CLICK TO START</div>
-              <div class="start-sub">Stick VS Angler</div>
-              <div class="controls-info">[WASD]: Move<br><br>[J]: Auto-Charge Attack</div>
-          </div>
-          <canvas id="gameCanvas" width="550" height="550"></canvas>
-          <div id="statusBar"></div>
-      </div>
+        </div>
+      </details>
+    </div>
+
+    <h2 class="section-title">FAQ</h2>
+    <div class="faq-area">
+      <details>
+        <summary>1. How do you make it?</summary>
+        <div class="faq-answer">
+          I made it using HTML and JavaScript.
+        </div>
+      </details>
+
+      <details>
+        <summary>2. Can I suggest ideas?</summary>
+        <div class="faq-answer">
+          Of course. Please share your ideas on my <a href="https://discord.gg/ZuQmms3c" target="_blank" rel="noopener noreferrer">Discord</a>.
+        </div>
+      </details>
+      
+    </div>
+
+    <div class="links">
+      <a class="icon-link" href="https://www.youtube.com/@OOOsimulation" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+        <img src="https://cdn.simpleicons.org/youtube/white" alt="YouTube logo">
+      </a>
+      <a class="icon-link" href="https://www.tiktok.com/@ooosimulation" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+        <img src="https://cdn.simpleicons.org/tiktok/white" alt="TikTok logo">
+      </a>
+      <a class="icon-link" href="https://www.instagram.com/ooosimulation/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+        <img src="https://cdn.simpleicons.org/instagram/white" alt="Instagram logo">
+      </a>
+      <a class="icon-link" href="https://x.com/ooosimulation" target="_blank" rel="noopener noreferrer" aria-label="X (Twitter)">
+        <img src="https://cdn.simpleicons.org/x/white" alt="X logo">
+      </a>
+      <a class="icon-link" href="https://discord.gg/ZuQmms3c" target="_blank" rel="noopener noreferrer" aria-label="Discord">
+        <img src="https://cdn.simpleicons.org/discord/white" alt="Discord logo">
+      </a>
     </div>
   </div>
 
   <script>
-    // [이미지/사운드 로드 및 게임 로직 시작 - 기존 코드와 동일]
-    const canvas = document.getElementById("gameCanvas"), ctx = canvas.getContext("2d");
-    const loadImg = s => { let i = new Image(); i.src = "../" + s; return i; };
-    const stickImg = loadImg("knockback stick.gif"), fishBucketImg = loadImg('fish bucket.png'), snowImg = loadImg('snow.png'), lavaImg = loadImg('lava.png');
-    const fishingImg = loadImg('fishing.png'), fishing2Img = loadImg('fishing2.png');
-    const loadSnd = s => new Audio("../" + s);
-    const chargeSound = loadSnd("spear charging.mp3"), hitSound = loadSnd("baseball.mp3"), swingSound = loadSnd("swing.mp3"), throwSound = loadSnd("through2.mp3"), breakSound = loadSnd("break2.mp3"), poisonSound = loadSnd("poison.mp3"), freezeSound = loadSnd("freeze.mp3");
-    const anglerMp3 = loadSnd('angler.mp3'), readySound = loadSnd("ready.mp3"), fightSound = loadSnd("fight.mp3");
+    const asciiText = `  #####      #####      #####      #####      ####    ##   ##   ##   ##   ####        ##      ######    ####     #####     ##   ## 
+ ##   ##    ##   ##    ##   ##    ##   ##      ##     ### ###   ##   ##    ##        ####     # ## #     ##     ##   ##    ###  ## 
+ ##   ##    ##   ##    ##   ##    ##           ##     #######   ##   ##    ##       ##  ##      ##       ##     ##   ##    #### ## 
+ ##   ##    ##   ##    ##   ##     #####       ##     #######   ##   ##    ##       ######      ##       ##     ##   ##    ## #### 
+ ##   ##    ##   ##    ##   ##         ##      ##     ## # ##   ##   ##    ##   #   ##  ##      ##       ##     ##   ##    ##  ### 
+ ##   ##    ##   ##    ##   ##    ##   ##      ##     ##   ##   ##   ##    ##  ##   ##  ##      ##       ##     ##   ##    ##   ## 
+  #####      #####      #####      #####      ####    ##   ##    #####    #######   ##  ##     ####     ####     #####     ##   ## `;
 
-    // ... (이하 모든 자바스크립트 게임 로직 동일) ...
-    // [사용자님의 원본 로직이 이 아래로 길게 이어집니다]
-    // 용량상 생략하지만, 실제 파일에는 전체 로직을 그대로 두시면 됩니다.
-
-    // 중략... (Ball 클래스, updateLogic, renderGraphics 등)
-
-    // 애니메이션 실행부
-    const animate = (currentTime) => {
-        if (!lastTime) lastTime = currentTime;
-        let deltaTime = currentTime - lastTime; lastTime = currentTime; if (deltaTime > 250) deltaTime = 250; accumulator += deltaTime;
-        while (accumulator >= logicStep) { updateLogic(); accumulator -= logicStep; }
-        renderGraphics(); animationId = requestAnimationFrame(animate);
-    };
-
-    window.addEventListener('keydown', e => {
-        let k = e.key.toLowerCase(); if(['w','a','s','d'].includes(k)) keys[k] = true;
-        if (k === 'j') {
-            const overlay = document.getElementById("startOverlay");
-            if (overlay && overlay.offsetParent !== null) { if (!isStarted) { overlay.style.display = "none"; isStarted = true; initAudio(); lastTime = performance.now(); startDelayTimer = 250; playCustomSound(readySound); if(!animationId) animationId = requestAnimationFrame(animate); } else { if(player1.stickState === 'idle' && !isGameOver) player1.triggerAttack = true; } }
-            else if (isStarted) { if (!isGameOver && player1.stickState === 'idle') { player1.triggerAttack = true; } }
-        }
-    });
-    window.addEventListener('keyup', e => { let k = e.key.toLowerCase(); if(['w','a','s','d'].includes(k)) keys[k] = false; });
-    document.getElementById("startOverlay").addEventListener('click', function(e) { if(!isStarted) { e.preventDefault(); this.style.display = "none"; isStarted = true; initAudio(); lastTime = performance.now(); startDelayTimer = 250; playCustomSound(readySound); if(!animationId) animationId = requestAnimationFrame(animate); } });
-    canvas.addEventListener('click', () => { if (isStarted && isGameOver) { resetGame(); } });
-
-    // 아스키 로고 애니메이션
-    const asciiText = `     #####      #####      #####      #####      ####    ##   ##   ##   ##   ####        ##      ######    ####      #####      ##   ## 
- ##   ##    ##   ##    ##   ##    ##   ##      ##     ### ###   ##   ##    ##        ####      # ## #      ##     ##   ##    ###  ## 
- ##   ##    ##   ##    ##   ##    ##            ##     #######   ##   ##    ##       ##  ##      ##        ##     ##   ##    #### ## 
- ##   ##    ##   ##    ##   ##     #####        ##     #######   ##   ##    ##       ######      ##        ##     ##   ##     ## #### 
- ##   ##    ##   ##    ##   ##          ##      ##     ## # ##   ##   ##    ##   #   ##  ##      ##        ##     ##   ##     ##  ### 
- ##   ##    ##   ##    ##   ##    ##   ##      ##     ##   ##   ##   ##    ##  ##   ##  ##      ##        ##     ##   ##     ##   ## 
-  #####      #####      #####      #####      ####    ##   ##    #####    #######   ##  ##     ####      ####      #####      ##   ## `;
     const asciiLogo = document.getElementById('asciiLogo');
     const glitchChars = ['#', '@', '%', '&', '*', '+', '?', 'X'];
     const targets = [];
-    function buildAscii() { if(!asciiLogo) return; asciiLogo.innerHTML = ''; targets.length = 0; for (const ch of asciiText) { if (ch === '\n') { asciiLogo.appendChild(document.createTextNode('\n')); continue; } const span = document.createElement('span'); span.className = 'ascii-char'; span.textContent = ch; span.dataset.original = ch; asciiLogo.appendChild(span); if (ch !== ' ') targets.push(span); } }
-    function glitchOne() { if (window.innerWidth <= 480 || !targets.length) return; const target = targets[Math.floor(Math.random() * targets.length)]; const original = target.dataset.original; target.textContent = glitchChars[Math.floor(Math.random() * glitchChars.length)]; target.classList.add('glitching'); setTimeout(() => { target.textContent = original; target.classList.remove('glitching'); }, 120); }
+
+    function buildAscii() {
+      asciiLogo.innerHTML = '';
+      targets.length = 0;
+      for (const ch of asciiText) {
+        if (ch === '\n') { asciiLogo.appendChild(document.createTextNode('\n')); continue; }
+        const span = document.createElement('span');
+        span.className = 'ascii-char'; span.textContent = ch; span.dataset.original = ch;
+        asciiLogo.appendChild(span);
+        if (ch !== ' ') targets.push(span);
+      }
+    }
+
+    function glitchOne() {
+      if (window.innerWidth <= 480 || !targets.length) return;
+      const target = targets[Math.floor(Math.random() * targets.length)];
+      const original = target.dataset.original;
+      target.textContent = glitchChars[Math.floor(Math.random() * glitchChars.length)];
+      target.classList.add('glitching');
+      setTimeout(() => { target.textContent = original; target.classList.remove('glitching'); }, 120);
+    }
+
     buildAscii();
-    setInterval(() => { const times = Math.random() < 0.5 ? 2 : 4; for (let i = 0; i < times; i++) setTimeout(glitchOne, i * 60); }, 100);
+    setInterval(() => {
+      const times = Math.random() < 0.5 ? 2 : 4;
+      for (let i = 0; i < times; i++) setTimeout(glitchOne, i * 60);
+    }, 100);
+
+    // ===== GAME SCRIPT =====
+    const canvas = document.getElementById("gameCanvas"), ctx = canvas.getContext("2d");
+    const loadImg = s => { let i = new Image(); i.src = s; return i; };
+    const stickImg = loadImg("knockback stick.gif"), fishBucketImg = loadImg('fish bucket.png'), snowImg = loadImg('snow.png'), lavaImg = loadImg('lava.png');
+    const fishingImg = loadImg('fishing.png'), fishing2Img = loadImg('fishing2.png');
+    
+    const loadSnd = s => new Audio(s);
+    const chargeSound = loadSnd("spear charging.mp3"), hitSound = loadSnd("baseball.mp3"), swingSound = loadSnd("swing.mp3"), throwSound = loadSnd("through2.mp3"), breakSound = loadSnd("break2.mp3"), poisonSound = loadSnd("poison.mp3"), freezeSound = loadSnd("freeze.mp3");
+    const anglerMp3 = loadSnd('angler.mp3');
+    
+    // 추가된 사운드 파일
+    const readySound = loadSnd("ready.mp3");
+    const fightSound = loadSnd("fight.mp3");
+
+    let audioCtx;
+    function playExternalSound(audioObj, vol) { if(!audioObj) return; let snd = audioObj.cloneNode(); snd.volume = vol; snd.play().catch(e => {}); }
+    const playCustomSound = o => { if(o){ o.currentTime=0; o.play().catch(e=>{}); } };
+    const stopCustomSound = o => { if(o){ o.pause(); o.currentTime=0; } };
+    const playEffectSound = o => { if(o){ let c = o.cloneNode(true); c.volume=1.0; c.play().catch(e=>{}); } };
+    const initAudio = () => { if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); };
+
+    function playSound(type) {
+        if(!audioCtx) return null;
+        let osc = audioCtx.createOscillator(), gain = audioCtx.createGain(), t = audioCtx.currentTime;
+        const setS = (ty, f1, f2, g1, g2, d) => { osc.type=ty; osc.frequency.setValueAtTime(f1,t); osc.frequency.exponentialRampToValueAtTime(f2,t+d); gain.gain.setValueAtTime(g1,t); gain.gain.exponentialRampToValueAtTime(g2,t+d); };
+        if(type==='hit') setS("sawtooth", 250, 50, 0.2, 0.01, 0.1);
+        else if(type==='bounce') setS("sine", 200, 80, 0.05, 0.001, 0.1);
+        else if(type==='heavyHit') setS("sawtooth", 120, 10, 0.5, 0.01, 0.4);
+        else if(type==='death') setS("square", 100, 10, 0.3, 0.01, 0.5);
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(t+0.5); return null;
+    }
+
+    const defaultSpeed = 2.5, MAX_HP = 100, COLLISION_DMG = 0.7; 
+    let frameCount = 0, particles = [], projectiles = [], pools = [], hitStopTimer = 0, collisionCooldown = 0; 
+    let isStarted = false, startDelayTimer = 250; // 약 1.5초(165Hz 기준) 대기 시간
+    let animationId = null;
+
+    let lastTime = 0;
+    let accumulator = 0;
+    const LOGIC_HZ = 165;
+    const logicStep = 1000 / LOGIC_HZ;
+
+    // 게임 상태 변수
+    let isGameOver = false;
+    let isWin = false;
+    let gameStartTime = 0;
+    let finalClearTime = 0;
+    let unlockedAchievements = []; 
+
+    const keys = { w: false, a: false, s: false, d: false };
+
+    // 시간 포맷 변환 함수 (00:00.00)
+    const formatTime = ms => {
+        let t = Math.floor(ms);
+        let m = Math.floor(t / 60000).toString().padStart(2, '0');
+        let s = Math.floor((t % 60000) / 1000).toString().padStart(2, '0');
+        let msPart = Math.floor((t % 1000) / 10).toString().padStart(2, '0');
+        return `${m}:${s}.${msPart}`;
+    };
+
+    const spawnP = (x, y, c, sm, isD) => {
+        let cnt = isD ? 50 : 20 * sm; if(isD) playSound('death');
+        for(let i=0; i<cnt; i++) particles.push({ x, y, dx:(Math.random()-0.5)*(isD?15:12*sm), dy:(Math.random()-0.5)*(isD?15:12*sm), life:(isD?40:20)+Math.random()*(isD?30:15*sm), size:(Math.random()*(isD?6:4)+2)*sm, color:c||"#FFF" });
+    };
+    const createHitEffect = (x, y, c=null, sm=1) => spawnP(x,y,c,sm,false);
+    const createDeathEffect = (x, y, c) => spawnP(x,y,c,1,true);
+
+    class BucketProjectile {
+        constructor(sx,sy,tx,ty,t,tye) { this.x=sx; this.y=sy; this.targetX=tx; this.targetY=ty; this.targetEnemy=t; this.type=tye; let a=Math.atan2(ty-sy,tx-sx); this.speed=5; this.dx=Math.cos(a)*5; this.dy=Math.sin(a)*5; this.spin=0; this.isDead=false; }
+        update() { this.x+=this.dx; this.y+=this.dy; this.spin+=0.2; if(Math.hypot(this.targetX-this.x, this.targetY-this.y)<this.speed) { this.isDead=true; pools.push(new BucketPool(this.targetX, this.targetY, this.targetEnemy, this.type)); playEffectSound(breakSound); } }
+        draw() { ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.spin); let i=this.type===1?fishBucketImg:(this.type===2?snowImg:lavaImg); if(i.complete&&i.naturalWidth>0) ctx.drawImage(i,-42.5,-42.5,85,85); else { ctx.fillStyle=this.type===1?"#4AA0":(this.type===2?"#FFF":"#F40"); ctx.beginPath(); ctx.arc(0,0,42.5,0,Math.PI*2); ctx.fill(); } ctx.restore(); }
+    }
+    
+    class BucketPool {
+        constructor(x,y,t,tye) { this.x=x; this.y=y; this.target=t; this.type=tye; this.radius=0; this.life=720; this.pulse=0; this.pixelSize=15; }
+        update() {
+            this.radius += this.radius<55?3:0.15; this.life--; this.pulse+=0.15; let t=this.target;
+            if(t && !t.isDead && !t.isInvincible && this.radius>5 && Math.hypot(t.x-this.x, t.y-this.y) < this.radius+t.radius) {
+                if(this.type===1) { t.hp-=0.015; t.poisonTimer=180; } else if(this.type===2) { t.hp-=0.01; t.snowSlowTimer=15; if(t.freezeTimer<=0 && ++t.freezeAccum>55) { t.freezeTimer=120; t.freezeAccum=-40; } } else { t.hp-=0.025; t.burnTimer=180; t.slowTimer=15; }
+            }
+        }
+        draw() {
+            if(this.radius<=0.1) return; ctx.save(); ctx.globalAlpha=Math.min(1, this.life/60);
+            let cr=Math.max(0.1, this.radius+Math.sin(this.pulse)*2), ps=this.pixelSize, gs=-Math.floor(cr/ps)*ps, ge=Math.floor(cr/ps)*ps;
+            for(let px=gs; px<=ge; px+=ps) for(let py=gs; py<=ge; py+=ps) {
+                let d=Math.hypot(px,py); if(d<=cr) { let nz=Math.sin(px*0.1+this.pulse)+Math.cos(py*0.1-this.pulse)>0;
+                    if(this.type===1) ctx.fillStyle=d<cr*0.3?(nz?"#8F4":"#4A0"):d<cr*0.7?(nz?"#2C4":"#180"):(nz?"#160":"#040");
+                    else if(this.type===2) ctx.fillStyle=d<cr*0.3?(nz?"#FFF":"#EEF"):d<cr*0.7?(nz?"#CEF":"#ADF"):(nz?"#8CF":"#5AF");
+                    else ctx.fillStyle=d<cr*0.3?(nz?"#FFA":"#FC0"):d<cr*0.7?(nz?"#F80":"#D50"):(nz?"#C20":"#810"); ctx.fillRect(this.x+px, this.y+py, ps, ps);
+                }
+            } ctx.restore();
+        }
+    }
+
+    class Ball {
+        constructor(x, y, color, darkColor, isBlue) {
+            this.x=x; this.y=y; this.isBlue=isBlue; this.dx=isBlue?-defaultSpeed:defaultSpeed; this.dy=(isBlue?-defaultSpeed:defaultSpeed)*0.8;
+            this.radius=45; this.color=color; this.darkColor=darkColor; 
+            this.hp = isBlue ? 300 : 100;
+            this.isDead=false;
+            this.electrifiedTimer=0; this.isPinned=false;
+            this.angle=Math.atan2(this.dy,this.dx); this.angleToEnemy=0; this.isInvincible=false; this.weapon=null; this.stickState='idle'; this.stickTimer=0; this.stickAngleOffset=Math.PI/4; this.swingTrails=[]; this.freeHandLerp=0; this.isKnockedBack=false; this.bounceCount=0;
+            this.poisonTimer=0; this.burnTimer=0; this.slowTimer=0; this.snowSlowTimer=0; this.freezeTimer=0; this.freezeAccum=0; this.activePoisonSound=null; this.activeFreezeSound=null;
+
+            this.triggerAttack = false;
+
+            if (this.isBlue) {
+                this.hook = { state: 0, x: this.x, y: this.y, dx: 0, dy: 0, path: [], pauseTimer: 0, life: 0, cooldown: 120 };
+                this.hookAngle = Math.random() * Math.PI * 2;
+            }
+        }
+        draw() {
+            if(this.isDead) return;
+            if(this.weapon==='knockback_stick') {
+                let bsa=this.angle+this.stickAngleOffset;
+                for(let t of this.swingTrails) { ctx.save(); ctx.globalAlpha=(t.life/15)*0.4; ctx.translate(this.x,this.y); ctx.rotate(t.angle); ctx.translate(0,35); ctx.rotate(Math.PI/4); ctx.drawImage(stickImg,5,-120,110,110); ctx.restore(); }
+                ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(bsa); 
+                if(this.stickState==='charging') {
+                    let cr=this.stickTimer/180; ctx.shadowColor="#B040FF"; ctx.shadowBlur=15+cr*30; ctx.beginPath(); ctx.arc(80,35,15+Math.random()*25*cr,0,Math.PI*2); ctx.fillStyle=`rgba(180,50,255,${cr*0.8})`; ctx.fill(); ctx.lineWidth=2;
+                    for(let i=0;i<5;i++) { let ea=Math.random()*Math.PI*2, ed=70-cr*50; ctx.beginPath(); ctx.moveTo(80+Math.cos(ea)*ed, 35+Math.sin(ea)*ed); ctx.lineTo(80,35); ctx.strokeStyle=`rgba(220,100,255,${Math.random()*cr})`; ctx.stroke(); }
+                } else ctx.shadowBlur=0;
+                ctx.save(); ctx.translate(0,35); ctx.rotate(Math.PI/4); ctx.drawImage(stickImg,5,-120,110,110); ctx.restore();
+                ctx.fillStyle=this.color; ctx.strokeStyle=this.darkColor; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(45,35,12,0,Math.PI*2); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.arc(45+(75-45)*this.freeHandLerp, -35+(35+35)*this.freeHandLerp, 12, 0, Math.PI*2); ctx.fill(); ctx.stroke(); ctx.restore(); 
+            }
+            ctx.save(); ctx.translate(this.x, this.y); 
+            if(this.poisonTimer>0) { ctx.shadowBlur=20; ctx.shadowColor="#4A0"; ctx.fillStyle="rgba(68,170,0,0.4)"; ctx.beginPath(); ctx.arc(0,0,this.radius+6,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0; }
+            ctx.save(); ctx.rotate(this.angle); ctx.beginPath(); ctx.arc(0,0,this.radius,0,Math.PI*2); ctx.fillStyle=this.color; ctx.fill(); ctx.lineWidth=3; ctx.strokeStyle=this.darkColor; ctx.stroke(); ctx.closePath();
+            if(this.burnTimer>0 && frameCount%10<5) { ctx.fillStyle="rgba(255,136,0,0.4)"; ctx.beginPath(); ctx.arc(0,0,this.radius,0,Math.PI*2); ctx.fill(); }
+            
+            ctx.rotate(-this.angle); ctx.font="14px 'Press Start 2P', cursive"; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.lineWidth=3; ctx.strokeStyle="#000"; let dHp=Math.ceil(Math.max(this.hp,0)); ctx.strokeText(dHp,0,0); ctx.fillStyle="#FFF"; ctx.fillText(dHp,0,0); ctx.restore(); 
+            ctx.restore(); 
+            
+            if(this.electrifiedTimer>0) {
+                ctx.save(); ctx.translate(this.x, this.y); ctx.shadowBlur=15; ctx.shadowColor='#ffa'; ctx.strokeStyle='#fff';
+                if(Math.random()>0.3) for(let i=0;i<4;i++) {
+                    let ow=Math.random()*2+1, cx=(Math.random()-0.5)*this.radius*1.8, cy=(Math.random()-0.5)*this.radius*1.8, p=[{x:cx,y:cy}];
+                    for(let j=0;j<3;j++){ cx+=(Math.random()-0.5)*40; cy+=(Math.random()-0.5)*40; p.push({x:cx,y:cy}); }
+                    const dl = (w,c) => { ctx.beginPath(); ctx.lineWidth=w; ctx.strokeStyle=c; ctx.moveTo(p[0].x,p[0].y); for(let k=1;k<p.length;k++) ctx.lineTo(p[k].x,p[k].y); ctx.stroke(); };
+                    dl(ow,'#fff'); dl(ow*0.45,'#ff0');
+                }
+                if(Math.random()>0.5){ ctx.globalCompositeOperation="lighter"; ctx.fillStyle="rgba(255,255,100,0.15)"; ctx.beginPath(); ctx.arc(0,0,this.radius+Math.random()*15,0,Math.PI*2); ctx.fill(); } ctx.restore();
+            }
+            if(this.freezeTimer>0) {
+                ctx.save(); ctx.translate(this.x, this.y); ctx.fillStyle="rgba(150,220,255,0.75)"; ctx.strokeStyle="#FFF"; ctx.lineWidth=3; ctx.beginPath(); let r=this.radius+18; ctx.moveTo(0,-r*1.1); ctx.lineTo(r*0.6,-r*0.8); ctx.lineTo(r*1.1,-r*0.2); ctx.lineTo(r*0.9,r*0.5); ctx.lineTo(r*0.5,r*1.1); ctx.lineTo(-r*0.4,r*0.9); ctx.lineTo(-r*1.0,r*0.3); ctx.lineTo(-r*0.8,-r*0.6); ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.lineWidth=1.5; ctx.strokeStyle="rgba(255,255,255,0.6)"; ctx.beginPath(); ctx.moveTo(0,-r*1.1); ctx.lineTo(0,0); ctx.stroke(); ctx.beginPath(); ctx.moveTo(r*1.1,-r*0.2); ctx.lineTo(0,0); ctx.stroke(); ctx.beginPath(); ctx.moveTo(-r*1.0,r*0.3); ctx.lineTo(0,0); ctx.stroke(); ctx.restore();
+            }
+
+            if (this.isBlue) {
+                let tipOffAngle = this.hookAngle - 0.25; 
+                let tipX = this.x + Math.cos(tipOffAngle) * 75; 
+                let tipY = this.y + Math.sin(tipOffAngle) * 75;
+                
+                if (this.hook && this.hook.state !== 0) {
+                    ctx.beginPath(); ctx.moveTo(tipX, tipY);
+                    for(let i = 0; i < this.hook.path.length; i++) { ctx.lineTo(this.hook.path[i].x, this.hook.path[i].y); }
+                    ctx.lineTo(this.hook.x, this.hook.y);
+                    ctx.strokeStyle = "#FFF"; ctx.lineWidth = 2; ctx.stroke();
+                    ctx.beginPath(); ctx.arc(this.hook.x, this.hook.y, 11, 0, Math.PI * 2);
+                    ctx.fillStyle = "#AAA"; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = "#000"; ctx.stroke();
+                }
+
+                ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.hookAngle);
+                ctx.save(); ctx.translate(15, -25); ctx.rotate(Math.PI / 8);
+                let rodSize = 85; 
+                let img = (this.hook && this.hook.state === 0) ? fishingImg : fishing2Img;
+                if (img.complete && img.naturalWidth > 0) { 
+                    ctx.rotate(Math.PI / 4); ctx.drawImage(img, 0, -rodSize, rodSize, rodSize); 
+                } else { ctx.fillStyle = "#A52A2A"; ctx.fillRect(0, -rodSize, 4, rodSize); }
+                ctx.restore(); ctx.restore();
+            }
+        }
+        update(enemy) {
+            if(this.hp<=0 && !this.isDead) {
+                this.isDead=true; if(this.stickState==='charging') stopCustomSound(chargeSound);
+                if(this.activePoisonSound){ this.activePoisonSound.pause(); this.activePoisonSound=null; } if(this.activeFreezeSound){ this.activeFreezeSound.pause(); this.activeFreezeSound=null; }
+                createDeathEffect(this.x, this.y, this.color); return; 
+            }
+            if(this.isDead) return;
+
+            if(enemy && !enemy.isDead) { this.isInvincible=false; }
+            else {
+                this.angleToEnemy+=0.02; this.isInvincible=true; this.poisonTimer=this.burnTimer=this.slowTimer=this.snowSlowTimer=this.freezeTimer=this.freezeAccum=0;
+                if(this.activePoisonSound){ this.activePoisonSound.pause(); this.activePoisonSound.currentTime=0; this.activePoisonSound=null; }
+                if(this.activeFreezeSound){ this.activeFreezeSound.pause(); this.activeFreezeSound.currentTime=0; this.activeFreezeSound=null; }
+            }
+
+            for(let i=this.swingTrails.length-1; i>=0; i--) if(--this.swingTrails[i].life<=0) this.swingTrails.splice(i,1);
+            if(this.poisonTimer>0) {
+                this.poisonTimer--; if(!this.isInvincible) this.hp-=0.015;
+                if(frameCount%6===0) particles.push({x:this.x+(Math.random()-0.5)*this.radius*1.5, y:this.y+(Math.random()-0.5)*this.radius, dx:(Math.random()-0.5), dy:-1.5-Math.random()*1.5, life:25+Math.random()*10, size:Math.random()*5+3, color:"rgba(68,170,0,0.8)"});
+                if(!this.activePoisonSound) { this.activePoisonSound=poisonSound.cloneNode(); this.activePoisonSound.loop=true; this.activePoisonSound.play().catch(e=>{}); }
+            } else if(this.activePoisonSound) { this.activePoisonSound.pause(); this.activePoisonSound.currentTime=0; this.activePoisonSound=null; }
+            if(this.burnTimer>0) { this.burnTimer--; if(!this.isInvincible) this.hp-=0.02; if(frameCount%15===0) createHitEffect(this.x,this.y,"#F80",0.5); }
+            if(this.snowSlowTimer>0) this.snowSlowTimer--; if(this.slowTimer>0) this.slowTimer--;
+            if(this.electrifiedTimer>0) { this.electrifiedTimer--; if(this.electrifiedTimer%60===0) this.hp-=1; }
+            if(this.freezeTimer>0) {
+                this.freezeTimer--; if(!this.activeFreezeSound) { this.activeFreezeSound=freezeSound.cloneNode(); this.activeFreezeSound.loop=true; this.activeFreezeSound.play().catch(e=>{}); }
+                if(this.weapon==='knockback_stick'&&this.stickState==='charging') { this.stickState='idle'; this.stickTimer=0; stopCustomSound(chargeSound); }
+            } else if(this.activeFreezeSound) { this.activeFreezeSound.pause(); this.activeFreezeSound.currentTime=0; this.activeFreezeSound=null; }
+            if(this.freezeAccum>0 && frameCount%3===0) this.freezeAccum--;
+
+            if(this.isPinned) { this.dx=0; this.dy=0; if(this.stickState==='charging'||this.stickState==='swinging'){stopCustomSound(chargeSound);} this.stickState='idle'; this.stickTimer=0; }
+
+            let amIPulled = (enemy && enemy.isBlue && enemy.hook && enemy.hook.state === 2);
+
+            if (amIPulled && !this.isBlue) {
+                if (this.stickState === 'charging' || this.stickState === 'swinging') {
+                    this.stickState = 'idle';
+                    this.stickTimer = 0;
+                    this.triggerAttack = false;
+                    stopCustomSound(chargeSound);
+                }
+            }
+
+            // =============== 1P (STICK) ===============
+            if (!this.isBlue && !this.isKnockedBack && this.freezeTimer <= 0 && !this.isPinned) {
+                let ax = 0, ay = 0;
+                let speedMulti = (this.snowSlowTimer > 0 || this.slowTimer > 0) ? 0.45 : 1;
+                
+                if (keys.w) ay -= defaultSpeed * speedMulti;
+                if (keys.s) ay += defaultSpeed * speedMulti;
+                if (keys.a) ax -= defaultSpeed * speedMulti;
+                if (keys.d) ax += defaultSpeed * speedMulti;
+
+                if (ax !== 0 && ay !== 0) {
+                    let len = Math.hypot(ax, ay);
+                    ax = (ax / len) * defaultSpeed * speedMulti;
+                    ay = (ay / len) * defaultSpeed * speedMulti;
+                }
+
+                this.dx = ax;
+                this.dy = ay;
+
+                if (ax !== 0 || ay !== 0) {
+                    this.angleToEnemy = Math.atan2(ay, ax);
+                } else if (enemy && !enemy.isDead) {
+                    this.angleToEnemy = Math.atan2(enemy.y - this.y, enemy.x - this.x);
+                }
+
+                let diff = this.angleToEnemy - this.angle; 
+                while(diff<-Math.PI) diff+=Math.PI*2; while(diff>Math.PI) diff-=Math.PI*2;
+                this.angle += diff * (this.stickState==='charging'?0.3:0.15);
+
+                if (this.weapon === 'knockback_stick') {
+                    this.freeHandLerp = this.stickState === 'charging' ? Math.min(1, this.freeHandLerp + 0.15) : Math.max(0, this.freeHandLerp - 0.15);
+                    
+                    if (this.stickState === 'idle') {
+                        if (this.triggerAttack) {
+                            this.stickState = 'charging';
+                            this.stickTimer = 0;
+                            playCustomSound(chargeSound);
+                            this.triggerAttack = false;
+                        } else {
+                            this.stickAngleOffset += (0 - this.stickAngleOffset) * 0.1;
+                        }
+                    } else if (this.stickState === 'charging') {
+                        this.stickTimer++;
+                        let chargeMax = 180; 
+                        this.stickAngleOffset += (-Math.PI * 0.75 - this.stickAngleOffset) * 0.05 + (Math.random() - 0.5) * 0.15 * (this.stickTimer / chargeMax);
+                        
+                        if (this.stickTimer >= chargeMax) {
+                            this.stickState = 'swinging';
+                            this.stickTimer = 0;
+                            stopCustomSound(chargeSound);
+                            playCustomSound(swingSound);
+                        }
+                    } else if (this.stickState === 'swinging') {
+                        this.stickTimer++;
+                        let prog = this.stickTimer / 12;
+                        this.stickAngleOffset = -Math.PI * 0.75 + (Math.PI * 1.35) * Math.sin(prog * Math.PI / 2);
+                        this.swingTrails.push({ angle: this.angle + this.stickAngleOffset, life: 15 });
+
+                        if (this.stickTimer === 6 && enemy && !enemy.isDead && !enemy.isKnockedBack) {
+                            if (Math.hypot(enemy.x - this.x, enemy.y - this.y) < this.radius + 165 && Math.abs(diff) < Math.PI / 2) {
+                                enemy.isKnockedBack = true;
+                                enemy.bounceCount = 7;
+                                enemy.dx = Math.cos(this.angle) * 35;
+                                enemy.dy = Math.sin(this.angle) * 35;
+                                enemy.hp -= 15;
+                                createHitEffect(enemy.x, enemy.y, "#B040FF", 3);
+                                playCustomSound(hitSound);
+                                hitStopTimer = 25;
+                            }
+                        }
+                        if (this.stickTimer >= 12) {
+                            this.stickState = 'cooldown';
+                            this.stickTimer = 0;
+                        }
+                    } else if (this.stickState === 'cooldown') {
+                        this.stickTimer++;
+                        if (this.stickTimer > 30) this.stickAngleOffset += (0 - this.stickAngleOffset) * 0.05;
+                        if (this.stickTimer > 600) { 
+                            this.stickState = 'idle';
+                            this.stickTimer = 0;
+                        }
+                    }
+                }
+            }
+
+            // =============== AI (ANGLER) ===============
+            if (this.isBlue) {
+                if(enemy && !enemy.isDead) this.angleToEnemy = Math.atan2(enemy.y-this.y, enemy.x-this.x);
+                let diff = this.angleToEnemy - this.angle; while(diff<-Math.PI) diff+=Math.PI*2; while(diff>Math.PI) diff-=Math.PI*2;
+                if(!this.isKnockedBack && this.freezeTimer<=0) this.angle += diff*0.15;
+
+                if (enemy && !enemy.isDead) {
+                    let h = this.hook;
+                    if (h.state === 0) {
+                        if (h.cooldown > 0) h.cooldown--;
+                        this.hookAngle += 0.025; 
+                        let tipOffAngle = this.hookAngle - 0.25;
+                        h.x = this.x + Math.cos(tipOffAngle) * 75; h.y = this.y + Math.sin(tipOffAngle) * 75;
+
+                        if (h.cooldown <= 0) {
+                            h.state = 1; h.life = 0; h.pauseTimer = 0; h.path = [];
+                            let aimAngle = this.hookAngle;
+                            let speed = 8; h.dx = Math.cos(aimAngle) * speed; h.dy = Math.sin(aimAngle) * speed;
+                            playExternalSound(anglerMp3, 0.5);
+                        }
+                    } else if (h.state === 1) {
+                        h.x += h.dx; h.y += h.dy; h.life++;
+                        let hitWall = false;
+                        if (h.x <= 0) { h.x = 0; h.dx *= -1; hitWall = true; }
+                        else if (h.x >= canvas.width) { h.x = canvas.width; h.dx *= -1; hitWall = true; }
+                        if (h.y <= 0) { h.y = 0; h.dy *= -1; hitWall = true; }
+                        else if (h.y >= canvas.height) { h.y = canvas.height; h.dy *= -1; hitWall = true; }
+                        
+                        if (hitWall) {
+                            h.path.push({x: h.x, y: h.y});
+                            createHitEffect(h.x, h.y, "#AAAAAA"); playSound('bounce');
+                        } else if (Math.hypot(h.x - enemy.x, h.y - enemy.y) < enemy.radius) {
+                            h.state = 2; playSound('hit');
+                        } else if (h.life > 450) { h.state = 3; }
+                    } else if (h.state === 2) { 
+                        if (h.pauseTimer > 0) {
+                            h.pauseTimer--;
+                            if(h.pauseTimer % 3 === 0) createHitEffect(enemy.x, enemy.y, "#FF3333", 0.5);
+                        } else {
+                            let targetX, targetY;
+                            if (h.path.length > 0) { targetX = h.path[h.path.length - 1].x; targetY = h.path[h.path.length - 1].y; } 
+                            else { let tipOffAngle = this.hookAngle - 0.25; targetX = this.x + Math.cos(tipOffAngle) * 75; targetY = this.y + Math.sin(tipOffAngle) * 75; }
+                            
+                            let pullAngle = Math.atan2(targetY - h.y, targetX - h.x);
+                            let distToTarget = Math.hypot(targetX - h.x, targetY - h.y);
+                            let pullSpeed = 15; 
+                            
+                            if (distToTarget <= pullSpeed) {
+                                if (h.path.length > 0) {
+                                    h.x = targetX; h.y = targetY; h.path.pop(); 
+                                    enemy.hp -= 7.0; h.pauseTimer = 10;
+                                    createHitEffect(h.x, h.y, "#FF4444", 2); playSound('heavyHit'); hitStopTimer = 15;
+                                } else {
+                                    h.x += Math.cos(pullAngle) * distToTarget; h.y += Math.sin(pullAngle) * distToTarget;
+                                    if (h.path.length === 0 && Math.hypot(this.x - h.x, this.y - h.y) < this.radius + enemy.radius + 15) {
+                                        h.state = 0; h.cooldown = 600; enemy.hp -= 2.0;
+                                        createHitEffect(enemy.x, enemy.y, "#FF3333"); playSound('hit');
+                                        let pushAngle = Math.atan2(enemy.y - this.y, enemy.x - this.x);
+                                        enemy.dx = Math.cos(pushAngle) * 12; enemy.dy = Math.sin(pushAngle) * 12;
+                                        this.dx = Math.cos(pushAngle + Math.PI) * 4; this.dy = Math.sin(pushAngle + Math.PI) * 4;
+                                        hitStopTimer = 10; collisionCooldown = 15; 
+                                    }
+                                }
+                            } else { h.x += Math.cos(pullAngle) * pullSpeed; h.y += Math.sin(pullAngle) * pullSpeed; }
+
+                            enemy.x = h.x; enemy.y = h.y;
+                            if (enemy.x + enemy.radius > canvas.width) { enemy.x = canvas.width - enemy.radius; }
+                            if (enemy.x - enemy.radius < 0) { enemy.x = enemy.radius; }
+                            if (enemy.y + enemy.radius > canvas.height) { enemy.y = canvas.height - enemy.radius; }
+                            if (enemy.y - enemy.radius < 0) { enemy.y = enemy.radius; }
+                        }
+                    } else if (h.state === 3) { 
+                        let targetX, targetY;
+                        if (h.path.length > 0) { targetX = h.path[h.path.length - 1].x; targetY = h.path[h.path.length - 1].y; } 
+                        else { let tipOffAngle = this.hookAngle - 0.25; targetX = this.x + Math.cos(tipOffAngle) * 75; targetY = this.y + Math.sin(tipOffAngle) * 75; }
+                        
+                        let pullAngle = Math.atan2(targetY - h.y, targetX - h.x);
+                        let distToTarget = Math.hypot(targetX - h.x, targetY - h.y);
+                        let pullSpeed = 18; 
+                        
+                        if (distToTarget <= pullSpeed) {
+                            h.x = targetX; h.y = targetY;
+                            if (h.path.length > 0) h.path.pop(); else { h.state = 0; h.cooldown = 480; }
+                        } else {
+                            h.x += Math.cos(pullAngle) * pullSpeed; h.y += Math.sin(pullAngle) * pullSpeed;
+                            if (Math.hypot(h.x - enemy.x, h.y - enemy.y) < enemy.radius) { h.state = 2; playSound('hit'); }
+                        }
+                    }
+                } else {
+                    this.hookAngle += 0.025; this.hook.state = 0; this.hook.path = [];
+                }
+            }
+
+            // =============== PHYSICS ===============
+            if(this.freezeTimer>0 && !this.isKnockedBack) { this.dx=0; this.dy=0; }
+            else if(!this.isPinned && !amIPulled) { 
+                let cm = (this.snowSlowTimer>0||this.slowTimer>0)?defaultSpeed*0.45:defaultSpeed;
+                
+                if(this.isBlue) {
+                    if(this.stickState==='charging') {
+                        let cr = this.stickTimer/180, ms=0.5-(cr*0.4);
+                        if(this.snowSlowTimer>0||this.slowTimer>0) ms*=0.45; this.x+=this.dx*ms; this.y+=this.dy*ms;
+                    } else { this.x+=this.dx; this.y+=this.dy; }
+                } else {
+                    this.x += this.dx;
+                    this.y += this.dy;
+                }
+
+                let hw=false, r=this.radius;
+                if(this.x+r>=canvas.width){this.x=canvas.width-r; this.dx=-Math.abs(this.dx); hw=true;}
+                if(this.x-r<=0){this.x=r; this.dx=Math.abs(this.dx); hw=true;}
+                if(this.y+r>=canvas.height){this.y=canvas.height-r; this.dy=-Math.abs(this.dy); hw=true;}
+                if(this.y-r<=0){this.y=r; this.dy=Math.abs(this.dy); hw=true;}
+                
+                if(hw) {
+                    if(this.isKnockedBack) {
+                        this.bounceCount--; if(!this.isInvincible) this.hp-=2; createHitEffect(this.x,this.y,"#FF5555",1.5); playSound('heavyHit'); hitStopTimer=15; 
+                        if(this.bounceCount<=0 || this.hp<=0) { this.isKnockedBack=false; let sp=Math.hypot(this.dx,this.dy); if(sp>0){ this.dx=(this.dx/sp)*cm*6; this.dy=(this.dy/sp)*cm*6; } }
+                    } 
+                }
+
+                if(this.isBlue && !this.isKnockedBack) {
+                    let sp = Math.hypot(this.dx,this.dy);
+                    if(sp===0) { this.dx=Math.cos(this.angle)*cm; this.dy=Math.sin(this.angle)*cm; }
+                    if(this.stickState!=='charging') {
+                        if(sp>cm) { this.dx*=0.95; this.dy*=0.95; } else if(sp<cm-0.2) { this.dx*=1.05; this.dy*=1.05; }
+                    }
+                }
+            }
+        }
+    }
+
+    let player1 = new Ball(100, 275, "#22CC44", "#147A28", false); player1.weapon = 'knockback_stick';
+    let player2 = new Ball(450, 275, "#88CCFF", "#4488CC", true);
+    let ryo = (Math.random()-0.5)*350, rsa = (Math.random()-0.5)*Math.PI*0.8;
+    player1.y = 275+ryo; player2.y = 275-ryo; player1.dx = 0; player1.dy = 0; player1.angle = rsa;
+    player2.dx = Math.cos(rsa+Math.PI)*defaultSpeed; player2.dy = Math.sin(rsa+Math.PI)*defaultSpeed; player2.angle = rsa+Math.PI;
+
+    function resetGame() {
+        player1 = new Ball(100, 275, "#22CC44", "#147A28", false); player1.weapon = 'knockback_stick';
+        player2 = new Ball(450, 275, "#88CCFF", "#4488CC", true);
+        let ryo = (Math.random()-0.5)*350, rsa = (Math.random()-0.5)*Math.PI*0.8;
+        player1.y = 275+ryo; player2.y = 275-ryo; player1.dx = 0; player1.dy = 0; player1.angle = rsa;
+        player2.dx = Math.cos(rsa+Math.PI)*defaultSpeed; player2.dy = Math.sin(rsa+Math.PI)*defaultSpeed; player2.angle = rsa+Math.PI;
+
+        projectiles = [];
+        pools = [];
+        particles = [];
+        frameCount = 0;
+        hitStopTimer = 0;
+        collisionCooldown = 0;
+        
+        isGameOver = false;
+        isWin = false;
+        finalClearTime = 0;
+        gameStartTime = 0;
+        unlockedAchievements = [];
+        keys.w = false; keys.a = false; keys.s = false; keys.d = false;
+
+        // 재시작 시 딜레이 타이머 및 레디 사운드 설정
+        startDelayTimer = 250;
+        playCustomSound(readySound);
+    }
+
+    function handleBodyCollisions() {
+        if (player2.hook && player2.hook.state === 2) return;
+        if(player1.isKnockedBack || player2.isKnockedBack) return;
+        if(collisionCooldown>0) collisionCooldown--;
+        if(!player1.isDead && !player2.isDead) {
+            let dx=player2.x-player1.x, dy=player2.y-player1.y, d=Math.hypot(dx,dy)||1;
+            if(d < player1.radius+player2.radius) {
+                let ov = player1.radius+player2.radius-d, nx=dx/d, ny=dy/d, m1=player1.freezeTimer>0?0.1:1, m2=player2.freezeTimer>0?0.1:1, tm=m1+m2;
+                player1.x -= nx*ov*(m2/tm); player1.y -= ny*ov*(m2/tm); player2.x += nx*ov*(m1/tm); player2.y += ny*ov*(m1/tm);
+                let van = (player1.dx-player2.dx)*nx + (player1.dy-player2.dy)*ny;
+                if(van>0 && collisionCooldown===0) {
+                    if(player1.freezeTimer<=0){player1.dx-=van*nx; player1.dy-=van*ny;} if(player2.freezeTimer<=0){player2.dx+=van*nx; player2.dy+=van*ny;}
+                    player1.hp-=COLLISION_DMG; createHitEffect(player1.x, player1.y); player2.hp-=COLLISION_DMG; createHitEffect(player2.x, player2.y);
+                    playSound('bounce'); collisionCooldown=5; 
+                }
+            }
+        }
+    }
+
+    const getTags = p => {
+        if(p.isDead) return "<span style='color:#555'>[DEAD]</span>"; let t=[];
+        if(p.stickState==='charging') t.push("<span style='color:#FF5555'>[CHARGING]</span>");
+        if(p.stickState==='cooldown') t.push(`<span style='color:#FFaa00'>[CD: ${Math.ceil((600-p.stickTimer)/60)}s]</span>`);
+        if(p.isKnockedBack) t.push(`<span style='color:#FF0000'>[FLYING: ${p.bounceCount}]</span>`);
+        if(p.electrifiedTimer>0) t.push("<span style='color:#FF0'>[ELECTRIFIED]</span>"); if(p.poisonTimer>0) t.push("<span style='color:#8F4'>[POISON]</span>");
+        if(p.burnTimer>0) t.push("<span style='color:#F80'>[BURN]</span>"); if(p.freezeTimer>0) t.push("<span style='color:#8CF'>[FROZEN]</span>");
+        else if(p.snowSlowTimer>0||p.slowTimer>0) t.push("<span style='color:#AAA'>[SLOW]</span>");
+        return t.length ? t.join(" ") : "<span style='color:#555'>[NORMAL]</span>";
+    };
+
+    function updateLogic() {
+        if(isStarted && startDelayTimer>0) {
+            startDelayTimer--; 
+            if(startDelayTimer === 0) {
+                gameStartTime = performance.now();
+                playCustomSound(fightSound); // 파이트 사운드 재생
+            }
+            return; 
+        }
+        frameCount++; 
+        if(hitStopTimer>0) hitStopTimer--;
+        else {
+            for(let i=projectiles.length-1; i>=0; i--) { projectiles[i].update(); if(projectiles[i].isDead) projectiles.splice(i,1); }
+            for(let i=pools.length-1; i>=0; i--) { pools[i].update(); if(pools[i].life<=0) pools.splice(i,1); }
+            player1.update(player2); player2.update(player1); handleBodyCollisions();
+        }
+        for(let i=particles.length-1; i>=0; i--) { let p=particles[i]; p.x+=p.dx; p.y+=p.dy; p.life--; if(p.life<=0) particles.splice(i,1); }
+
+        if ((player1.isDead || player2.isDead) && !isGameOver) {
+            isGameOver = true;
+            finalClearTime = performance.now() - gameStartTime;
+            isWin = player2.isDead && !player1.isDead;
+
+            unlockedAchievements = [];
+            if (isWin) {
+                let endHp = Math.ceil(Math.max(player1.hp, 0));
+                if (endHp === 100) unlockedAchievements.push("FLAWLESS (100 HP)");
+                if (endHp === 1) unlockedAchievements.push("CLUTCH (1 HP LEFT)");
+                if (finalClearTime <= 60000) unlockedAchievements.push("SPEEDRUNNER (< 1 MIN)");
+            }
+        }
+    }
+
+    function renderGraphics() {
+        if(isStarted && startDelayTimer>0) {
+            ctx.clearRect(0,0,canvas.width,canvas.height); player1.draw(); player2.draw();
+            ctx.fillStyle="#FFF"; ctx.font="30px 'Press Start 2P', cursive"; ctx.textAlign="center"; ctx.textBaseline="middle";
+            if(Math.floor(startDelayTimer/20)%2===0) ctx.fillText("READY...", canvas.width/2, canvas.height/2);
+            return; 
+        }
+
+        ctx.clearRect(0,0,canvas.width,canvas.height); ctx.save();
+        if(hitStopTimer>0) { let sa=Math.min(hitStopTimer,12)*0.8; ctx.translate((Math.random()-0.5)*sa, (Math.random()-0.5)*sa); }
+        for(let p of pools) p.draw(); player2.draw(); player1.draw(); for(let p of projectiles) p.draw();
+        for(let p of particles) { ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0, p.size*(p.life/30)), 0, Math.PI*2); ctx.fillStyle=p.color; ctx.fill(); ctx.closePath(); }
+        ctx.restore(); 
+
+        let pt1 = player1.isDead?"<span style='color:#555'>DEAD</span>":Math.ceil(Math.max(player1.hp,0));
+        let pt2 = player2.isDead?"<span style='color:#555'>DEAD</span>":Math.ceil(Math.max(player2.hp,0));
+        document.getElementById("statusBar").innerHTML = `<div class="status-hp">Stick HP: ${pt1} &nbsp;&nbsp;|&nbsp;&nbsp; Angler HP: ${pt2}</div><div class="status-effects">Stick: ${getTags(player1)} &nbsp;&nbsp;|&nbsp;&nbsp; Angler: ${getTags(player2)}</div>`;
+        
+        let currentTimeText = "00:00.00";
+        if (isStarted && startDelayTimer <= 0) {
+            if (!isGameOver) {
+                let currentMs = performance.now() - gameStartTime;
+                currentTimeText = formatTime(currentMs);
+            } else {
+                currentTimeText = formatTime(finalClearTime);
+            }
+            ctx.fillStyle="#FFF"; ctx.font="16px 'Press Start 2P', cursive"; ctx.textAlign="center"; ctx.textBaseline="top";
+            ctx.fillText(currentTimeText, canvas.width/2, 15);
+        }
+
+        if (isGameOver) {
+            ctx.fillStyle="rgba(0,0,0,0.5)";
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle="#FFF"; ctx.font="40px 'Press Start 2P', cursive"; ctx.textAlign="center"; ctx.textBaseline="middle";
+            
+            if (isWin) {
+                ctx.fillText("YOU WIN!", canvas.width/2, canvas.height/2 - 60);
+                ctx.font="15px 'Press Start 2P', cursive";
+                ctx.fillText("CLEAR TIME: " + formatTime(finalClearTime), canvas.width/2, canvas.height/2 - 10);
+
+                if (unlockedAchievements.length > 0) {
+                    ctx.font="12px 'Press Start 2P', cursive";
+                    ctx.fillStyle="#FFD700"; 
+                    ctx.fillText("- ACHIEVEMENTS -", canvas.width/2, canvas.height/2 + 30);
+                    
+                    ctx.font="10px 'Press Start 2P', cursive";
+                    for(let i=0; i<unlockedAchievements.length; i++) {
+                        ctx.fillText("[ " + unlockedAchievements[i] + " ]", canvas.width/2, canvas.height/2 + 55 + (i*18));
+                    }
+                }
+            } else {
+                ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2 - 20);
+            }
+
+            ctx.font="12px 'Press Start 2P', cursive";
+            ctx.fillStyle="#AAA";
+            if (Math.floor(Date.now() / 500) % 2 === 0) {
+                ctx.fillText("CLICK TO RESTART", canvas.width/2, canvas.height/2 + 130);
+            }
+        }
+    }
+
+    const animate = (currentTime) => {
+        if (!lastTime) lastTime = currentTime;
+        let deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
+
+        if (deltaTime > 250) deltaTime = 250; 
+
+        accumulator += deltaTime;
+
+        while (accumulator >= logicStep) {
+            updateLogic();
+            accumulator -= logicStep;
+        }
+
+        renderGraphics();
+
+        animationId = requestAnimationFrame(animate);
+    };
+
+    window.addEventListener('keydown', e => {
+        let k = e.key.toLowerCase();
+        if(['w','a','s','d'].includes(k)) keys[k] = true;
+
+        if (k === 'j') {
+            const overlay = document.getElementById("startOverlay");
+            if (overlay && overlay.offsetParent !== null) {
+                if (!isStarted) {
+                    overlay.style.display = "none";
+                    isStarted = true;
+                    initAudio();
+                    lastTime = performance.now();
+                    startDelayTimer = 250;
+                    playCustomSound(readySound); // 시작 시 레디 사운드
+                    if(!animationId) animationId = requestAnimationFrame(animate);
+                } else {
+                    if(player1.stickState === 'idle' && !isGameOver) player1.triggerAttack = true;
+                }
+            } else if (isStarted) {
+                if (!isGameOver && player1.stickState === 'idle') {
+                    player1.triggerAttack = true;
+                }
+            }
+        }
+    });
+
+    window.addEventListener('keyup', e => {
+        let k = e.key.toLowerCase();
+        if(['w','a','s','d'].includes(k)) keys[k] = false;
+    });
+
+    document.getElementById("startOverlay").addEventListener('click', function(e) {
+        if(!isStarted) {
+            e.preventDefault();
+            this.style.display = "none";
+            isStarted = true;
+            initAudio();
+            lastTime = performance.now();
+            startDelayTimer = 250;
+            playCustomSound(readySound); // 시작 시 레디 사운드
+            if(!animationId) animationId = requestAnimationFrame(animate);
+        }
+    });
+
+    canvas.addEventListener('click', () => {
+        if (isStarted && isGameOver) {
+            resetGame(); // 마우스 클릭으로만 게임 재시작
+        }
+    });
   </script>
 </body>
 </html>
