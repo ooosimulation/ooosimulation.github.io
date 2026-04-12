@@ -645,6 +645,11 @@
             if (overlay && overlay.offsetParent !== null) { if (!isStarted) { overlay.style.display = "none"; isStarted = true; initAudio(); lastTime = performance.now(); startDelayTimer = 250; playCustomSound(readySound); if(!animationId) animationId = requestAnimationFrame(animate); } else { if(player1.stickState === 'idle' && !isGameOver) player1.triggerAttack = true; } }
             else if (isStarted) { if (!isGameOver && player1.stickState === 'idle') { player1.triggerAttack = true; } }
         }
+      // --- 여기부터 추가된 코드 ---
+        if (k === 'r' && isStarted) {
+            resetGame();
+        }
+        // --- 여기까지 ---
     });
     window.addEventListener('keyup', e => { let k = e.key.toLowerCase(); if(['w','a','s','d'].includes(k)) keys[k] = false; });
     document.getElementById("startOverlay").addEventListener('click', function(e) { if(!isStarted) { e.preventDefault(); this.style.display = "none"; isStarted = true; initAudio(); lastTime = performance.now(); startDelayTimer = 250; playCustomSound(readySound); if(!animationId) animationId = requestAnimationFrame(animate); } });
