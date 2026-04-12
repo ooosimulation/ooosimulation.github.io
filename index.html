@@ -245,37 +245,59 @@
   </div>
 
   <script>
-    const asciiText = `  #####      #####      #####      #####      ####    ##   ##   ##   ##   ####        ##      ######    ####     #####     ##   ## 
- ##   ##    ##   ##    ##   ##    ##   ##      ##     ### ###   ##   ##    ##        ####      # ## #      ##     ##   ##    ###  ## 
- ##   ##    ##   ##    ##   ##    ##           ##     #######   ##   ##    ##       ##  ##      ##        ##     ##   ##    #### ## 
- ##   ##    ##   ##    ##   ##     #####       ##     #######   ##   ##    ##       ######      ##        ##     ##   ##    ## #### 
- ##   ##    ##   ##    ##   ##         ##      ##     ## # ##   ##   ##    ##   #   ##  ##      ##        ##     ##   ##    ##  ### 
- ##   ##    ##   ##    ##   ##    ##   ##      ##     ##   ##   ##   ##    ##  ##   ##  ##      ##        ##     ##   ##    ##   ## 
-  #####      #####      #####      #####      ####    ##   ##    #####    #######   ##  ##     ####      ####     #####     ##   ## `;
+    // ===== 수정된 ASCII 텍스트 (정렬 최적화) =====
+    const asciiText = `
+     #####    #####    #####    #####   #####  ##   ##  ##   ##  ##        ##    #####  #####   #####   ##   ##
+    ##   ##  ##   ##  ##   ##  ##   ##    ##   ### ###  ##   ##  ##       ####     ##     ##   ##   ##  ###  ##
+    ##   ##  ##   ##  ##   ##  ##         ##   #######  ##   ##  ##      ##  ##    ##     ##   ##   ##  #### ##
+    ##   ##  ##   ##  ##   ##   #####     ##   #######  ##   ##  ##      ######    ##     ##   ##   ##  ## ####
+    ##   ##  ##   ##  ##   ##       ##    ##   ## # ##  ##   ##  ##      ##  ##    ##     ##   ##   ##  ##  ###
+    ##   ##  ##   ##  ##   ##  ##   ##    ##   ##   ##  ##   ##  ##      ##  ##    ##     ##   ##   ##  ##   ##
+     #####    #####    #####    #####   #####  ##   ##   #####   ######  ##  ##    ##   #####   #####   ##   ##
+    `.substring(1);
 
     const asciiLogo = document.getElementById('asciiLogo');
     const glitchChars = ['#', '@', '%', '&', '*', '+', '?', 'X'];
     const targets = [];
 
+    // ===== 수정된 ASCII 빌드 함수 =====
     function buildAscii() {
       asciiLogo.innerHTML = '';
       targets.length = 0;
       for (const ch of asciiText) {
-        if (ch === '\n') { asciiLogo.appendChild(document.createTextNode('\n')); continue; }
+        if (ch === '\n') { 
+          asciiLogo.appendChild(document.createTextNode('\n')); 
+          continue; 
+        }
         const span = document.createElement('span');
-        span.className = 'ascii-char'; span.textContent = ch; span.dataset.original = ch;
+        span.className = 'ascii-char'; 
+        
+        if (ch !== ' ') {
+          span.textContent = ' '; // 처음엔 # 부분을 빈칸으로 숨김
+          span.dataset.original = ch;
+          targets.push(span);
+        } else {
+          span.textContent = ' '; 
+        }
         asciiLogo.appendChild(span);
-        if (ch !== ' ') targets.push(span);
       }
     }
 
+    // ===== 수정된 글리치 함수 =====
     function glitchOne() {
       if (window.innerWidth <= 480 || !targets.length) return;
-      const target = targets[Math.floor(Math.random() * targets.length)];
+      
+      const idx = Math.floor(Math.random() * targets.length);
+      const target = targets[idx];
       const original = target.dataset.original;
+      
       target.textContent = glitchChars[Math.floor(Math.random() * glitchChars.length)];
       target.classList.add('glitching');
-      setTimeout(() => { target.textContent = original; target.classList.remove('glitching'); }, 120);
+      
+      setTimeout(() => { 
+        target.textContent = original; // 랜덤 이펙트 후 빈칸이었던 자리에 '#'이 고정됨
+        target.classList.remove('glitching'); 
+      }, 120);
     }
 
     buildAscii();
