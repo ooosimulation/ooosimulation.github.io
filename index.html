@@ -71,7 +71,7 @@
     .icon-link:hover { transform: translateY(-4px); background: rgba(255,255,255,0.18); }
     .icon-link img { width: 34px; height: 34px; }
 
-    /* ==== 수정된 게임 전용 CSS ==== */
+    /* ==== 게임 전용 CSS ==== */
     #gameWrapper { 
         width: 100%; max-width: 550px; margin: 20px auto 0; 
         background-color: #000;
@@ -245,7 +245,7 @@
   </div>
 
   <script>
-    // ===== 수정된 ASCII 텍스트 (정렬 최적화) =====
+    // ===== ASCII 텍스트 =====
     const asciiText = `
      #####    #####    #####    #####   #####  ##   ##  ##   ##  ##        ##    #####  #####   #####   ##   ##
     ##   ##  ##   ##  ##   ##  ##   ##    ##   ### ###  ##   ##  ##       ####     ##     ##   ##   ##  ###  ##
@@ -260,7 +260,7 @@
     const glitchChars = ['#', '@', '%', '&', '*', '+', '?', 'X'];
     const targets = [];
 
-    // ===== 수정된 ASCII 빌드 함수 =====
+    // ===== ASCII 빌드 함수 =====
     function buildAscii() {
       asciiLogo.innerHTML = '';
       targets.length = 0;
@@ -283,19 +283,29 @@
       }
     }
 
-    // ===== 수정된 글리치 함수 =====
+    // ===== 수정된 글리치 함수 (빈칸 우선 채우기) =====
     function glitchOne() {
       if (window.innerWidth <= 480 || !targets.length) return;
       
-      const idx = Math.floor(Math.random() * targets.length);
-      const target = targets[idx];
+      // 아직 '#'이 채워지지 않은(빈칸인) 요소들을 먼저 찾습니다.
+      const emptyTargets = targets.filter(t => t.textContent === ' ');
+      
+      let target;
+      if (emptyTargets.length > 0) {
+        // 아직 채워지지 않은 빈 공간이 있다면, 그 중에서 우선적으로 랜덤 선택
+        target = emptyTargets[Math.floor(Math.random() * emptyTargets.length)];
+      } else {
+        // 모두 채워졌다면, 전체 중에서 랜덤하게 선택하여 계속해서 글리치 효과 유지
+        target = targets[Math.floor(Math.random() * targets.length)];
+      }
+
       const original = target.dataset.original;
       
       target.textContent = glitchChars[Math.floor(Math.random() * glitchChars.length)];
       target.classList.add('glitching');
       
       setTimeout(() => { 
-        target.textContent = original; // 랜덤 이펙트 후 빈칸이었던 자리에 '#'이 고정됨
+        target.textContent = original; // 원래 글자('#')로 고정
         target.classList.remove('glitching'); 
       }, 120);
     }
@@ -316,7 +326,6 @@
     const chargeSound = loadSnd("spear charging.mp3"), hitSound = loadSnd("baseball.mp3"), swingSound = loadSnd("swing.mp3"), throwSound = loadSnd("through2.mp3"), breakSound = loadSnd("break2.mp3"), poisonSound = loadSnd("poison.mp3"), freezeSound = loadSnd("freeze.mp3");
     const anglerMp3 = loadSnd('angler.mp3');
     
-    // 추가된 사운드 파일
     const readySound = loadSnd("ready.mp3");
     const fightSound = loadSnd("fight.mp3");
 
@@ -340,7 +349,7 @@
 
     const defaultSpeed = 2.5, MAX_HP = 100, COLLISION_DMG = 0.7; 
     let frameCount = 0, particles = [], projectiles = [], pools = [], hitStopTimer = 0, collisionCooldown = 0; 
-    let isStarted = false, startDelayTimer = 250; // 약 1.5초(165Hz 기준) 대기 시간
+    let isStarted = false, startDelayTimer = 250; 
     let animationId = null;
 
     let lastTime = 0;
@@ -348,7 +357,6 @@
     const LOGIC_HZ = 165;
     const logicStep = 1000 / LOGIC_HZ;
 
-    // 게임 상태 변수
     let isGameOver = false;
     let isWin = false;
     let gameStartTime = 0;
@@ -357,7 +365,6 @@
 
     const keys = { w: false, a: false, s: false, d: false };
 
-    // 시간 포맷 변환 함수 (00:00.00)
     const formatTime = ms => {
         let t = Math.floor(ms);
         let m = Math.floor(t / 60000).toString().padStart(2, '0');
@@ -764,7 +771,6 @@
         unlockedAchievements = [];
         keys.w = false; keys.a = false; keys.s = false; keys.d = false;
 
-        // 재시작 시 딜레이 타이머 및 레디 사운드 설정
         startDelayTimer = 250;
         playCustomSound(readySound);
     }
@@ -804,7 +810,7 @@
             startDelayTimer--; 
             if(startDelayTimer === 0) {
                 gameStartTime = performance.now();
-                playCustomSound(fightSound); // 파이트 사운드 재생
+                playCustomSound(fightSound); 
             }
             return; 
         }
@@ -916,7 +922,6 @@
     window.addEventListener('keydown', e => {
         let k = e.key.toLowerCase();
         
-        // AZERTY 키보드 지원을 위한 매핑 (Z->W, Q->A)
         if (k === 'z') k = 'w';
         if (k === 'q') k = 'a';
 
@@ -931,7 +936,7 @@
                     initAudio();
                     lastTime = performance.now();
                     startDelayTimer = 250;
-                    playCustomSound(readySound); // 시작 시 레디 사운드
+                    playCustomSound(readySound); 
                     if(!animationId) animationId = requestAnimationFrame(animate);
                 } else {
                     if(player1.stickState === 'idle' && !isGameOver) player1.triggerAttack = true;
@@ -947,7 +952,6 @@
     window.addEventListener('keyup', e => {
         let k = e.key.toLowerCase();
         
-        // AZERTY 키보드 지원을 위한 매핑 (Z->W, Q->A)
         if (k === 'z') k = 'w';
         if (k === 'q') k = 'a';
 
@@ -962,14 +966,14 @@
             initAudio();
             lastTime = performance.now();
             startDelayTimer = 250;
-            playCustomSound(readySound); // 시작 시 레디 사운드
+            playCustomSound(readySound); 
             if(!animationId) animationId = requestAnimationFrame(animate);
         }
     });
 
     canvas.addEventListener('click', () => {
         if (isStarted && isGameOver) {
-            resetGame(); // 마우스 클릭으로만 게임 재시작
+            resetGame(); 
         }
     });
   </script>
