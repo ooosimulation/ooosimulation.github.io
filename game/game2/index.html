@@ -183,24 +183,23 @@
     };
 
     async function shareRecordToDiscord() {
-        if (!isGameOver || !isWin || hasSharedRecord) return;
+  if (!isGameOver || !isWin || hasSharedRecord) return;
+  
+  hasSharedRecord = true;
+  shareStatusMessage = "SHARING...";
+  shareStatusTimer = 180;
 
-        hasSharedRecord = true;
-        shareStatusMessage = 'SHARING...';
-        shareStatusTimer = 180;
-
-        try {
-            const response = await fetch('/api/submit-record', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    player: window.discordUserName || 'Unknown Player',
-                    clearTime: (finalClearTime / 1000).toFixed(2),
-                    matchup: 'Stick vs Creeper'
-                })
-            });
+  try {
+    const response = await fetch('/api/submit-record', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        gameName: 'Stick vs Creeper', // 👈 이 줄이 추가되었습니다!
+        player: window.discordUserName || 'Unknown Player',
+        clearTime: (finalClearTime / 1000).toFixed(2),
+        matchup: 'Stick vs Creeper'
+      })
+    });
 
             const data = await response.json();
 
