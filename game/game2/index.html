@@ -620,6 +620,12 @@
         if(!player1.isDead && !player2.isDead) {
             let dx=player2.x-player1.x, dy=player2.y-player1.y, d=Math.hypot(dx,dy)||1;
             if(d < player1.radius+player2.radius) {
+                // 추가된 핵심 로직: 크리퍼가 터질 수 있는 상태일 때 플레이어 몸에 닿으면 즉시 폭발
+                if (player2.weapon === 'tnt' && (player2.state === 'normal' || player2.state === 'fusing')) {
+                    player2.explode(player1);
+                    return; 
+                }
+
                 let ov = player1.radius+player2.radius-d, nx=dx/d, ny=dy/d, m1=player1.freezeTimer>0?0.1:1, m2=player2.freezeTimer>0?0.1:1, tm=m1+m2;
                 player1.x -= nx*ov*(m2/tm); player1.y -= ny*ov*(m2/tm); player2.x += nx*ov*(m1/tm); player2.y += ny*ov*(m1/tm);
                 let van = (player1.dx-player2.dx)*nx + (player1.dy-player2.dy)*ny;
