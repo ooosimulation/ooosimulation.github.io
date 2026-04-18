@@ -531,6 +531,15 @@
                             if (Math.hypot(enemy.x - this.x, enemy.y - this.y) < this.radius + 165 && Math.abs(diff) < Math.PI / 2) {
                                 enemy.isKnockedBack = true; enemy.bounceCount = 7; enemy.dx = Math.cos(this.angle) * 35; enemy.dy = Math.sin(this.angle) * 35;
                                 enemy.hp -= 15; createHitEffect(enemy.x, enemy.y, "#B040FF", 3); playCustomSound(hitSound); hitStopTimer = 25;
+                                
+                                // 타격 성공 시 크리퍼의 폭발(치지직) 캔슬 로직
+                                if (enemy.weapon === 'tnt' && enemy.state === 'fusing') {
+                                    enemy.state = 'normal';
+                                    enemy.fuseTimer = 0;
+                                    enemy.abilityCooldown = 480; // 약 3초 쿨타임 부여
+                                    creeper1Snd.pause();
+                                    creeper1Snd.currentTime = 0;
+                                }
                             }
                         }
                         if (this.stickTimer >= 12) { this.stickState = 'cooldown'; this.stickTimer = 0; }
