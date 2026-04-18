@@ -552,7 +552,7 @@
                         if (this.stickTimer === 6 && enemy && !enemy.isDead && !enemy.isKnockedBack && enemy.state !== 'split' && enemy.state !== 'stopped' && enemy.state !== 'returning') {
                             if (Math.hypot(enemy.x - this.x, enemy.y - this.y) < this.radius + 165 && Math.abs(diff) < Math.PI / 2) {
                                 enemy.isKnockedBack = true; enemy.bounceCount = 7; enemy.dx = Math.cos(this.angle) * 35; enemy.dy = Math.sin(this.angle) * 35;
-                                enemy.hp -= 15; createHitEffect(enemy.x, enemy.y, "#B040FF", 3); playCustomSound(hitSound); hitStopTimer = 25;
+                                enemy.hp -= 30; createHitEffect(enemy.x, enemy.y, "#B040FF", 3); playCustomSound(hitSound); hitStopTimer = 25;
                                 
                                 // 크리퍼가 퓨징(치지직) 상태일 때 타격하면 퓨징 취소 및 쿨타임(약 3초) 부여, 그리고 2초 무적 부여
                                 if (enemy.weapon === 'tnt' && enemy.state === 'fusing') {
