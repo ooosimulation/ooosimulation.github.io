@@ -234,6 +234,7 @@
             this.angle=Math.atan2(this.dy,this.dx); this.angleToEnemy=0; this.isInvincible=false; this.weapon=null; this.stickState='idle'; this.stickTimer=0; this.stickAngleOffset=Math.PI/4; this.swingTrails=[]; this.freeHandLerp=0; this.isKnockedBack=false; this.bounceCount=0;
             this.poisonTimer=0; this.burnTimer=0; this.slowTimer=0; this.snowSlowTimer=0; this.freezeTimer=0; this.freezeAccum=0; this.activePoisonSound=null; this.activeFreezeSound=null;
             this.triggerAttack = false;
+            this.invincibleTimer = 0; // 타격 성공 시 발동하는 무적 타이머
 
             if (this.isBlue) {
                 this.weapon = 'tnt';
@@ -271,12 +272,13 @@
             createHitEffect(this.x, this.y, "#FFFFFF", 5);
 
             let checkHit = (target) => {
-                if(!target || target.isDead || target.isInvincible) return;
+                // 플레이어가 무적 상태(invincibleTimer > 0)일 경우 데미지 스킵
+                if(!target || target.isDead || target.isInvincible || target.invincibleTimer > 0) return;
                 let dist = Math.hypot(target.x - this.x, target.y - this.y);
                 if (dist <= maxDist + target.radius) { 
                     let angle = Math.atan2(target.y - this.y, target.x - this.x);
                     target.isKnockedBack = true; target.bounceCount = 7;
-                    target.hp -= damage; // 인자로 받은 데미지 적용
+                    target.hp -= damage;
                     target.dx = Math.cos(angle) * 35; 
                     target.dy = Math.sin(angle) * 35;
                     hitStopTimer = 25; 
@@ -440,8 +442,23 @@
                 ctx.restore();
                 ctx.fillStyle=currentColor; ctx.strokeStyle=this.darkColor; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(45,35,12,0,Math.PI*2); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.arc(45+(75-45)*this.freeHandLerp, -35+(35+35)*this.freeHandLerp, 12, 0, Math.PI*2); ctx.fill(); ctx.stroke(); ctx.restore(); 
             }
+            
             ctx.save(); ctx.translate(drawX, drawY); 
             if(this.poisonTimer>0) { ctx.shadowBlur=20; ctx.shadowColor="#4A0"; ctx.fillStyle="rgba(68,170,0,0.4)"; ctx.beginPath(); ctx.arc(0,0,currentRadius+6,0,Math.PI*2); ctx.fill(); ctx.shadowBlur=0; }
+            
+            // 무적 상태일 때 그려지는 황금색 실드
+            if (this.invincibleTimer > 0) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(0, 0, currentRadius + 10 + Math.sin(frameCount * 0.15) * 5, 0, Math.PI * 2);
+                ctx.strokeStyle = "rgba(255, 215, 0, " + (0.5 + Math.sin(frameCount * 0.25)*0.5) + ")";
+                ctx.lineWidth = 4;
+                ctx.stroke();
+                ctx.fillStyle = "rgba(255, 215, 0, 0.2)";
+                ctx.fill();
+                ctx.restore();
+            }
+
             ctx.save(); ctx.rotate(this.angle); ctx.beginPath(); ctx.arc(0,0,currentRadius,0,Math.PI*2); ctx.fillStyle=currentColor; ctx.fill(); ctx.lineWidth=3; ctx.strokeStyle=this.darkColor; ctx.stroke(); ctx.closePath();
             if(this.burnTimer>0 && frameCount%10<5) { ctx.fillStyle="rgba(255,136,0,0.4)"; ctx.beginPath(); ctx.arc(0,0,currentRadius,0,Math.PI*2); ctx.fill(); }
             
@@ -464,6 +481,9 @@
             }
         }
         update(enemy) {
+            // 무적 타이머 감소
+            if (this.invincibleTimer > 0) this.invincibleTimer--;
+
             if(this.hp<=0 && !this.isDead) {
                 this.isDead=true; if(this.stickState==='charging') stopCustomSound(chargeSound);
                 if(this.activePoisonSound){ this.activePoisonSound.pause(); this.activePoisonSound=null; } if(this.activeFreezeSound){ this.activeFreezeSound.pause(); this.activeFreezeSound=null; }
@@ -481,13 +501,13 @@
 
             for(let i=this.swingTrails.length-1; i>=0; i--) if(--this.swingTrails[i].life<=0) this.swingTrails.splice(i,1);
             if(this.poisonTimer>0) {
-                this.poisonTimer--; if(!this.isInvincible) this.hp-=0.015;
+                this.poisonTimer--; if(!this.isInvincible && this.invincibleTimer <= 0) this.hp-=0.015;
                 if(frameCount%6===0) particles.push({x:this.x+(Math.random()-0.5)*this.radius*1.5, y:this.y+(Math.random()-0.5)*this.radius, dx:(Math.random()-0.5), dy:-1.5-Math.random()*1.5, life:25+Math.random()*10, size:Math.random()*5+3, color:"rgba(68,170,0,0.8)"});
                 if(!this.activePoisonSound) { this.activePoisonSound=poisonSound.cloneNode(); this.activePoisonSound.loop=true; this.activePoisonSound.play().catch(e=>{}); }
             } else if(this.activePoisonSound) { this.activePoisonSound.pause(); this.activePoisonSound.currentTime=0; this.activePoisonSound=null; }
-            if(this.burnTimer>0) { this.burnTimer--; if(!this.isInvincible) this.hp-=0.02; if(frameCount%15===0) createHitEffect(this.x,this.y,"#F80",0.5); }
+            if(this.burnTimer>0) { this.burnTimer--; if(!this.isInvincible && this.invincibleTimer <= 0) this.hp-=0.02; if(frameCount%15===0) createHitEffect(this.x,this.y,"#F80",0.5); }
             if(this.snowSlowTimer>0) this.snowSlowTimer--; if(this.slowTimer>0) this.slowTimer--;
-            if(this.electrifiedTimer>0) { this.electrifiedTimer--; if(this.electrifiedTimer%60===0) this.hp-=1; }
+            if(this.electrifiedTimer>0) { this.electrifiedTimer--; if(this.electrifiedTimer%60===0 && this.invincibleTimer <= 0) this.hp-=1; }
             if(this.freezeTimer>0) {
                 this.freezeTimer--; if(!this.activeFreezeSound) { this.activeFreezeSound=freezeSound.cloneNode(); this.activeFreezeSound.loop=true; this.activeFreezeSound.play().catch(e=>{}); }
                 if(this.weapon==='knockback_stick'&&this.stickState==='charging') { this.stickState='idle'; this.stickTimer=0; stopCustomSound(chargeSound); }
@@ -532,11 +552,14 @@
                                 enemy.isKnockedBack = true; enemy.bounceCount = 7; enemy.dx = Math.cos(this.angle) * 35; enemy.dy = Math.sin(this.angle) * 35;
                                 enemy.hp -= 15; createHitEffect(enemy.x, enemy.y, "#B040FF", 3); playCustomSound(hitSound); hitStopTimer = 25;
                                 
-                                // 타격 성공 시 크리퍼의 폭발(치지직) 캔슬 로직
+                                // 타격 성공 시 3초(165hz * 3 = 495프레임) 무적 부여
+                                this.invincibleTimer = 495;
+
+                                // 크리퍼가 퓨징(치지직) 상태일 때 타격하면 퓨징 취소 및 쿨타임(약 3초) 부여
                                 if (enemy.weapon === 'tnt' && enemy.state === 'fusing') {
                                     enemy.state = 'normal';
                                     enemy.fuseTimer = 0;
-                                    enemy.abilityCooldown = 480; // 약 3초 쿨타임 부여
+                                    enemy.abilityCooldown = 480; 
                                     creeper1Snd.pause();
                                     creeper1Snd.currentTime = 0;
                                 }
@@ -604,7 +627,7 @@
                 if(this.x-r<=0){this.x=r; this.dx=Math.abs(this.dx); hw=true;}
                 if(this.y+r>=canvas.height){this.y=canvas.height-r; this.dy=-Math.abs(this.dy); hw=true;}
                 if(this.y-r<=0){this.y=r; this.dy=Math.abs(this.dy); hw=true;}
-                if(hw) { if(this.isKnockedBack) { this.bounceCount--; if(!this.isInvincible) this.hp-=2; createHitEffect(this.x,this.y,"#FF5555",1.5); playSound('heavyHit'); hitStopTimer=15; if(this.bounceCount<=0 || this.hp<=0) { this.isKnockedBack=false; let sp=Math.hypot(this.dx,this.dy); if(sp>0){ this.dx=(this.dx/sp)*cm*6; this.dy=(this.dy/sp)*cm*6; } } } }
+                if(hw) { if(this.isKnockedBack) { this.bounceCount--; if(!this.isInvincible && this.invincibleTimer <= 0) this.hp-=2; createHitEffect(this.x,this.y,"#FF5555",1.5); playSound('heavyHit'); hitStopTimer=15; if(this.bounceCount<=0 || this.hp<=0) { this.isKnockedBack=false; let sp=Math.hypot(this.dx,this.dy); if(sp>0){ this.dx=(this.dx/sp)*cm*6; this.dy=(this.dy/sp)*cm*6; } } } }
             }
         }
     }
@@ -646,7 +669,9 @@
                 let van = (player1.dx-player2.dx)*nx + (player1.dy-player2.dy)*ny;
                 if(van>0 && collisionCooldown===0) {
                     if(player1.freezeTimer<=0){player1.dx-=van*nx; player1.dy-=van*ny;} if(player2.freezeTimer<=0){player2.dx+=van*nx; player2.dy+=van*ny;}
-                    player1.hp-=COLLISION_DMG; createHitEffect(player1.x, player1.y); player2.hp-=COLLISION_DMG; createHitEffect(player2.x, player2.y);
+                    // 무적 상태가 아닐 때만 몸통 박치기 데미지 적용
+                    if(player1.invincibleTimer <= 0) { player1.hp-=COLLISION_DMG; createHitEffect(player1.x, player1.y); }
+                    if(player2.invincibleTimer <= 0) { player2.hp-=COLLISION_DMG; createHitEffect(player2.x, player2.y); }
                     playSound('bounce'); collisionCooldown=5; 
                 }
             }
@@ -655,6 +680,10 @@
 
     const getTags = p => {
         if(p.isDead) return "<span style='color:#555'>[DEAD]</span>"; let t=[];
+        
+        // 무적 태그 표시
+        if(p.invincibleTimer > 0) t.push(`<span style='color:#FFD700; font-weight:bold;'>[INVINCIBLE: ${(p.invincibleTimer/165).toFixed(1)}s]</span>`);
+
         if(p.stickState==='charging') t.push("<span style='color:#FF5555'>[CHARGING]</span>");
         if(p.stickState==='cooldown') t.push(`<span style='color:#FFaa00'>[CD: ${Math.ceil((600-p.stickTimer)/60)}s]</span>`);
         
