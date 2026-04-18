@@ -63,7 +63,6 @@
     .title-right { font-size: 18px; color: #88CCFF; text-shadow: 2px 2px 0 #000; } 
     #gameCanvas { background-color: #000; display: block; width: 100%; height: auto; aspect-ratio: 1/1; cursor: crosshair; border: none; }
     
-    /* 여기서 높이를 85px로 고정하고 넘치는 것을 숨기도록 변경했습니다 */
     #statusBar { width: 100%; height: 85px; padding: 10px; border-top: 2px solid #555; color: #FFF; text-align: center; display: flex; flex-direction: column; justify-content: center; line-height: 1.5; box-sizing: border-box; overflow: hidden; }
     .status-hp { font-size: 11px; margin-bottom: 5px; text-shadow: 1px 1px 0 #000; }
     .status-effects { font-size: 9px; color: #CCC; line-height: 1.4; word-break: keep-all; }
@@ -109,7 +108,7 @@
           <div id="startOverlay">
               <div class="start-text">CLICK TO START</div>
               <div class="start-sub">Stick VS Creeper</div>
-              <div class="controls-info">[WASD]: Move<br><br>[J]: Auto-Charge Attack</div>
+              <div class="controls-info">[WASD]: Move<br><br>[J]: Auto-Charge Attack<br><br>[R]: Restart</div>
           </div>
           <canvas id="gameCanvas" width="550" height="550"></canvas>
           <div id="statusBar"></div>
