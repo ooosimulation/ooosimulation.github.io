@@ -234,7 +234,7 @@
             this.angle=Math.atan2(this.dy,this.dx); this.angleToEnemy=0; this.isInvincible=false; this.weapon=null; this.stickState='idle'; this.stickTimer=0; this.stickAngleOffset=Math.PI/4; this.swingTrails=[]; this.freeHandLerp=0; this.isKnockedBack=false; this.bounceCount=0;
             this.poisonTimer=0; this.burnTimer=0; this.slowTimer=0; this.snowSlowTimer=0; this.freezeTimer=0; this.freezeAccum=0; this.activePoisonSound=null; this.activeFreezeSound=null;
             this.triggerAttack = false;
-            this.invincibleTimer = 0; // 타격 성공 시 발동하는 무적 타이머
+            this.invincibleTimer = 0; // 무적 타이머
 
             if (this.isBlue) {
                 this.weapon = 'tnt';
@@ -552,16 +552,14 @@
                                 enemy.isKnockedBack = true; enemy.bounceCount = 7; enemy.dx = Math.cos(this.angle) * 35; enemy.dy = Math.sin(this.angle) * 35;
                                 enemy.hp -= 15; createHitEffect(enemy.x, enemy.y, "#B040FF", 3); playCustomSound(hitSound); hitStopTimer = 25;
                                 
-                                // 타격 성공 시 3초(165hz * 3 = 495프레임) 무적 부여
-                                this.invincibleTimer = 495;
-
-                                // 크리퍼가 퓨징(치지직) 상태일 때 타격하면 퓨징 취소 및 쿨타임(약 3초) 부여
+                                // 크리퍼가 퓨징(치지직) 상태일 때 타격하면 퓨징 취소 및 쿨타임(약 3초) 부여, 그리고 2초 무적 부여
                                 if (enemy.weapon === 'tnt' && enemy.state === 'fusing') {
                                     enemy.state = 'normal';
                                     enemy.fuseTimer = 0;
                                     enemy.abilityCooldown = 480; 
                                     creeper1Snd.pause();
                                     creeper1Snd.currentTime = 0;
+                                    this.invincibleTimer = 330; // 165Hz * 2초 = 330 프레임
                                 }
                             }
                         }
