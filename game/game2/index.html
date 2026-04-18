@@ -73,7 +73,7 @@
 
   <script type="module">
     import { DiscordSDK } from "https://esm.sh/@discord/embedded-app-sdk";
-    const discordSdk = new DiscordSDK("1492558716027797574");
+    const discordSdk = new DiscordSDK("1495120151627173969");
 
     window.discordSdk = discordSdk;
     window.discordUserName = "Unknown Player";
@@ -248,7 +248,7 @@
             }
         }
         
-        explode(enemy) {
+        explode(enemy, damage = 30) {
             creeper1Snd.pause(); creeper1Snd.currentTime = 0;
             creeper2Snd.currentTime = 0; creeper2Snd.play().catch(e => {});
             
@@ -276,7 +276,7 @@
                 if (dist <= maxDist + target.radius) { 
                     let angle = Math.atan2(target.y - this.y, target.x - this.x);
                     target.isKnockedBack = true; target.bounceCount = 7;
-                    target.hp -= 100; // 한 방에 즉사하도록 데미지 100으로 변경
+                    target.hp -= damage; // 인자로 받은 데미지 적용
                     target.dx = Math.cos(angle) * 35; 
                     target.dy = Math.sin(angle) * 35;
                     hitStopTimer = 25; 
@@ -560,7 +560,7 @@
                             particles.push({x: this.x + (Math.random()-0.5)*this.radius, y: this.y - 15, dx: (Math.random()-0.5)*2, dy: -Math.random()*3 - 1, life: 40, size: Math.random()*10+5, color: '#888888'});
                         }
                         if (this.fuseTimer <= 0) {
-                            this.explode(enemy);
+                            this.explode(enemy, 30); // 시간 초과로 터질 때는 30 데미지
                         }
                     }
                 } else if (this.state === 'split' || this.state === 'stopped' || this.state === 'returning') {
@@ -628,7 +628,7 @@
             if(d < player1.radius+player2.radius) {
                 
                 if (player2.weapon === 'tnt' && (player2.state === 'normal' || player2.state === 'fusing')) {
-                    player2.explode(player1);
+                    player2.explode(player1, 100); // 닿았을 때는 즉사(100 데미지)
                     return; 
                 }
 
