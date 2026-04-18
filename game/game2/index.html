@@ -249,7 +249,7 @@
             }
         }
         
-        explode(enemy, damage = 30) {
+        explode(enemy, damage = 100) {
             creeper1Snd.pause(); creeper1Snd.currentTime = 0;
             creeper2Snd.currentTime = 0; creeper2Snd.play().catch(e => {});
             
@@ -590,7 +590,7 @@
                             particles.push({x: this.x + (Math.random()-0.5)*this.radius, y: this.y - 15, dx: (Math.random()-0.5)*2, dy: -Math.random()*3 - 1, life: 40, size: Math.random()*10+5, color: '#888888'});
                         }
                         if (this.fuseTimer <= 0) {
-                            this.explode(enemy, 30); // 시간 초과로 터질 때는 30 데미지
+                            this.explode(enemy, 100); // 시간 초과로 터질 때 100(즉사) 데미지
                         }
                     }
                 } else if (this.state === 'split' || this.state === 'stopped' || this.state === 'returning') {
