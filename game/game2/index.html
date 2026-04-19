@@ -183,39 +183,40 @@
     };
 
     async function shareRecordToDiscord() {
-  if (!isGameOver || !isWin || hasSharedRecord) return;
-  
-  hasSharedRecord = true;
-  shareStatusMessage = "SHARING...";
-  shareStatusTimer = 180;
+      if (!isGameOver || !isWin || hasSharedRecord) return;
+      
+      hasSharedRecord = true;
+      shareStatusMessage = "SHARING...";
+      shareStatusTimer = 180;
 
-  try {
-    const response = await fetch('/api/submit-record', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        gameName: 'Stick vs Creeper', // 👈 이 줄이 추가되었습니다!
-        player: window.discordUserName || 'Unknown Player',
-        clearTime: (finalClearTime / 1000).toFixed(2),
-        matchup: 'Stick vs Creeper'
-      })
-    });
+      try {
+        const response = await fetch('/api/submit-record', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            gameName: 'Stick vs Creeper', 
+            player: window.discordUserName || 'Unknown Player',
+            clearTime: formatTime(finalClearTime), // 밀리초 대신 포맷팅된 시간 문자열을 보내도 좋습니다. 기존처럼 (finalClearTime / 1000).toFixed(2) 를 쓰셔도 무방합니다.
+            matchup: 'Stick vs Creeper',
+            achievements: unlockedAchievements // 👈 이 줄을 추가했습니다! 배열 그대로 서버에 전송됩니다.
+          })
+        });
 
-            const data = await response.json();
+        const data = await response.json();
 
-            if (data.ok) {
-                shareStatusMessage = 'SHARED TO DISCORD!';
-            } else {
-                hasSharedRecord = false;
-                shareStatusMessage = 'SHARE FAILED';
-            }
-        } catch (error) {
+        if (data.ok) {
+            shareStatusMessage = 'SHARED TO DISCORD!';
+        } else {
             hasSharedRecord = false;
             shareStatusMessage = 'SHARE FAILED';
-            console.error(error);
         }
+      } catch (error) {
+          hasSharedRecord = false;
+          shareStatusMessage = 'SHARE FAILED';
+          console.error(error);
+      }
 
-        shareStatusTimer = 240;
+      shareStatusTimer = 240;
     }
 
     const spawnP = (x, y, c, sm, isD) => {
