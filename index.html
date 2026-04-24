@@ -944,8 +944,8 @@
 
         if(['w','a','s','d'].includes(k)) keys[k] = true;
 
-        if (k === 'r') {
-            if (isStarted && isGameOver) {
+        if (k === 'r' || k === 'ㄱ' || e.code === 'KeyR') {
+            if (isStarted) {
                 resetGame();
             }
         }
