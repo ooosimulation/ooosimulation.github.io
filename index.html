@@ -252,10 +252,10 @@
   </div>
 
   <script>
-    // ===== ASCII 텍스트 (코드 들여쓰기 문제를 방지하기 위해 배열 사용) =====
+    // ===== ASCII 텍스트 (코드 들여쓰기 문제를 방지하고 완벽한 라인 정렬을 위해 배열로 수정) =====
     const asciiText = [
       "  #####    #####    #####    #####   #####  ##   ##  ##   ##  ##        ##    #####  #####   #####   ##   ##",
-      " ##   ##  ##   ##  ##   ##  ##   ##    ##   ### ###  ##   ##  ##       ####      ##     ##   ##   ##  ###  ##",
+      " ##   ##  ##   ##  ##   ##  ##   ##    ##   ### ###  ##   ##  ##       ####     ##     ##   ##   ##  ###  ##",
       " ##   ##  ##   ##  ##   ##  ##         ##   #######  ##   ##  ##      ##  ##    ##     ##   ##   ##  #### ##",
       " ##   ##  ##   ##  ##   ##   #####     ##   #######  ##   ##  ##      ######    ##     ##   ##   ##  ## ####",
       " ##   ##  ##   ##  ##   ##      ##    ##   ## # ##  ##   ##  ##      ##  ##    ##     ##   ##   ##  ##  ###",
@@ -266,11 +266,13 @@
     const asciiLogo = document.getElementById('asciiLogo');
     const glitchChars = ['#', '@', '%', '&', '*', '+', '?', 'X'];
     const targets = [];
+    let isFullyRevealed = false; // 글자가 모두 생성되었는지 추적하는 변수
 
     // ===== ASCII 빌드 함수 =====
     function buildAscii() {
       asciiLogo.innerHTML = '';
       targets.length = 0;
+      isFullyRevealed = false; // 초기화
       for (const ch of asciiText) {
         if (ch === '\n') { 
           asciiLogo.appendChild(document.createTextNode('\n')); 
@@ -290,38 +292,48 @@
       }
     }
 
-    // ===== 수정된 글리치 함수 (빈칸 우선 채우기) =====
+    // ===== 글리치 애니메이션 함수 =====
     function glitchOne() {
       if (window.innerWidth <= 480 || !targets.length) return;
       
-      // 아직 '#'이 채워지지 않은(빈칸인) 요소들을 먼저 찾습니다.
       const emptyTargets = targets.filter(t => t.textContent === ' ');
+      
+      // 모든 글자가 다 채워졌는지 상태 업데이트
+      if (!isFullyRevealed && emptyTargets.length === 0) {
+        isFullyRevealed = true;
+      }
       
       let target;
       if (emptyTargets.length > 0) {
-        // 아직 채워지지 않은 빈 공간이 있다면, 그 중에서 우선적으로 랜덤 선택
+        // 채워지지 않은 빈 공간 중에서 우선적으로 선택
         target = emptyTargets[Math.floor(Math.random() * emptyTargets.length)];
       } else {
-        // 모두 채워졌다면, 전체 중에서 랜덤하게 선택하여 계속해서 글리치 효과 유지
+        // 다 채워졌다면 전체 중에서 무작위 선택하여 잔상 효과 유지
         target = targets[Math.floor(Math.random() * targets.length)];
       }
 
       const original = target.dataset.original;
-      
       target.textContent = glitchChars[Math.floor(Math.random() * glitchChars.length)];
       target.classList.add('glitching');
       
+      // 상태에 따라 잔상이 머무는 시간 조정 (완성 전: 빠름, 완성 후: 느림)
       setTimeout(() => { 
-        target.textContent = original; // 원래 글자('#')로 고정
+        target.textContent = original; // 원래 문자로 복구
         target.classList.remove('glitching'); 
-      }, 40); // 120 -> 40으로 수정되어 애니메이션 스냅 속도 증가
+      }, isFullyRevealed ? 120 : 40);
     }
 
     buildAscii();
     setInterval(() => {
-      // 랜덤 호출 횟수를 기존 (2~4회)에서 (6~12회)로 3배 늘려 생성 속도 3배 증가
-      const times = Math.random() < 0.5 ? 6 : 12;
-      for (let i = 0; i < times; i++) setTimeout(glitchOne, i * 8); // 간격을 줄여 한 프레임 내에 처리
+      // isFullyRevealed 상태에 따라 호출 빈도수와 간격을 동적으로 조절
+      // 완성 전: 한 번에 6~12개의 글자가 매우 빠르게 생성됨 (3배 속도)
+      // 완성 후: 한 번에 1~2개의 글자만 가끔씩 깜빡임 (원래 속도로 복귀)
+      const times = isFullyRevealed ? (Math.random() < 0.5 ? 1 : 2) : (Math.random() < 0.5 ? 6 : 12);
+      const delayStep = isFullyRevealed ? 60 : 8;
+
+      for (let i = 0; i < times; i++) {
+        setTimeout(glitchOne, i * delayStep);
+      }
     }, 100);
 
     // ===== GAME SCRIPT =====
