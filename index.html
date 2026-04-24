@@ -194,7 +194,7 @@
                     <div class="start-text">CLICK TO START</div>
                     <div class="start-sub">Stick VS Angler</div>
                     <div class="pc-only">* CURRENTLY PC ONLY *</div>
-                    <div class="controls-info">[WASD]: Move<br><br>[J]: Auto-Charge Attack</div>
+                    <div class="controls-info">[WASD]: Move<br><br>[J]: Auto-Charge Attack<br><br>[R]: Restart</div>
                 </div>
                 <canvas id="gameCanvas" width="550" height="550"></canvas>
                 <div id="statusBar"></div>
@@ -912,7 +912,7 @@
             ctx.font="12px 'Press Start 2P', cursive";
             ctx.fillStyle="#AAA";
             if (Math.floor(Date.now() / 500) % 2 === 0) {
-                ctx.fillText("CLICK TO RESTART", canvas.width/2, canvas.height/2 + 130);
+                ctx.fillText("CLICK OR PRESS 'R' TO RESTART", canvas.width/2, canvas.height/2 + 130);
             }
         }
     }
@@ -943,6 +943,12 @@
         if (k === 'q') k = 'a';
 
         if(['w','a','s','d'].includes(k)) keys[k] = true;
+
+        if (k === 'r') {
+            if (isStarted && isGameOver) {
+                resetGame();
+            }
+        }
 
         if (k === 'j') {
             const overlay = document.getElementById("startOverlay");
