@@ -757,38 +757,20 @@
         }
 
         let animationId;
-let lastTimestamp = 0;
-let accumulator = 0;
+        let lastTime = 0;
+        let accumulator = 0;
+        const LOGIC_HZ = 60; // 기존 게임 밸런스 속도를 그대로 유지하기 위해 60Hz로 고정
+        const logicStep = 1000 / LOGIC_HZ;
 
-// 💡 평소 개발하고 플레이하셨을 때 '정상적인 속도'라고 느꼈던 모니터의 주사율을 적어주세요. 
-// (60프레임에서 느려졌다면 평소 144Hz나 120Hz를 쓰셨을 확률이 높습니다.)
-const TARGET_FPS = 144; 
-const FIXED_TIME_STEP = 1000 / TARGET_FPS;
-
-function animate(timestamp) {
-    // timestamp가 전달되지 않을 경우를 대비한 방어 코드
-    if (!timestamp) timestamp = performance.now();
-    if (!lastTimestamp) lastTimestamp = timestamp;
-
-    let deltaTime = timestamp - lastTimestamp;
-    lastTimestamp = timestamp;
-
-    // 브라우저 탭을 내렸을 때 프레임이 무한히 쌓여 게임이 폭주하는 것을 방지 (최대 0.25초 제한)
-    if (deltaTime > 250) deltaTime = 250;
-    accumulator += deltaTime;
-
-    bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
-    bgCtx.save(); bgCtx.beginPath(); bgCtx.moveTo(550, 0); bgCtx.lineTo(550, 550);
-    bgCtx.lineWidth = 6; bgCtx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-    bgCtx.setLineDash([15, 15]); bgCtx.stroke(); bgCtx.restore();
-
-    // --- 1. [로직 업데이트] 모니터 주사율과 독립적으로 일정한 속도로 계산 ---
-    while (accumulator >= FIXED_TIME_STEP) {
-        if (isStarted && startDelayTimer > 0) {
-            startDelayTimer--;
-            if (startDelayTimer === 0) gameStartTime = performance.now();
-        } else {
-            frameCount++;
+        // 1. [게임 논리 업데이트] 프레임과 상관없이 일정한 속도로 계산
+        function updateLogic() {
+            if (isStarted && startDelayTimer > 0) {
+                startDelayTimer--; 
+                if (startDelayTimer === 0) gameStartTime = performance.now();
+                return;
+            }
+            
+            frameCount++; 
             if (shareStatusTimer > 0) shareStatusTimer--;
 
             if (!isGameOver) {
@@ -807,155 +789,177 @@ function animate(timestamp) {
             }
 
             let isHitStop = false;
-            if (hitStopTimer > 0) { isHitStop = true; hitStopTimer--; }
-
+            if (hitStopTimer > 0) { isHitStop = true; hitStopTimer--; } 
+            
             if (!isGameOver) {
                 players.forEach(p => p.update(players.filter(e => e !== p), isHitStop));
                 if (!isHitStop) handleBodyCollisions();
             }
 
-            for (let i = particles.length - 1; i >= 0; i--) {
-                let p = particles[i]; p.x += p.dx; p.y += p.dy; p.life--;
-                if (p.life <= 0) particles.splice(i, 1);
+            for (let i = particles.length - 1; i >= 0; i--) { 
+                let p = particles[i]; p.x += p.dx; p.y += p.dy; p.life--; 
+                if (p.life <= 0) particles.splice(i, 1); 
             }
         }
-        accumulator -= FIXED_TIME_STEP;
-    }
 
-    // --- 2. [렌더링 로직] 시각적 그리기 처리 ---
-    let shakeAmt = 0;
-    if (hitStopTimer > 0) shakeAmt = Math.min(hitStopTimer, 12) * 1.5;
-    if (shakeAmt > 0) wrapperDom.style.transform = `translate(${(Math.random() - 0.5) * shakeAmt}px, ${(Math.random() - 0.5) * shakeAmt}px)`;
-    else wrapperDom.style.transform = `translate(0px, 0px)`;
+        // 2. [그래픽 렌더링] 모니터 주사율에 맞춰 부드럽게 화면만 새로고침
+        function renderGraphics() {
+            bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+            bgCtx.save(); bgCtx.beginPath(); bgCtx.moveTo(550, 0); bgCtx.lineTo(550, 550);
+            bgCtx.lineWidth = 6; bgCtx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+            bgCtx.setLineDash([15, 15]); bgCtx.stroke(); bgCtx.restore();
 
-    fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
+            if (isStarted && startDelayTimer > 0) {
+                fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
+                players.forEach(p => p.draw());
+                fgCtx.fillStyle = "#FFF"; fgCtx.font = "30px 'Press Start 2P', cursive"; fgCtx.textAlign = "center"; fgCtx.textBaseline = "middle";
+                if (Math.floor(startDelayTimer / 15) % 2 === 0) fgCtx.fillText("READY...", fgCanvas.width/2, fgCanvas.height/2);
+                return; 
+            }
 
-    if (isStarted && startDelayTimer > 0) {
-        players.forEach(p => p.draw());
-        fgCtx.fillStyle = "#FFF"; fgCtx.font = "30px 'Press Start 2P', cursive"; fgCtx.textAlign = "center"; fgCtx.textBaseline = "middle";
-        // 깜빡임 속도 고정
-        if (Math.floor(startDelayTimer / (TARGET_FPS / 4)) % 2 === 0) fgCtx.fillText("READY...", fgCanvas.width/2, fgCanvas.height/2);
-    } else {
-        let currentTimeText = "00:00.00";
-        if (isStarted && startDelayTimer <= 0) {
-            if (!isGameOver) currentTimeText = formatTime(performance.now() - gameStartTime);
-            else currentTimeText = formatTime(finalClearTime);
-            fgCtx.save();
-            fgCtx.fillStyle = "#FFF"; fgCtx.font = "16px 'Press Start 2P', cursive"; fgCtx.textAlign = "center"; fgCtx.textBaseline = "top";
-            fgCtx.fillText(currentTimeText, fgCanvas.width/2, 15);
-            fgCtx.restore();
-        }
+            let shakeAmt = 0;
+            if (hitStopTimer > 0) shakeAmt = Math.min(hitStopTimer, 12) * 1.5;
+            if (shakeAmt > 0) wrapperDom.style.transform = `translate(${(Math.random() - 0.5) * shakeAmt}px, ${(Math.random() - 0.5) * shakeAmt}px)`;
+            else wrapperDom.style.transform = `translate(0px, 0px)`;
 
-        let displayTime = Math.ceil(Math.max(player1.detonationTimer, 0));
-        if (player1.state === 'split' || player1.state === 'stopped' || player1.state === 'returning') displayTime = "-";
-        fgCtx.save(); fgCtx.font = "270px 'Press Start 2P', cursive"; fgCtx.textAlign = "center"; fgCtx.textBaseline = "middle";
-        fgCtx.fillStyle = "rgba(255, 255, 255, 0.15)"; fgCtx.fillText(displayTime, fgCanvas.width/2, fgCanvas.height/2 + 20); fgCtx.restore();
+            fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
 
-        players.forEach(p => p.draw());
+            let currentTimeText = "00:00.00";
+            if (isStarted && startDelayTimer <= 0) {
+                if (!isGameOver) currentTimeText = formatTime(performance.now() - gameStartTime);
+                else currentTimeText = formatTime(finalClearTime);
+                fgCtx.save();
+                fgCtx.fillStyle = "#FFF"; fgCtx.font = "16px 'Press Start 2P', cursive"; fgCtx.textAlign = "center"; fgCtx.textBaseline = "top";
+                fgCtx.fillText(currentTimeText, fgCanvas.width/2, 15);
+                fgCtx.restore();
+            }
 
-        for (let i = 0; i < particles.length; i++) {
-            let p = particles[i]; fgCtx.beginPath();
-            let renderSize = p.maxLife ? Math.max(0, p.size * (p.life/p.maxLife)) : Math.max(0, p.size * (p.life/30));
-            fgCtx.fillStyle = p.color;
-            if (p.isSquare) fgCtx.fillRect(p.x - renderSize/2, p.y - renderSize/2, renderSize, renderSize);
-            else { fgCtx.arc(p.x, p.y, renderSize, 0, Math.PI*2); fgCtx.fill(); }
-            fgCtx.closePath();
-        }
+            let displayTime = Math.ceil(Math.max(player1.detonationTimer, 0));
+            if (player1.state === 'split' || player1.state === 'stopped' || player1.state === 'returning') displayTime = "-";
+            fgCtx.save(); fgCtx.font = "270px 'Press Start 2P', cursive"; fgCtx.textAlign = "center"; fgCtx.textBaseline = "middle";
+            fgCtx.fillStyle = "rgba(255, 255, 255, 0.15)"; fgCtx.fillText(displayTime, fgCanvas.width/2, fgCanvas.height/2 + 20); fgCtx.restore();
 
-        if (isGameOver) {
-            fgCtx.fillStyle = "rgba(0,0,0,0.5)";
-            fgCtx.fillRect(0, 0, fgCanvas.width, fgCanvas.height);
-            fgCtx.fillStyle = "#FFF";
-            fgCtx.font = "40px 'Press Start 2P', cursive";
-            fgCtx.textAlign = "center";
-            fgCtx.textBaseline = "middle";
+            players.forEach(p => p.draw());
 
-            if (isWin) {
-                fgCtx.fillText("YOU WIN!", fgCanvas.width/2, fgCanvas.height/2 - 60);
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i]; fgCtx.beginPath(); 
+                let renderSize = p.maxLife ? Math.max(0, p.size * (p.life/p.maxLife)) : Math.max(0, p.size * (p.life/30));
+                fgCtx.fillStyle = p.color; 
+                if (p.isSquare) fgCtx.fillRect(p.x - renderSize/2, p.y - renderSize/2, renderSize, renderSize);
+                else { fgCtx.arc(p.x, p.y, renderSize, 0, Math.PI*2); fgCtx.fill(); }
+                fgCtx.closePath();
+            }
+            
+            if (isGameOver) {
+                fgCtx.fillStyle = "rgba(0,0,0,0.5)";
+                fgCtx.fillRect(0, 0, fgCanvas.width, fgCanvas.height);
+                fgCtx.fillStyle = "#FFF";
+                fgCtx.font = "40px 'Press Start 2P', cursive";
+                fgCtx.textAlign = "center";
+                fgCtx.textBaseline = "middle";
+                
+                if (isWin) {
+                    fgCtx.fillText("YOU WIN!", fgCanvas.width/2, fgCanvas.height/2 - 60);
 
-                fgCtx.font="15px 'Press Start 2P', cursive";
-                fgCtx.fillStyle="#FFF";
-                fgCtx.fillText("CLEAR TIME: " + formatTime(finalClearTime), fgCanvas.width/2, fgCanvas.height/2 - 10);
+                    fgCtx.font="15px 'Press Start 2P', cursive";
+                    fgCtx.fillStyle="#FFF";
+                    fgCtx.fillText("CLEAR TIME: " + formatTime(finalClearTime), fgCanvas.width/2, fgCanvas.height/2 - 10);
 
-                if (unlockedAchievements.length > 0) {
-                    fgCtx.font="12px 'Press Start 2P', cursive";
-                    fgCtx.fillStyle="#FFD700";
-                    fgCtx.fillText("- ACHIEVEMENTS -", fgCanvas.width/2, fgCanvas.height/2 + 30);
+                    if (unlockedAchievements.length > 0) {
+                        fgCtx.font="12px 'Press Start 2P', cursive";
+                        fgCtx.fillStyle="#FFD700";
+                        fgCtx.fillText("- ACHIEVEMENTS -", fgCanvas.width/2, fgCanvas.height/2 + 30);
 
-                    fgCtx.font="10px 'Press Start 2P', cursive";
-                    for(let i=0; i<unlockedAchievements.length; i++) {
-                        fgCtx.fillText("[ " + unlockedAchievements[i] + " ]", fgCanvas.width/2, fgCanvas.height/2 + 55 + (i*18));
+                        fgCtx.font="10px 'Press Start 2P', cursive";
+                        for(let i=0; i<unlockedAchievements.length; i++) {
+                            fgCtx.fillText("[ " + unlockedAchievements[i] + " ]", fgCanvas.width/2, fgCanvas.height/2 + 55 + (i*18));
+                        }
                     }
+
+                    const buttonX = fgCanvas.width / 2 - 110; const buttonY = fgCanvas.height / 2 + 92;
+                    const buttonW = 220; const buttonH = 28;
+                    shareButtonBounds = { x: buttonX, y: buttonY, w: buttonW, h: buttonH };
+
+                    fgCtx.fillStyle = hasSharedRecord ? "rgba(80,180,120,0.28)" : "rgba(80,140,255,0.22)";
+                    fgCtx.strokeStyle = hasSharedRecord ? "#66FFAA" : "#88CCFF";
+                    fgCtx.lineWidth = 2;
+                    fgCtx.fillRect(buttonX, buttonY, buttonW, buttonH);
+                    fgCtx.strokeRect(buttonX, buttonY, buttonW, buttonH);
+
+                    fgCtx.font="11px 'Press Start 2P', cursive";
+                    fgCtx.fillStyle = hasSharedRecord ? "#66FFAA" : "#88CCFF";
+                    fgCtx.fillText(hasSharedRecord ? "RECORD SHARED" : "CLICK TO SHARE", fgCanvas.width/2, buttonY + 15);
+
+                    if (shareStatusTimer > 0 && shareStatusMessage) {
+                        fgCtx.font="10px 'Press Start 2P', cursive";
+                        fgCtx.fillStyle = shareStatusMessage === 'SHARED TO DISCORD!' ? "#AAFFAA" : (shareStatusMessage === 'SHARING...' ? "#FFD700" : "#FF8888");
+                        fgCtx.fillText(shareStatusMessage, fgCanvas.width/2, fgCanvas.height/2 + 135);
+                    }
+                } else {
+                    fgCtx.fillText("GAME OVER", fgCanvas.width/2, fgCanvas.height/2 - 20);
                 }
 
-                const buttonX = fgCanvas.width / 2 - 110; const buttonY = fgCanvas.height / 2 + 92;
-                const buttonW = 220; const buttonH = 28;
-                shareButtonBounds = { x: buttonX, y: buttonY, w: buttonW, h: buttonH };
-
-                fgCtx.fillStyle = hasSharedRecord ? "rgba(80,180,120,0.28)" : "rgba(80,140,255,0.22)";
-                fgCtx.strokeStyle = hasSharedRecord ? "#66FFAA" : "#88CCFF";
-                fgCtx.lineWidth = 2;
-                fgCtx.fillRect(buttonX, buttonY, buttonW, buttonH);
-                fgCtx.strokeRect(buttonX, buttonY, buttonW, buttonH);
-
-                fgCtx.font="11px 'Press Start 2P', cursive";
-                fgCtx.fillStyle = hasSharedRecord ? "#66FFAA" : "#88CCFF";
-                fgCtx.fillText(hasSharedRecord ? "RECORD SHARED" : "CLICK TO SHARE", fgCanvas.width/2, buttonY + 15);
-
-                if (shareStatusTimer > 0 && shareStatusMessage) {
-                    fgCtx.font="10px 'Press Start 2P', cursive";
-                    fgCtx.fillStyle = shareStatusMessage === 'SHARED TO DISCORD!' ? "#AAFFAA" : (shareStatusMessage === 'SHARING...' ? "#FFD700" : "#FF8888");
-                    fgCtx.fillText(shareStatusMessage, fgCanvas.width/2, fgCanvas.height/2 + 135);
+                fgCtx.font = "12px 'Press Start 2P', cursive";
+                fgCtx.fillStyle = "#AAA";
+                if (Math.floor(Date.now() / 500) % 2 === 0) {
+                    fgCtx.fillText("PRESS 'R' TO RESTART", fgCanvas.width / 2, fgCanvas.height / 2 + 175);
                 }
-            } else {
-                fgCtx.fillText("GAME OVER", fgCanvas.width/2, fgCanvas.height/2 - 20);
             }
 
-            fgCtx.font = "12px 'Press Start 2P', cursive";
-            fgCtx.fillStyle = "#AAA";
-            if (Math.floor(Date.now() / 500) % 2 === 0) {
-                fgCtx.fillText("PRESS 'R' TO RESTART", fgCanvas.width / 2, fgCanvas.height / 2 + 175);
-            }
+            let p1TimerDisplay = player1.state === 'split' || player1.state === 'stopped' || player1.state === 'returning' ? "INV" : Math.ceil(Math.max(player1.detonationTimer, 0)) + "s";
+            let p2Text = player2.isDead ? "<span style='color:#555'>DEAD</span>" : Math.ceil(Math.max(player2.hp, 0));
+            let p3Text = player3.isDead ? "<span style='color:#555'>DEAD</span>" : Math.ceil(Math.max(player3.hp, 0));
+
+            let redStateTag = "<span style='color:#CCC'>[NORMAL]</span>";
+            if (player1.knockbackBounces > 0) redStateTag = "<span style='color:#FF0000'>[KNOCKBACK]</span>";
+            else if (player1.state === 'fusing') redStateTag = "<span style='color:#FF4400'>[FUSING]</span>";
+            else if (player1.state === 'split' || player1.state === 'stopped' || player1.state === 'returning') redStateTag = "<span style='color:#FFCC00'>[INVINCIBLE]</span>";
+
+            let greenStateTag = "<span style='color:#CCC'>[NORMAL]</span>";
+            if (player2.knockbackBounces > 0) greenStateTag = "<span style='color:#FF0000'>[KNOCKBACK]</span>";
+            else if (player2.stickState === 'cooldown') greenStateTag = `<span style='color:#FFaa00'>[CD: ${Math.ceil((300 - player2.stickTimer) / 60)}s]</span>`;
+            else if (player2.stickState === 'charging') greenStateTag = "<span style='color:#FF5555'>[CHARGING]</span>";
+            else if (player2.stickState === 'swinging') greenStateTag = "<span style='color:#FFFFFF'>[SWINGING]</span>";
+
+            let blueStateTag = "<span style='color:#CCC'>[NORMAL]</span>";
+            if (player3.knockbackBounces > 0) blueStateTag = "<span style='color:#FF0000'>[KNOCKBACK]</span>";
+            else if (player3.stickState === 'cooldown') blueStateTag = `<span style='color:#FFaa00'>[CD: ${Math.ceil((300 - player3.stickTimer) / 60)}s]</span>`;
+            else if (player3.stickState === 'charging') blueStateTag = "<span style='color:#88CCFF'>[CHARGING]</span>";
+            else if (player3.stickState === 'swinging') blueStateTag = "<span style='color:#FFFFFF'>[SWINGING]</span>";
+
+            document.getElementById("statusBar").innerHTML = 
+                `<div class="status-hp">
+                    <span style="color:#22CC44">GREEN HP: ${p2Text}</span> &nbsp;&nbsp;|&nbsp;&nbsp; 
+                    <span style="color:#FF4444">CREEPER: ${p1TimerDisplay}</span> &nbsp;&nbsp;|&nbsp;&nbsp; 
+                    <span style="color:#88CCFF">BLUE HP: ${p3Text}</span>
+                </div>
+                <div class="status-effects">
+                    <span style="color:#22CC44">G: ${greenStateTag}</span> &nbsp;|&nbsp; 
+                    <span style="color:#FF4444">R: ${redStateTag}</span> &nbsp;|&nbsp; 
+                    <span style="color:#88CCFF">B: ${blueStateTag}</span>
+                </div>`;
         }
-    } 
 
-    let p1TimerDisplay = player1.state === 'split' || player1.state === 'stopped' || player1.state === 'returning' ? "INV" : Math.ceil(Math.max(player1.detonationTimer, 0)) + "s";
-    let p2Text = player2.isDead ? "<span style='color:#555'>DEAD</span>" : Math.ceil(Math.max(player2.hp, 0));
-    let p3Text = player3.isDead ? "<span style='color:#555'>DEAD</span>" : Math.ceil(Math.max(player3.hp, 0));
+        // 3. [메인 루프] 분리된 로직과 그래픽을 호출
+        const animate = (currentTime) => {
+            if (!lastTime) lastTime = currentTime;
+            let deltaTime = currentTime - lastTime; 
+            lastTime = currentTime; 
+            
+            if (deltaTime > 250) deltaTime = 250; 
+            accumulator += deltaTime;
+            
+            while (accumulator >= logicStep) { 
+                updateLogic(); 
+                accumulator -= logicStep; 
+            }
+            
+            renderGraphics(); 
+            animationId = requestAnimationFrame(animate);
+        };
 
-    let redStateTag = "<span style='color:#CCC'>[NORMAL]</span>";
-    if (player1.knockbackBounces > 0) redStateTag = "<span style='color:#FF0000'>[KNOCKBACK]</span>";
-    else if (player1.state === 'fusing') redStateTag = "<span style='color:#FF4400'>[FUSING]</span>";
-    else if (player1.state === 'split' || player1.state === 'stopped' || player1.state === 'returning') redStateTag = "<span style='color:#FFCC00'>[INVINCIBLE]</span>";
+        // --- 키입력 및 이벤트 리스너 업데이트 ---
 
-    let greenStateTag = "<span style='color:#CCC'>[NORMAL]</span>";
-    let cdScale = TARGET_FPS / 5; // 텍스트 표기용 스케일
-    if (player2.knockbackBounces > 0) greenStateTag = "<span style='color:#FF0000'>[KNOCKBACK]</span>";
-    else if (player2.stickState === 'cooldown') greenStateTag = `<span style='color:#FFaa00'>[CD: ${Math.ceil((300 - player2.stickTimer) / cdScale)}s]</span>`;
-    else if (player2.stickState === 'charging') greenStateTag = "<span style='color:#FF5555'>[CHARGING]</span>";
-    else if (player2.stickState === 'swinging') greenStateTag = "<span style='color:#FFFFFF'>[SWINGING]</span>";
-
-    let blueStateTag = "<span style='color:#CCC'>[NORMAL]</span>";
-    if (player3.knockbackBounces > 0) blueStateTag = "<span style='color:#FF0000'>[KNOCKBACK]</span>";
-    else if (player3.stickState === 'cooldown') blueStateTag = `<span style='color:#FFaa00'>[CD: ${Math.ceil((300 - player3.stickTimer) / cdScale)}s]</span>`;
-    else if (player3.stickState === 'charging') blueStateTag = "<span style='color:#88CCFF'>[CHARGING]</span>";
-    else if (player3.stickState === 'swinging') blueStateTag = "<span style='color:#FFFFFF'>[SWINGING]</span>";
-
-    document.getElementById("statusBar").innerHTML = 
-        `<div class="status-hp">
-            <span style="color:#22CC44">GREEN HP: ${p2Text}</span> &nbsp;&nbsp;|&nbsp;&nbsp; 
-            <span style="color:#FF4444">CREEPER: ${p1TimerDisplay}</span> &nbsp;&nbsp;|&nbsp;&nbsp; 
-            <span style="color:#88CCFF">BLUE HP: ${p3Text}</span>
-        </div>
-        <div class="status-effects">
-            <span style="color:#22CC44">G: ${greenStateTag}</span> &nbsp;|&nbsp; 
-            <span style="color:#FF4444">R: ${redStateTag}</span> &nbsp;|&nbsp; 
-            <span style="color:#88CCFF">B: ${blueStateTag}</span>
-        </div>`;
-
-    animationId = requestAnimationFrame(animate);
-}
-        
         fgCanvas.addEventListener('click', (e) => {
             if (isStarted && isGameOver && isWin && shareButtonBounds && !hasSharedRecord) {
                 const rect = fgCanvas.getBoundingClientRect();
@@ -983,7 +987,9 @@ function animate(timestamp) {
                 const overlay = document.getElementById("startOverlay");
                 if (overlay && overlay.offsetParent !== null && !isStarted) {
                     overlay.style.display = "none";
-                    isStarted = true; player1.lastTime = Date.now(); initAudio(); animate();
+                    isStarted = true; player1.lastTime = Date.now(); initAudio(); 
+                    lastTime = performance.now();
+                    if(!animationId) animationId = requestAnimationFrame(animate);
                 } else if (isStarted && k === 'j' && !isGameOver) {
                     player2.triggerAttack = true;
                 }
@@ -998,7 +1004,9 @@ function animate(timestamp) {
         document.getElementById("startOverlay").addEventListener('click', function(e) { 
             if(!isStarted) { 
                 e.preventDefault(); this.style.display = "none"; 
-                isStarted = true; player1.lastTime = Date.now(); initAudio(); animate();
+                isStarted = true; player1.lastTime = Date.now(); initAudio(); 
+                lastTime = performance.now();
+                if(!animationId) animationId = requestAnimationFrame(animate);
             } 
         });
     </script>
