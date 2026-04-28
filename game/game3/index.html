@@ -141,6 +141,73 @@
     </div>
 
     <script>
+        function createNameOverlay() {
+            const nameOverlay = document.createElement('div');
+            nameOverlay.id = 'nameOverlay';
+            nameOverlay.style.cssText = `
+                position: fixed;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: rgba(0, 0, 0, 0.72);
+                z-index: 99999;
+            `;
+
+            nameOverlay.innerHTML = `
+                <div style="
+                    width: min(88vw, 360px);
+                    background: #000;
+                    border: 3px solid #fff;
+                    border-radius: 12px;
+                    padding: 22px 18px;
+                    box-shadow: 0 0 24px rgba(255,255,255,0.18);
+                    color: #fff;
+                    font-family: 'Press Start 2P', cursive;
+                    text-align: center;
+                ">
+                    <div style="font-size: 14px; line-height: 1.5; margin-bottom: 14px; color: #88ccff;">ENTER YOUR NAME</div>
+                    <div style="font-size: 10px; line-height: 1.7; margin-bottom: 16px; color: #ccc;">This name will be shown in the clear record.</div>
+                    
+                    <input id="playerNameInput" type="text" maxlength="32" placeholder="Player Name" style="
+                        width: 100%; box-sizing: border-box; padding: 12px 10px; border: 2px solid #666;
+                        border-radius: 8px; background: #111; color: #fff; font-family: 'Press Start 2P', cursive;
+                        font-size: 10px; text-align: center; outline: none;
+                    "/>
+
+                    <div style="font-size: 8px; line-height: 1.6; margin-top: 12px; margin-bottom: 16px; color: #999;">Leave it blank to use Unknown Player.</div>
+                    
+                    <button id="startNameButton" style="
+                        width: 100%; padding: 12px 10px; border: 2px solid #22cc44; border-radius: 8px;
+                        background: #0b2a12; color: #22cc44; font-family: 'Press Start 2P', cursive; font-size: 10px; cursor: pointer;
+                    ">CONFIRM</button>
+                </div>
+            `;
+
+            document.body.appendChild(nameOverlay);
+
+            function confirmPlayerName() {
+                const input = document.getElementById('playerNameInput');
+                const typedName = (input?.value || '').trim();
+                
+                // 만약 빈칸이면 기존 디스코드 이름이나 기본값을 유지합니다.
+                if (typedName) {
+                    window.discordUserName = typedName.substring(0, 32);
+                }
+                nameOverlay.remove();
+            }
+
+            document.getElementById('startNameButton').addEventListener('click', confirmPlayerName);
+            document.getElementById('playerNameInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') confirmPlayerName();
+            });
+        }
+
+        // 페이지 로드 시 오버레이 생성
+        window.addEventListener('load', createNameOverlay);
+    </script>
+
+    <script>
         const bgCanvas = document.getElementById("bgCanvas");
         const bgCtx = bgCanvas.getContext("2d");
         const fgCanvas = document.getElementById("fgCanvas");
@@ -213,6 +280,7 @@
             shareStatusMessage = 'SHARING...';
             shareStatusTimer = 180;
             try {
+                // 주의: ngrok 주소 등 API 경로 확인 필요
                 const response = await fetch('/api/submit-record', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
