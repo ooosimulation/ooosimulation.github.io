@@ -382,7 +382,7 @@
                     let enemyInRight = (enemy.x + enemy.radius >= 550);
                     let isHit = (isLeftMap && enemyInLeft) || (!isLeftMap && enemyInRight);
 
-                    // 상대방(파란공) 진영에서 터지면 초록공(유저)은 대미지 면역
+                    // 상대방(파란공) 진영에서 터지면 초록공(유저)은 절대 데미지 받지 않음
                     if (!isLeftMap && enemy.type === 'green') {
                         isHit = false;
                     }
@@ -442,7 +442,6 @@
                         this.state = 'normal'; this.detonationTimer = 10.0; this.lastTime = Date.now();
                         this.x = this.explodeX; this.y = this.explodeY; this.pieces = [];
                         createHitEffect(this.x, this.y, '#FF4444', 3);
-                        // 폭발 복구 후 무작위 방향으로 DVD 바운스 시작
                         let newAngle = Math.random() * Math.PI * 2;
                         this.dx = Math.cos(newAngle) * defaultSpeed; this.dy = Math.sin(newAngle) * defaultSpeed * 0.8;
                     }
@@ -509,9 +508,10 @@
                     if (creeper) this.angleToEnemy = Math.atan2(creeper.y - this.y, creeper.x - this.x); // 항상 크리퍼 바라봄
                     
                     if (this.stickState === 'idle') {
-                        let isCreeperInTerritory = creeper && creeper.state === 'normal' && creeper.x > 550;
+                        // normal이거나 fusing 상태(폭발 3초 전)일 때 모두 공격 대상에 포함
+                        let isCreeperInTerritory = creeper && (creeper.state === 'normal' || creeper.state === 'fusing') && creeper.x > 550;
                         if (isCreeperInTerritory) {
-                            // 크리퍼가 넘어왔고 쿨이 없다면 바로 공격 진입
+                            // 크리퍼가 넘어왔고 쿨이 없다면 바로 공격 진입 (예외 없음)
                             this.stickState = 'charging'; this.stickTimer = 0; playCustomSound(audioStickCharge);
                         }
                         // idle 상태일 때 dx, dy를 건드리지 않음으로써 튕기는 DVD 바운스 완벽 유지
@@ -567,7 +567,7 @@
                         if(this.stickTimer >= 12) { this.stickState = 'cooldown'; this.stickTimer = 0; }
                     } else if(this.stickState === 'cooldown') {
                         this.stickTimer++; if(this.stickTimer > 30) this.stickAngleOffset += (0-this.stickAngleOffset)*0.05; 
-                        // 5초 쿨타임
+                        // 5초 쿨타임 (300프레임)
                         if(this.stickTimer > 300) { this.stickState = 'idle'; this.stickTimer = 0; }
                     } else if (this.stickState === 'idle') {
                         this.stickAngleOffset += (0-this.stickAngleOffset)*0.1;
@@ -609,7 +609,6 @@
                     if ((this.type === 'green' || this.type === 'blue') && this.stickState === 'swinging') {
                         if (currentSpeed > targetSpeed) { this.dx *= 0.88; this.dy *= 0.88; }
                     } else {
-                        // AI 파란공 및 크리퍼의 DVD 바운스 속도 유지 로직
                         if (this.type !== 'green') {
                             if (currentSpeed > targetSpeed) { this.dx *= 0.96; this.dy *= 0.96; } 
                             else if (currentSpeed < targetSpeed && targetSpeed > 0) { 
@@ -676,7 +675,6 @@
                         let dvx = p1.dx - p2.dx; let dvy = p1.dy - p2.dy; let velAlongNormal = dvx * nx + dvy * ny;
                         if (velAlongNormal > 0 && collisionCooldown === 0) {
                             let bounceSpeed = 6; 
-                            // 몸체 충돌 대미지 삭제 (오직 튕겨나가기만 함)
                             if (p1IsRed) {
                                 p2.dx += nx * bounceSpeed; p2.dy += ny * bounceSpeed;
                             } else if (p2IsRed) {
@@ -748,7 +746,6 @@
 
             fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
 
-            // 게임 플레이 중일 때 상단 중앙에 클리어 타임 타이머 표시
             let currentTimeText = "00:00.00";
             if (isStarted && startDelayTimer <= 0) {
                 if (!isGameOver) currentTimeText = formatTime(performance.now() - gameStartTime);
@@ -775,7 +772,6 @@
                 fgCtx.closePath();
             }
             
-            // 게임오버 및 공유 버튼 렌더링
             if (isGameOver) {
                 fgCtx.fillStyle = "rgba(0,0,0,0.5)";
                 fgCtx.fillRect(0, 0, fgCanvas.width, fgCanvas.height);
@@ -802,7 +798,6 @@
                         }
                     }
 
-                    // 공유 버튼
                     const buttonX = fgCanvas.width / 2 - 110; const buttonY = fgCanvas.height / 2 + 92;
                     const buttonW = 220; const buttonH = 28;
                     shareButtonBounds = { x: buttonX, y: buttonY, w: buttonW, h: buttonH };
