@@ -759,7 +759,7 @@
         let animationId;
         let lastTime = 0;
         let accumulator = 0;
-        const LOGIC_HZ = 60; // 기존 게임 밸런스 속도를 그대로 유지하기 위해 60Hz로 고정
+        const LOGIC_HZ = 165; // 원래 체감하시던 게임 밸런스 속도인 165Hz로 고정
         const logicStep = 1000 / LOGIC_HZ;
 
         // 1. [게임 논리 업데이트] 프레임과 상관없이 일정한 속도로 계산
@@ -1009,6 +1009,7 @@
                 if(!animationId) animationId = requestAnimationFrame(animate);
             } 
         });
+        
     </script>
 </body>
 </html>
