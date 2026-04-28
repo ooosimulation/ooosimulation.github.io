@@ -473,14 +473,14 @@
                 }
             }
 
-            updatePieces() {
+            updatePieces(timeScale = 1) {
                 if (this.state === 'split') {
                     let allStopped = true;
                     for (let p of this.pieces) {
                         let speed = Math.hypot(p.dx, p.dy);
                         if (speed > 0.3) {
-                            allStopped = false; p.x += p.dx; p.y += p.dy; p.rotation += speed * 0.03;
-                            if (p.bounces >= 5) { p.dx *= 0.94; p.dy *= 0.94; } else { p.dx *= 0.99; p.dy *= 0.99; }
+                            allStopped = false; p.x += p.dx * timeScale; p.y += p.dy * timeScale; p.rotation += speed * 0.03 * timeScale;
+                            if (p.bounces >= 5) { p.dx *= Math.pow(0.94, timeScale); p.dy *= Math.pow(0.94, timeScale); } else { p.dx *= Math.pow(0.99, timeScale); p.dy *= Math.pow(0.99, timeScale); }
                             
                             let hitWall = false;
                             if (p.x + p.radius >= fgCanvas.width) { p.x = fgCanvas.width - p.radius; p.dx = -Math.abs(p.dx); hitWall = true;}
@@ -492,17 +492,17 @@
                     }
                     if (allStopped && this.pieces.length > 0) { this.state = 'stopped'; this.stopWaitTimer = 180; }
                 } else if (this.state === 'stopped') {
-                    this.stopWaitTimer--;
+                    this.stopWaitTimer -= timeScale;
                     if (this.stopWaitTimer <= 0) this.state = 'returning';
                 } else if (this.state === 'returning') {
                     let allReturned = true;
                     for (let p of this.pieces) {
                         let dx = this.explodeX - p.x; let dy = this.explodeY - p.y; let dist = Math.hypot(dx, dy);
                         if (dist > 3) {
-                            allReturned = false; p.x += dx * 0.06; p.y += dy * 0.06;
+                            allReturned = false; p.x += dx * 0.06 * timeScale; p.y += dy * 0.06 * timeScale;
                             let angleDiff = -p.rotation;
                             while (angleDiff < -Math.PI) angleDiff += Math.PI * 2; while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-                            p.rotation += angleDiff * 0.1;
+                            p.rotation += angleDiff * 0.1 * timeScale;
                         } else { p.x = this.explodeX; p.y = this.explodeY; p.rotation = 0; }
                     }
                     if (allReturned) {
@@ -515,7 +515,7 @@
                 }
             }
 
-            update(enemies, isHitStop = false) {
+            update(enemies, isHitStop = false, timeScale = 1) {
                 if (this.hp <= 0 && !this.isDead && this.type !== 'red') { 
                     this.isDead = true; createHitEffect(this.x, this.y, this.color, 2.5);
                     if (this.type === 'green' || this.type === 'blue') stopCustomSound(audioStickCharge);
@@ -538,19 +538,19 @@
                         if (this.detonationTimer <= 0) this.explode(enemies.filter(e => !e.isDead && e.type !== this.type));
                     } 
                     if (this.state === 'split' || this.state === 'stopped' || this.state === 'returning') {
-                        if (!isHitStop) this.updatePieces(); return;
+                        if (!isHitStop) this.updatePieces(timeScale); return;
                     }
                 }
 
                 if (isHitStop) return;
-                if (this.wallDamageCooldown > 0) this.wallDamageCooldown--;
-                if (this.wallSoundCooldown > 0) this.wallSoundCooldown--;
+                if (this.wallDamageCooldown > 0) this.wallDamageCooldown -= timeScale;
+                if (this.wallSoundCooldown > 0) this.wallSoundCooldown -= timeScale;
 
                 if (this.type === 'green' || this.type === 'blue') {
-                    if (this.stickState === 'charging' || this.stickState === 'swinging') this.freeHandLerp = Math.min(1, this.freeHandLerp + 0.15);
-                    else this.freeHandLerp = Math.max(0, this.freeHandLerp - 0.15);
-                    for(let i=this.swingTrails.length-1; i>=0; i--) if(--this.swingTrails[i].life<=0) this.swingTrails.splice(i,1);
-                    for(let i=this.dashTrails.length-1; i>=0; i--) { this.dashTrails[i].alpha -= 0.05; if(this.dashTrails[i].alpha <= 0) this.dashTrails.splice(i, 1); }
+                    if (this.stickState === 'charging' || this.stickState === 'swinging') this.freeHandLerp = Math.min(1, this.freeHandLerp + 0.15 * timeScale);
+                    else this.freeHandLerp = Math.max(0, this.freeHandLerp - 0.15 * timeScale);
+                    for(let i=this.swingTrails.length-1; i>=0; i--) { this.swingTrails[i].life -= timeScale; if(this.swingTrails[i].life<=0) this.swingTrails.splice(i,1); }
+                    for(let i=this.dashTrails.length-1; i>=0; i--) { this.dashTrails[i].alpha -= 0.05 * timeScale; if(this.dashTrails[i].alpha <= 0) this.dashTrails.splice(i, 1); }
                 }
 
                 if (this.type === 'green') {
@@ -583,10 +583,10 @@
 
                 if (this.type !== 'green') {
                     let diff = this.angleToEnemy - this.angle; while (diff < -Math.PI) diff += Math.PI*2; while (diff > Math.PI) diff -= Math.PI*2;
-                    this.angle += diff * 0.15;
+                    this.angle += diff * 0.15 * timeScale;
                 } else {
                     let diff = this.angleToEnemy - this.angle; while (diff < -Math.PI) diff += Math.PI*2; while (diff > Math.PI) diff -= Math.PI*2;
-                    this.angle += diff * 0.25;
+                    this.angle += diff * 0.25 * timeScale;
                 }
 
                 if (this.type === 'green' || this.type === 'blue') {
@@ -595,8 +595,8 @@
                     }
 
                     if (this.stickState === 'charging') {
-                        this.stickTimer++; let cr = this.stickTimer / 180; 
-                        this.stickAngleOffset += (-Math.PI*0.75 - this.stickAngleOffset)*0.05 + (Math.random()-0.5)*0.15*cr;
+                        this.stickTimer += timeScale; let cr = this.stickTimer / 180; 
+                        this.stickAngleOffset += (-Math.PI*0.75 - this.stickAngleOffset)*0.05*timeScale + (Math.random()-0.5)*0.15*cr*timeScale;
                         
                         if (this.stickTimer >= 180) { 
                             this.stickState = 'swinging'; this.stickTimer = 0; stopCustomSound(audioStickCharge); playCustomSound(audioStickSwing);
@@ -607,12 +607,13 @@
                             }
                         }
                     } else if (this.stickState === 'swinging') {
-                        this.stickTimer++; let prog = this.stickTimer/12; 
+                        let prevStickTimer = this.stickTimer;
+                        this.stickTimer += timeScale; let prog = this.stickTimer/12; 
                         this.stickAngleOffset = -Math.PI*0.75 + (Math.PI*1.35)*Math.sin(prog*Math.PI/2);
                         this.swingTrails.push({angle:this.angle+this.stickAngleOffset, life:15});
                         if (this.stickTimer <= 5 && this.type === 'blue') this.dashTrails.push({x: this.x, y: this.y, alpha: 0.3});
 
-                        if(this.stickTimer === 6) {
+                        if(prevStickTimer < 6 && this.stickTimer >= 6) {
                             let hitAny = false;
                             for (let e of enemies.filter(e => !e.isDead && e.type === 'red')) { 
                                 let eIsInvincible = e.weapon === 'tnt' && (e.state === 'split' || e.state === 'stopped' || e.state === 'returning');
@@ -628,14 +629,14 @@
                         }
                         if(this.stickTimer >= 12) { this.stickState = 'cooldown'; this.stickTimer = 0; }
                     } else if(this.stickState === 'cooldown') {
-                        this.stickTimer++; if(this.stickTimer > 30) this.stickAngleOffset += (0-this.stickAngleOffset)*0.05; 
+                        this.stickTimer += timeScale; if(this.stickTimer > 30) this.stickAngleOffset += (0-this.stickAngleOffset)*0.05*timeScale; 
                         if(this.stickTimer > 300) { this.stickState = 'idle'; this.stickTimer = 0; }
                     } else if (this.stickState === 'idle') {
-                        this.stickAngleOffset += (0-this.stickAngleOffset)*0.1;
+                        this.stickAngleOffset += (0-this.stickAngleOffset)*0.1*timeScale;
                     }
                 }
 
-                this.x += this.dx; this.y += this.dy;
+                this.x += this.dx * timeScale; this.y += this.dy * timeScale;
 
                 let hitWall = false; let r = this.radius;
                 if (this.x + r >= this.maxX) { this.x = this.maxX - r; this.dx = -Math.abs(this.dx); hitWall = true; }
@@ -666,22 +667,22 @@
                 if ((this.type === 'green' || this.type === 'blue') && this.stickState === 'charging') targetSpeed = defaultSpeed * Math.max(0.1, 0.5 - (this.stickTimer / 180 * 0.4));
 
                 if (this.knockbackBounces > 0) {
-                    if (currentSpeed < 18) { this.dx *= 1.1; this.dy *= 1.1; }
+                    if (currentSpeed < 18) { this.dx *= Math.pow(1.1, timeScale); this.dy *= Math.pow(1.1, timeScale); }
                 } else {
                     if (currentSpeed === 0 && targetSpeed > 0 && this.type !== 'red') { 
                         this.dx = Math.cos(this.angle) * targetSpeed; this.dy = Math.sin(this.angle) * targetSpeed; 
                     }
                     if ((this.type === 'green' || this.type === 'blue') && this.stickState === 'swinging') {
-                        if (currentSpeed > targetSpeed) { this.dx *= 0.88; this.dy *= 0.88; }
+                        if (currentSpeed > targetSpeed) { this.dx *= Math.pow(0.88, timeScale); this.dy *= Math.pow(0.88, timeScale); }
                     } else {
                         if (this.type !== 'green') {
-                            if (currentSpeed > targetSpeed) { this.dx *= 0.96; this.dy *= 0.96; } 
+                            if (currentSpeed > targetSpeed) { this.dx *= Math.pow(0.96, timeScale); this.dy *= Math.pow(0.96, timeScale); } 
                             else if (currentSpeed < targetSpeed && targetSpeed > 0) { 
                                 if (currentSpeed === 0) {
                                     let a = Math.random() * Math.PI * 2;
                                     this.dx = Math.cos(a) * targetSpeed; this.dy = Math.sin(a) * targetSpeed;
                                 } else {
-                                    let ratio = (currentSpeed + 0.5) / currentSpeed;
+                                    let ratio = (currentSpeed + 0.5 * timeScale) / currentSpeed;
                                     this.dx *= ratio; this.dy *= ratio;
                                     let newSpeed = Math.hypot(this.dx, this.dy);
                                     if (newSpeed > targetSpeed) {
@@ -712,11 +713,12 @@
             isGameOver = false; isWin = false; startDelayTimer = 120;
             hasSharedRecord = false; shareStatusMessage = ''; shareStatusTimer = 0; shareButtonBounds = null;
             unlockedAchievements = [];
+            loopLastTime = 0; 
             playCustomSound(audioStickHit);
         }
 
-        function handleBodyCollisions() {
-            if (collisionCooldown > 0) collisionCooldown--;
+        function handleBodyCollisions(timeScale = 1) {
+            if (collisionCooldown > 0) collisionCooldown -= timeScale;
             for (let i = 0; i < players.length; i++) {
                 for (let j = i + 1; j < players.length; j++) {
                     let p1 = players[i]; let p2 = players[j];
@@ -738,7 +740,7 @@
                         p2.x += nx * overlap * (m1 / totalM); p2.y += ny * overlap * (m1 / totalM);
 
                         let dvx = p1.dx - p2.dx; let dvy = p1.dy - p2.dy; let velAlongNormal = dvx * nx + dvy * ny;
-                        if (velAlongNormal > 0 && collisionCooldown === 0) {
+                        if (velAlongNormal > 0 && collisionCooldown <= 0) {
                             let bounceSpeed = 6; 
                             if (p1IsRed) {
                                 p2.dx += nx * bounceSpeed; p2.dy += ny * bounceSpeed;
@@ -756,8 +758,17 @@
             }
         }
 
+        let loopLastTime = 0;
         let animationId;
-        function animate() {
+        function animate(currentTime) {
+            if (!currentTime) currentTime = performance.now();
+            if (loopLastTime === 0) loopLastTime = currentTime;
+            let deltaTime = currentTime - loopLastTime;
+            loopLastTime = currentTime;
+            let timeScale = deltaTime / (1000 / 165);
+            if (timeScale > 10) timeScale = 10;
+            if (timeScale < 0) timeScale = 0;
+
             bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
             bgCtx.save(); bgCtx.beginPath(); bgCtx.moveTo(550, 0); bgCtx.lineTo(550, 550);
             bgCtx.lineWidth = 6; bgCtx.strokeStyle = "rgba(255, 255, 255, 0.4)";
@@ -768,13 +779,18 @@
                 players.forEach(p => p.draw());
                 fgCtx.fillStyle = "#FFF"; fgCtx.font = "30px 'Press Start 2P', cursive"; fgCtx.textAlign = "center"; fgCtx.textBaseline = "middle";
                 if (Math.floor(startDelayTimer / 15) % 2 === 0) fgCtx.fillText("READY...", fgCanvas.width/2, fgCanvas.height/2);
-                startDelayTimer--; 
-                if (startDelayTimer === 0) gameStartTime = performance.now();
+                
+                let prevTimer = startDelayTimer;
+                startDelayTimer -= timeScale; 
+                if (startDelayTimer <= 0 && prevTimer > 0) {
+                    startDelayTimer = 0;
+                    if (gameStartTime === 0) gameStartTime = performance.now();
+                }
                 animationId = requestAnimationFrame(animate); return; 
             }
             
-            frameCount++; 
-            if (shareStatusTimer > 0) shareStatusTimer--;
+            frameCount += timeScale; 
+            if (shareStatusTimer > 0) shareStatusTimer -= timeScale;
 
             if (!isGameOver) {
                 if (player2.isDead || player3.isDead) {
@@ -792,15 +808,15 @@
             }
 
             let isHitStop = false;
-            if (hitStopTimer > 0) { isHitStop = true; hitStopTimer--; } 
+            if (hitStopTimer > 0) { isHitStop = true; hitStopTimer -= timeScale; } 
             
             if (!isGameOver) {
-                players.forEach(p => p.update(players.filter(e => e !== p), isHitStop));
-                if (!isHitStop) handleBodyCollisions();
+                players.forEach(p => p.update(players.filter(e => e !== p), isHitStop, timeScale));
+                if (!isHitStop) handleBodyCollisions(timeScale);
             }
 
             for (let i = particles.length - 1; i >= 0; i--) { 
-                let p = particles[i]; p.x += p.dx; p.y += p.dy; p.life--; 
+                let p = particles[i]; p.x += p.dx * timeScale; p.y += p.dy * timeScale; p.life -= timeScale; 
                 if (p.life <= 0) particles.splice(i, 1); 
             }
 
@@ -956,7 +972,7 @@
                 const overlay = document.getElementById("startOverlay");
                 if (overlay && overlay.offsetParent !== null && !isStarted) {
                     overlay.style.display = "none";
-                    isStarted = true; player1.lastTime = Date.now(); initAudio(); animate();
+                    isStarted = true; player1.lastTime = Date.now(); loopLastTime = performance.now(); initAudio(); animate();
                 } else if (isStarted && k === 'j' && !isGameOver) {
                     player2.triggerAttack = true;
                 }
@@ -971,7 +987,7 @@
         document.getElementById("startOverlay").addEventListener('click', function(e) { 
             if(!isStarted) { 
                 e.preventDefault(); this.style.display = "none"; 
-                isStarted = true; player1.lastTime = Date.now(); initAudio(); animate();
+                isStarted = true; player1.lastTime = Date.now(); loopLastTime = performance.now(); initAudio(); animate();
             } 
         });
     </script>
