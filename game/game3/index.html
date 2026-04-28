@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creeper Ball - Discord Game</title>
+    <link rel="icon" type="image/png" href="../favicon2.png">
+
+    <style>
+        @font-face {
+            font-family: 'Press Start 2P';
+            src: url('../PressStart2P-Regular.ttf') format('truetype');
+            font-weight: 400;
+            font-style: normal;
+            font-display: block;
+        }
+
+        body { 
+            margin: 0;
+            font-family: 'Press Start 2P', cursive;
+            color: white;
+            text-align: center;
+            min-height: 100vh;
+            background-color: #030712;
+            background-image:
+                radial-gradient(circle at 7% 12%, rgba(255,255,255,0.95) 0 1px, transparent 1.5px),
+                radial-gradient(circle at 50% 50%, rgba(53, 80, 160, 0.18), transparent 55%),
+                linear-gradient(to bottom, #02040a 0%, #081225 45%, #101a3a 100%);
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            overflow-x: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container { width: 100%; max-width: 1150px; padding: 10px; position: relative; z-index: 2; }
+        
+        #gameWrapper { 
+            width: 100%; max-width: 1150px; 
+            background-color: #000;
+            border: 4px solid #FFF; 
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255,255,255,0.15);
+            overflow: hidden; 
+            position: relative;
+        }
+
+        #gameContainer { position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; }
+        
+        #titleBar { 
+            width: 100%; display: flex; justify-content: space-around; align-items: center; 
+            background-color: #000; padding: 15px 0; border-bottom: 2px solid #555; letter-spacing: 1px; 
+        }
+        .title-left { font-size: 18px; color: #22CC44; text-shadow: 2px 2px 0 #000; } 
+        .title-vs { font-size: 14px; color: #FFFFFF; }
+        .title-mid { font-size: 18px; color: #FF4444; text-shadow: 2px 2px 0 #000; } 
+        .title-right { font-size: 18px; color: #88CCFF; text-shadow: 2px 2px 0 #000; } 
+
+        #canvasWrapper {
+            position: relative; width: 1100px; height: 550px;
+            background-color: #000; border: none; 
+            overflow: hidden;
+        }
+        
+        canvas { position: absolute; left: 0; top: 0; background-color: transparent; }
+        #bgCanvas { z-index: 1; background-color: #000; }
+        #fgCanvas { z-index: 3; } 
+
+        #statusBar { 
+            width: 100%; padding: 15px 10px 10px; border-top: 2px solid #555; 
+            color: #FFF; text-align: center; display: flex; flex-direction: column; 
+            line-height: 1.5; box-sizing: border-box; background-color: #000;
+        }
+        .status-hp { font-size: 11px; margin-bottom: 5px; text-shadow: 1px 1px 0 #000; }
+        .status-effects { font-size: 9px; color: #CCC; }
+
+        #startOverlay { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background-color: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; z-index: 10; cursor: pointer; 
+        }
+        .start-text { color: #FFF; font-size: 18px; text-align: center; line-height: 1.5; animation: blink 1s infinite; }
+        .start-sub { color: #BBB; font-size: 12px; margin-top: 20px; text-align: center; }
+        .controls-info { color: #AAFFAA; font-size: 12px; margin-top: 30px; line-height: 2; background-color: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; }
+
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    </style>
+
+    <script type="module">
+        import { DiscordSDK } from "https://esm.sh/@discord/embedded-app-sdk";
+        const discordSdk = new DiscordSDK("1492558716027797574");
+
+        window.discordSdk = discordSdk;
+        window.discordUserName = "Unknown Player";
+
+        async function setupDiscord() {
+            await discordSdk.ready();
+            try {
+                const instanceUser = discordSdk.instanceManager?.currentUser;
+                if (instanceUser) {
+                    window.discordUserName = instanceUser.global_name || instanceUser.username || "Unknown Player";
+                }
+            } catch (e) {
+                console.error("Failed to get Discord user from instanceManager", e);
+            }
+        }
+        setupDiscord();
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div id="gameWrapper">
+            <div id="gameContainer">
+                <div id="titleBar">
+                    <div class="title-left">GREEN (YOU)</div>
+                    <div class="title-vs">VS</div>
+                    <div class="title-mid">CREEPER BALL</div>
+                    <div class="title-vs">VS</div>
+                    <div class="title-right">BLUE (CPU)</div>
+                </div>
+
+                <div id="canvasWrapper">
+                    <canvas id="bgCanvas" width="1100" height="550"></canvas>
+                    <canvas id="fgCanvas" width="1100" height="550"></canvas>
+                    
+                    <div id="startOverlay">
+                        <div class="start-text">CLICK TO START</div>
+                        <div class="start-sub">Creeper Ball</div>
+                        <div class="controls-info">[WASD]: Move<br><br>[J]: Attack (10s Cooldown)</div>
+                    </div>
+                </div>
+                
+                <div id="statusBar"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const bgCanvas = document.getElementById("bgCanvas");
+        const bgCtx = bgCanvas.getContext("2d");
+        const fgCanvas = document.getElementById("fgCanvas");
+        const fgCtx = fgCanvas.getContext("2d");
+        const wrapperDom = document.getElementById("canvasWrapper");
+
+        // --- 에셋 로드 (game3 기준) ---
+        const creeper1Snd = new Audio('../creeper1.mp3'); 
+        const creeper2Snd = new Audio('../creeper2.mp3');
+
+        const stickImg = new Image(); stickImg.src = "../knockback stick.gif";
+        const audioStickCharge = new Audio("../spear charging.mp3");
+        const audioStickHit = new Audio("../baseball.mp3");
+        const audioStickSwing = new Audio("../swing.mp3");
+
+        // 키 입력 상태
+        const keys = { w: false, a: false, s: false, d: false, j: false };
+
+        // --- 사운드 ---
+        let audioCtx;
+        function initAudio() { 
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        const playCustomSound = o => { if(o){ o.currentTime=0; o.volume=0.7; o.play().catch(e=>{}); } };
+        const stopCustomSound = o => { if(o){ o.pause(); o.currentTime=0; } };
+
+        function playSound(type) {
+            if (!audioCtx) return null;
+            let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+            let t = audioCtx.currentTime;
+            
+            if (type === 'bounce' || type === 'hit') { 
+                osc.type = "sine"; osc.frequency.setValueAtTime(200, t); osc.frequency.exponentialRampToValueAtTime(80, t + 0.1); 
+                gain.gain.setValueAtTime(0.05, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1); 
+            } else if (type === 'crash') { 
+                osc.type = "square"; osc.frequency.setValueAtTime(100, t); osc.frequency.exponentialRampToValueAtTime(10, t + 0.4); 
+                gain.gain.setValueAtTime(0.4, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.4); 
+            }
+            
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); 
+            osc.stop(t + 0.5);
+            return null;
+        }
+
+        const defaultSpeed = 3.5;
+        const MAX_HP = 100;
+        const COLLISION_DMG = 0.7; 
+
+        let particles = [];
+        let collisionCooldown = 0; 
+        let frameCount = 0;
+        let hitStopTimer = 0; 
+
+        function createHitEffect(x, y, colorCode = null, sizeMult = 1, isSquare = false) {
+            for (let i = 0; i < 20 * sizeMult; i++) {
+                let life = 20 + Math.random() * 15 * sizeMult;
+                particles.push({
+                    x: x, y: y,
+                    dx: (Math.random() - 0.5) * 12 * sizeMult, dy: (Math.random() - 0.5) * 12 * sizeMult,
+                    life: life, maxLife: life, size: (Math.random() * 4 + 2) * sizeMult,
+                    color: colorCode ? colorCode : "#FFF",
+                    isSquare: isSquare
+                });
+            }
+        }
+
+        class Ball {
+            constructor(x, y, color, darkColor, type) {
+                this.x = x; this.y = y; this.type = type;
+                
+                let initialSpeed = defaultSpeed; 
+                this.dx = (Math.random() > 0.5 ? 1 : -1) * initialSpeed; 
+                this.dy = (Math.random() > 0.5 ? 1 : -1) * initialSpeed * 0.8;
+                
+                this.baseRadius = 45; this.radius = this.baseRadius;
+                this.color = color; this.darkColor = darkColor; 
+                this.hp = MAX_HP; 
+                this.isDead = false; 
+                this.angle = Math.atan2(this.dy, this.dx); this.angleToEnemy = 0; 
+
+                this.wallDamageCooldown = 0;
+                this.knockbackBounces = 0; 
+
+                // 맵 제한
+                if (this.type === 'green') {
+                    this.minX = 0; this.maxX = 550;
+                } else if (this.type === 'blue') {
+                    this.minX = 550; this.maxX = 1100;
+                } else {
+                    this.minX = 0; this.maxX = 1100; // 크리퍼는 전체 맵
+                }
+
+                // 빨간공(크리퍼) 전용 속성
+                if (this.type === 'red') {
+                    this.weapon = 'tnt';
+                    this.state = 'normal';
+                    this.detonationTimer = 10.0;
+                    this.lastTime = Date.now();
+                    this.fuseTimer = 0;
+                    this.fuseMaxTimer = 3.0;
+                    this.pieces = [];
+                    this.explodeX = 0;
+                    this.explodeY = 0;
+                }
+                
+                // 초록공, 파란공 전용 속성
+                if (this.type === 'green' || this.type === 'blue') {
+                    this.weapon = 'knockback_stick';
+                    this.stickState = 'idle'; 
+                    this.stickTimer = 0; 
+                    this.stickAngleOffset = Math.PI/4; 
+                    this.swingTrails = []; 
+                    this.freeHandLerp = 0;
+                    this.dashTrails = []; 
+                }
+            }
+
+            draw() {
+                if (this.isDead) return;
+
+                if (this.type === 'red' && (this.state === 'split' || this.state === 'stopped' || this.state === 'returning')) {
+                    for (let p of this.pieces) {
+                        fgCtx.save(); 
+                        fgCtx.translate(p.x, p.y); 
+                        fgCtx.rotate(p.rotation); 
+                        fgCtx.beginPath(); 
+                        fgCtx.moveTo(0, 0); 
+                        fgCtx.arc(0, 0, p.radius, p.startAngle, p.endAngle);
+                        fgCtx.closePath();
+                        fgCtx.fillStyle = this.color; 
+                        fgCtx.fill(); 
+                        fgCtx.lineWidth = 3; 
+                        fgCtx.strokeStyle = this.darkColor; 
+                        fgCtx.stroke(); 
+                        fgCtx.restore();
+                    }
+                    return; 
+                }
+
+                if ((this.type === 'green' || this.type === 'blue') && this.dashTrails && this.dashTrails.length > 0) {
+                    fgCtx.save();
+                    for (let dt of this.dashTrails) {
+                        fgCtx.beginPath(); fgCtx.arc(dt.x, dt.y, this.radius, 0, Math.PI * 2);
+                        fgCtx.fillStyle = `rgba(176, 64, 255, ${dt.alpha})`; fgCtx.fill();
+                    }
+                    fgCtx.restore();
+                }
+
+                let drawX = this.x;
+                let drawY = this.y;
+                let currentColor = this.color;
+                let currentRadius = this.radius;
+
+                if (this.type === 'red' && this.state === 'fusing') {
+                    let isLeftMap = drawX < 550; 
+                    
+                    fgCtx.save();
+                    fgCtx.fillStyle = "rgba(255, 68, 0, 0.15)";
+                    if (isLeftMap) fgCtx.fillRect(0, 0, 550, fgCanvas.height);
+                    else fgCtx.fillRect(550, 0, 550, fgCanvas.height);
+                    fgCtx.restore();
+
+                    let progress = 1 - (this.fuseTimer / this.fuseMaxTimer);
+                    currentRadius = this.radius * (1 + 0.3 * progress);
+
+                    let shakeAmt = progress * 18; 
+                    drawX += (Math.random() - 0.5) * shakeAmt;
+                    drawY += (Math.random() - 0.5) * shakeAmt;
+                    
+                    let flashRate = Math.max(2, Math.floor(15 - progress * 13)); 
+                    if (frameCount % flashRate < flashRate / 2) currentColor = "#FFFFFF";
+                }
+
+                fgCtx.save(); 
+                fgCtx.translate(drawX, drawY); 
+
+                fgCtx.save();
+                fgCtx.rotate(this.angle); 
+                fgCtx.beginPath(); fgCtx.arc(0, 0, currentRadius, 0, Math.PI * 2);
+                fgCtx.fillStyle = currentColor; 
+                fgCtx.fill(); 
+                fgCtx.shadowBlur = 0; fgCtx.lineWidth = 3; fgCtx.strokeStyle = this.darkColor; fgCtx.stroke(); fgCtx.closePath();
+                fgCtx.restore(); 
+
+                if(this.type === 'green' || this.type === 'blue') {
+                    fgCtx.save(); 
+                    let bsa = this.angle + this.stickAngleOffset;
+                    for(let t of this.swingTrails) { 
+                        fgCtx.save(); fgCtx.globalAlpha=(t.life/15)*0.4; fgCtx.rotate(t.angle); fgCtx.translate(0,35); fgCtx.rotate(Math.PI/4); 
+                        if(stickImg.complete && stickImg.naturalWidth > 0) fgCtx.drawImage(stickImg,5,-120,110,110); 
+                        fgCtx.restore(); 
+                    }
+                    fgCtx.save(); fgCtx.rotate(bsa); 
+                    fgCtx.save(); fgCtx.translate(0,35); fgCtx.rotate(Math.PI/4); 
+                    if(stickImg.complete && stickImg.naturalWidth > 0) fgCtx.drawImage(stickImg,5,-120,110,110); 
+                    fgCtx.restore();
+                    fgCtx.fillStyle=this.color; fgCtx.strokeStyle=this.darkColor; fgCtx.lineWidth=3; fgCtx.beginPath(); fgCtx.arc(45,35,12,0,Math.PI*2); fgCtx.fill(); fgCtx.stroke(); fgCtx.beginPath(); fgCtx.arc(45+(75-45)*this.freeHandLerp, -35+(35+35)*this.freeHandLerp, 12, 0, Math.PI*2); fgCtx.fill(); fgCtx.stroke(); 
+                    fgCtx.restore(); fgCtx.restore(); 
+                }
+
+                // 폰트를 전부 'Press Start 2P'로 적용
+                fgCtx.font = "14px 'Press Start 2P', cursive"; fgCtx.textAlign = "center"; fgCtx.textBaseline = "middle";
+                fgCtx.lineWidth = 3; fgCtx.strokeStyle = "#000"; 
+                
+                let displayText = "";
+                if (this.type !== 'red') {
+                    displayText = Math.ceil(Math.max(this.hp, 0));
+                    fgCtx.strokeText(displayText, 0, 0); fgCtx.fillStyle = "#FFFFFF"; fgCtx.fillText(displayText, 0, 0); 
+                }
+                fgCtx.restore(); 
+            }
+
+            explode(livingEnemies) {
+                creeper1Snd.pause(); creeper1Snd.currentTime = 0;
+                creeper2Snd.currentTime = 0; creeper2Snd.play().catch(e => {});
+                
+                let isLeftMap = this.x < 550; 
+
+                for(let i=0; i<200; i++) {
+                    let angle = Math.random() * Math.PI * 2;
+                    let speed = Math.random() * 15 + 5; 
+                    let size = Math.random() * 30 + 15; 
+                    let rNum = Math.random();
+                    let pColor = rNum > 0.6 ? '#FF0000' : (rNum > 0.3 ? '#FFFFFF' : '#FF8800');
+                    let px = isLeftMap ? Math.random() * 550 : 550 + Math.random() * 550;
+                    let py = Math.random() * fgCanvas.height;
+
+                    particles.push({
+                        x: px, y: py,
+                        dx: Math.cos(angle)*speed, dy: Math.sin(angle)*speed,
+                        life: 40, maxLife: 40, size: size,
+                        color: pColor, isSquare: true
+                    });
+                }
+                
+                createHitEffect(this.x, this.y, "#FFFFFF", 5, false);
+
+                for (let enemy of livingEnemies) {
+                    let enemyInLeft = (enemy.x - enemy.radius < 550);
+                    let enemyInRight = (enemy.x + enemy.radius >= 550);
+                    let isHit = (isLeftMap && enemyInLeft) || (!isLeftMap && enemyInRight);
+
+                    if (isHit) { 
+                        let angle = Math.atan2(enemy.y - this.y, enemy.x - this.x);
+                        enemy.knockbackBounces += 8; 
+                        enemy.hp -= 15; 
+                        enemy.dx = Math.cos(angle) * 35; 
+                        enemy.dy = Math.sin(angle) * 35;
+                    }
+                }
+                hitStopTimer = 25; 
+
+                this.state = 'split';
+                this.explodeX = this.x; 
+                this.explodeY = this.y;
+                this.pieces = [];
+                this.dx = 0; this.dy = 0; this.knockbackBounces = 0;
+                
+                let baseRotation = Math.random() * Math.PI * 2; 
+                for(let i=0; i<4; i++) {
+                    let startAngle = baseRotation + (Math.PI / 2) * i;
+                    let endAngle = startAngle + (Math.PI / 2);
+                    let randomFlightAngle = Math.random() * Math.PI * 2; 
+                    let randomSpeed = defaultSpeed * (10 + Math.random() * 8); 
+
+                    this.pieces.push({
+                        x: this.x, y: this.y,
+                        dx: Math.cos(randomFlightAngle) * randomSpeed, dy: Math.sin(randomFlightAngle) * randomSpeed,
+                        radius: this.baseRadius, 
+                        startAngle: startAngle, endAngle: endAngle, bounces: 0, rotation: 0 
+                    });
+                }
+            }
+
+            updatePieces() {
+                if (this.state === 'split') {
+                    let allStopped = true;
+                    for (let p of this.pieces) {
+                        let speed = Math.hypot(p.dx, p.dy);
+                        if (speed > 0.3) {
+                            allStopped = false;
+                            p.x += p.dx; p.y += p.dy;
+                            p.rotation += speed * 0.03;
+                            if (p.bounces >= 5) { p.dx *= 0.94; p.dy *= 0.94; } 
+                            else { p.dx *= 0.99; p.dy *= 0.99; }
+                            
+                            let hitWall = false;
+                            if (p.x + p.radius >= fgCanvas.width) { p.x = fgCanvas.width - p.radius; p.dx = -Math.abs(p.dx); hitWall = true;}
+                            if (p.x - p.radius <= 0) { p.x = p.radius; p.dx = Math.abs(p.dx); hitWall = true;}
+                            if (p.y + p.radius >= fgCanvas.height) { p.y = fgCanvas.height - p.radius; p.dy = -Math.abs(p.dy); hitWall = true;}
+                            if (p.y - p.radius <= 0) { p.y = p.radius; p.dy = Math.abs(p.dy); hitWall = true;}
+                            if (hitWall) { playSound('bounce'); p.bounces++; }
+                        } else { p.dx = 0; p.dy = 0; }
+                    }
+                    if (allStopped && this.pieces.length > 0) { this.state = 'stopped'; this.stopWaitTimer = 180; }
+                } else if (this.state === 'stopped') {
+                    this.stopWaitTimer--;
+                    if (this.stopWaitTimer <= 0) this.state = 'returning';
+                } else if (this.state === 'returning') {
+                    let allReturned = true;
+                    for (let p of this.pieces) {
+                        let dx = this.explodeX - p.x; let dy = this.explodeY - p.y;
+                        let dist = Math.hypot(dx, dy);
+                        if (dist > 3) {
+                            allReturned = false;
+                            p.x += dx * 0.06; p.y += dy * 0.06;
+                            let angleDiff = -p.rotation;
+                            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                            p.rotation += angleDiff * 0.1;
+                        } else {
+                            p.x = this.explodeX; p.y = this.explodeY; p.rotation = 0;
+                        }
+                    }
+                    if (allReturned) {
+                        this.state = 'normal';
+                        this.detonationTimer = 10.0; 
+                        this.lastTime = Date.now();
+                        this.x = this.explodeX; this.y = this.explodeY;
+                        this.pieces = [];
+                        createHitEffect(this.x, this.y, '#FF4444', 3);
+                    }
+                }
+            }
+
+            update(enemies, isHitStop = false) {
+                if (this.hp <= 0 && !this.isDead && this.type !== 'red') { 
+                    this.isDead = true; 
+                    createHitEffect(this.x, this.y, this.color, 2.5);
+                    if (this.type === 'green' || this.type === 'blue') stopCustomSound(audioStickCharge);
+                    return; 
+                }
+                if (this.isDead) return;
+
+                if (this.type === 'red') {
+                    let now = Date.now(); let dt = (now - this.lastTime) / 1000;
+                    this.lastTime = now;
+
+                    if (this.state === 'normal' || this.state === 'fusing') {
+                        this.detonationTimer -= dt;
+                        if (this.detonationTimer <= 3.0 && this.state === 'normal') {
+                            this.state = 'fusing';
+                            creeper1Snd.currentTime = 0;
+                            creeper1Snd.play().catch(e => {});
+                        }
+                        if (this.state === 'fusing') {
+                            this.fuseTimer = this.detonationTimer; 
+                            this.fuseMaxTimer = 3.0;
+                            if (this.knockbackBounces > 0) { creeper1Snd.pause(); } 
+                            else if (creeper1Snd.paused && this.detonationTimer > 0) { creeper1Snd.play().catch(e => {}); }
+
+                            if (Math.random() < 0.6) {
+                                particles.push({x: this.x + (Math.random()-0.5)*this.radius, y: this.y - 15, dx: (Math.random()-0.5)*2, dy: -Math.random()*3 - 1, life: 40, maxLife: 40, size: Math.random()*10+5, color: '#888888', isSquare: true});
+                            }
+                        }
+                        if (this.detonationTimer <= 0) {
+                            this.explode(enemies.filter(e => !e.isDead && e.type !== this.type));
+                        }
+                    } 
+                    if (this.state === 'split' || this.state === 'stopped' || this.state === 'returning') {
+                        if (!isHitStop) this.updatePieces();
+                        return;
+                    }
+                }
+
+                if (isHitStop) return;
+                if (this.wallDamageCooldown > 0) this.wallDamageCooldown--;
+
+                if (this.type === 'green' || this.type === 'blue') {
+                    for(let i=this.swingTrails.length-1; i>=0; i--) if(--this.swingTrails[i].life<=0) this.swingTrails.splice(i,1);
+                    for(let i=this.dashTrails.length-1; i>=0; i--) {
+                        this.dashTrails[i].alpha -= 0.05;
+                        if(this.dashTrails[i].alpha <= 0) this.dashTrails.splice(i, 1);
+                    }
+                }
+
+                // 이동 및 조작 로직
+                if (this.type === 'green') {
+                    let ax = 0, ay = 0;
+                    if (keys.w) ay -= defaultSpeed;
+                    if (keys.s) ay += defaultSpeed;
+                    if (keys.a) ax -= defaultSpeed;
+                    if (keys.d) ax += defaultSpeed;
+                    
+                    if (ax !== 0 && ay !== 0) {
+                        let len = Math.hypot(ax, ay);
+                        ax = (ax / len) * defaultSpeed;
+                        ay = (ay / len) * defaultSpeed;
+                    }
+                    
+                    if (this.knockbackBounces <= 0) {
+                        this.dx = ax; this.dy = ay;
+                        if (ax !== 0 || ay !== 0) {
+                            this.angleToEnemy = Math.atan2(ay, ax);
+                        } else {
+                            let creeper = enemies.find(e => e.type === 'red');
+                            if (creeper) this.angleToEnemy = Math.atan2(creeper.y - this.y, creeper.x - this.x);
+                        }
+                    }
+
+                    // J키 누르면 즉시 공격
+                    if (keys.j && this.stickState === 'idle' && this.knockbackBounces <= 0) {
+                        this.stickState = 'swinging';
+                        this.stickTimer = 0;
+                        playCustomSound(audioStickSwing);
+                    }
+                }
+
+                if (this.type === 'blue' && this.knockbackBounces <= 0) {
+                    let creeper = enemies.find(e => e.type === 'red');
+                    if (creeper && creeper.state === 'normal') {
+                        this.angleToEnemy = Math.atan2(creeper.y - this.y, creeper.x - this.x);
+                        this.dx = Math.cos(this.angleToEnemy) * defaultSpeed;
+                        this.dy = Math.sin(this.angleToEnemy) * defaultSpeed;
+                        
+                        // 크리퍼가 가까우면 자동 공격 (10초 쿨타임 이후)
+                        if (Math.hypot(creeper.x - this.x, creeper.y - this.y) < this.radius + creeper.radius + 80 && this.stickState === 'idle') {
+                            this.stickState = 'swinging';
+                            this.stickTimer = 0;
+                            playCustomSound(audioStickSwing);
+                        }
+                    } else {
+                        this.dx = 0; this.dy = 0;
+                    }
+                }
+
+                if (this.type !== 'green') {
+                    let diff = this.angleToEnemy - this.angle;
+                    while (diff < -Math.PI) diff += Math.PI*2; while (diff > Math.PI) diff -= Math.PI*2;
+                    this.angle += diff * 0.15;
+                } else {
+                    let diff = this.angleToEnemy - this.angle;
+                    while (diff < -Math.PI) diff += Math.PI*2; while (diff > Math.PI) diff -= Math.PI*2;
+                    this.angle += diff * 0.25;
+                }
+
+                // 스틱 공격 사이클 및 쿨타임 처리 (초록, 파랑)
+                if (this.type === 'green' || this.type === 'blue') {
+                    if (this.knockbackBounces > 0) {
+                        if (this.stickState === 'swinging') {
+                            this.stickState = 'idle';
+                            this.stickTimer = 0;
+                        }
+                    }
+
+                    if (this.stickState === 'swinging') {
+                        this.stickTimer++; let prog = this.stickTimer/12; 
+                        this.stickAngleOffset = -Math.PI*0.75 + (Math.PI*1.35)*Math.sin(prog*Math.PI/2);
+                        this.swingTrails.push({angle:this.angle+this.stickAngleOffset, life:15});
+                        if (this.stickTimer <= 5) this.dashTrails.push({x: this.x, y: this.y, alpha: 0.3});
+
+                        if(this.stickTimer === 6) {
+                            let hitAny = false;
+                            for (let e of enemies.filter(e => !e.isDead && e.type === 'red')) { 
+                                let eIsInvincible = e.weapon === 'tnt' && (e.state === 'split' || e.state === 'stopped' || e.state === 'returning');
+                                if(!eIsInvincible) {
+                                    let angleToE = Math.atan2(e.y-this.y, e.x-this.x);
+                                    let diffE = angleToE - this.angle;
+                                    diffE = Math.atan2(Math.sin(diffE), Math.cos(diffE));
+                                    if(Math.hypot(e.x-this.x, e.y-this.y) < this.radius + e.radius + 140 && Math.abs(diffE) < Math.PI/2) {
+                                        e.dx = Math.cos(this.angle)*35; e.dy = Math.sin(this.angle)*35; 
+                                        if (e.type !== 'red') e.hp -= 7; 
+                                        createHitEffect(e.x, e.y, "#B040FF", 3); hitAny=true;
+                                        e.knockbackBounces = 7; // 고유 넉백 카운트
+                                    }
+                                }
+                            }
+                            if(hitAny) { playCustomSound(audioStickHit); hitStopTimer=15; }
+                        }
+                        if(this.stickTimer >= 12) { this.stickState = 'cooldown'; this.stickTimer = 0; }
+                    } else if(this.stickState === 'cooldown') {
+                        this.stickTimer++; 
+                        if(this.stickTimer > 30) this.stickAngleOffset += (0-this.stickAngleOffset)*0.05; 
+                        // 10초 쿨타임 (600프레임)
+                        if(this.stickTimer > 600) { this.stickState = 'idle'; this.stickTimer = 0; }
+                    } else if (this.stickState === 'idle') {
+                        this.stickAngleOffset += (0-this.stickAngleOffset)*0.1;
+                    }
+                }
+
+                this.x += this.dx; 
+                this.y += this.dy;
+
+                let hitWall = false;
+                let r = this.radius;
+                
+                if (this.x + r >= this.maxX) { this.x = this.maxX - r; this.dx = -Math.abs(this.dx); hitWall = true; }
+                if (this.x - r <= this.minX) { this.x = this.minX + r; this.dx = Math.abs(this.dx); hitWall = true; }
+                if (this.y + r >= canvas.height) { this.y = canvas.height - r; this.dy = -Math.abs(this.dy); hitWall = true; }
+                if (this.y - r <= 0) { this.y = r; this.dy = Math.abs(this.dy); hitWall = true; }
+                
+                if (hitWall) {
+                    if (this.knockbackBounces > 0) {
+                        this.knockbackBounces--;
+                        hitStopTimer = 10; 
+                        if (this.type !== 'red') this.hp -= 2; 
+                        playSound('crash'); 
+                        createHitEffect(this.x, this.y, "#FFFFFF", 2);
+
+                        if (this.knockbackBounces <= 0) {
+                            let spd = Math.hypot(this.dx, this.dy);
+                            if (spd > 0) {
+                                let inertiaSpeed = 25; 
+                                this.dx = (this.dx / spd) * inertiaSpeed;
+                                this.dy = (this.dy / spd) * inertiaSpeed;
+                            }
+                        }
+                    } else { playSound('bounce'); }
+                }
+
+                let currentSpeed = Math.hypot(this.dx, this.dy);
+                let targetSpeed = (this.type === 'green' || this.type === 'blue') ? defaultSpeed : defaultSpeed;
+                
+                if (this.knockbackBounces > 0) {
+                    if (currentSpeed < 18) { this.dx *= 1.1; this.dy *= 1.1; }
+                } else {
+                    if (currentSpeed === 0 && targetSpeed > 0 && this.type !== 'red') { 
+                        this.dx = Math.cos(this.angle) * targetSpeed; this.dy = Math.sin(this.angle) * targetSpeed; 
+                    }
+                    if ((this.type === 'green' || this.type === 'blue') && this.stickState === 'swinging') {
+                        if (currentSpeed > targetSpeed) { this.dx *= 0.88; this.dy *= 0.88; }
+                    } else {
+                        if (currentSpeed > targetSpeed) { this.dx *= 0.96; this.dy *= 0.96; } 
+                        else if (currentSpeed < targetSpeed - 0.2 && targetSpeed > 0 && this.type !== 'red') { this.dx *= 1.05; this.dy *= 1.05; }
+                    }
+                }
+            }
+        }
+
+        let player1 = new Ball(550, 275, "#FF4444", "#CC1111", 'red');
+        let player2 = new Ball(150, 275, "#22CC44", "#147A28", 'green');
+        let player3 = new Ball(950, 275, "#88CCFF", "#4488CC", 'blue');
+
+        let players = [player1, player2, player3];
+
+        let isStarted = false; let startDelayTimer = 120; 
+
+        function handleBodyCollisions() {
+            if (collisionCooldown > 0) collisionCooldown--;
+
+            for (let i = 0; i < players.length; i++) {
+                for (let j = i + 1; j < players.length; j++) {
+                    let p1 = players[i]; let p2 = players[j];
+
+                    if (p1.isDead || p2.isDead) continue;
+                    if (p1.knockbackBounces > 0 || p2.knockbackBounces > 0) continue;
+                    if (p1.type === 'red' && (p1.state === 'split' || p1.state === 'stopped' || p1.state === 'returning')) continue;
+                    if (p2.type === 'red' && (p2.state === 'split' || p2.state === 'stopped' || p2.state === 'returning')) continue;
+
+                    let dx = p2.x - p1.x; let dy = p2.y - p1.y; let distance = Math.hypot(dx, dy);
+                    if (distance === 0) { dx = 1; dy = 0; distance = 1; }
+
+                    if (distance < p1.radius + p2.radius) {
+                        let overlap = (p1.radius + p2.radius) - distance;
+                        let nx = dx / distance; let ny = dy / distance; 
+                        overlap = Math.min(overlap, 10);
+
+                        let m1 = 1; let m2 = 1;
+                        let totalM = m1 + m2;
+
+                        p1.x -= nx * overlap * (m2 / totalM); p1.y -= ny * overlap * (m2 / totalM);
+                        p2.x += nx * overlap * (m1 / totalM); p2.y += ny * overlap * (m1 / totalM);
+
+                        let dvx = p1.dx - p2.dx; let dvy = p1.dy - p2.dy;
+                        let velAlongNormal = dvx * nx + dvy * ny;
+                        
+                        if (velAlongNormal > 0 && collisionCooldown === 0) {
+                            let restitution = 1; let impulse = (1 + restitution) * velAlongNormal / 2; 
+                            impulse = Math.min(impulse, 8);
+
+                            p1.dx -= impulse * nx; p1.dy -= impulse * ny; 
+                            p2.dx += impulse * nx; p2.dy += impulse * ny; 
+                            
+                            let isCreeperInvolved = (p1.type === 'red' || p2.type === 'red');
+                            if (!isCreeperInvolved) {
+                                p1.hp -= COLLISION_DMG; 
+                                p2.hp -= COLLISION_DMG; 
+                            }
+                            
+                            createHitEffect(p1.x, p1.y);
+                            createHitEffect(p2.x, p2.y);
+                            playSound('bounce'); collisionCooldown = 5; 
+                        }
+                    }
+                }
+            }
+        }
+
+        let animationId;
+        function animate() {
+            bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+            bgCtx.save();
+            bgCtx.beginPath();
+            bgCtx.moveTo(550, 0); bgCtx.lineTo(550, 550);
+            bgCtx.lineWidth = 6; bgCtx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+            bgCtx.setLineDash([15, 15]); bgCtx.stroke();
+            bgCtx.restore();
+
+            if (isStarted && startDelayTimer > 0) {
+                fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
+                players.forEach(p => p.draw());
+                fgCtx.fillStyle = "#FFF"; fgCtx.font = "30px 'Press Start 2P', cursive"; fgCtx.textAlign = "center"; fgCtx.textBaseline = "middle";
+                if (Math.floor(startDelayTimer / 15) % 2 === 0) fgCtx.fillText("READY...", fgCanvas.width/2, fgCanvas.height/2);
+                startDelayTimer--; animationId = requestAnimationFrame(animate); return; 
+            }
+            
+            frameCount++; 
+
+            let isHitStop = false;
+            if (hitStopTimer > 0) { isHitStop = true; hitStopTimer--; } 
+            
+            players.forEach(p => p.update(players.filter(e => e !== p), isHitStop));
+            if (!isHitStop) handleBodyCollisions();
+
+            for (let i = particles.length - 1; i >= 0; i--) { 
+                let p = particles[i]; p.x += p.dx; p.y += p.dy; p.life--; 
+                if (p.life <= 0) particles.splice(i, 1); 
+            }
+
+            let shakeAmt = 0;
+            if (hitStopTimer > 0) shakeAmt = Math.min(hitStopTimer, 12) * 1.5;
+            if (shakeAmt > 0) {
+                wrapperDom.style.transform = `translate(${(Math.random() - 0.5) * shakeAmt}px, ${(Math.random() - 0.5) * shakeAmt}px)`;
+            } else { wrapperDom.style.transform = `translate(0px, 0px)`; }
+
+            fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
+
+            // 대형 폭발 카운터 (크리퍼 타이머)
+            let displayTime = Math.ceil(Math.max(player1.detonationTimer, 0));
+            if (player1.state === 'split' || player1.state === 'stopped' || player1.state === 'returning') {
+                displayTime = "-";
+            }
+            fgCtx.save();
+            fgCtx.font = "270px 'Press Start 2P', cursive"; 
+            fgCtx.textAlign = "center"; fgCtx.textBaseline = "middle";
+            fgCtx.fillStyle = "rgba(255, 255, 255, 0.15)";
+            fgCtx.fillText(displayTime, fgCanvas.width/2, fgCanvas.height/2);
+            fgCtx.restore();
+
+            players.forEach(p => p.draw());
+
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i]; fgCtx.beginPath(); 
+                let renderSize = p.maxLife ? Math.max(0, p.size * (p.life/p.maxLife)) : Math.max(0, p.size * (p.life/30));
+                fgCtx.fillStyle = p.color; 
+                if (p.isSquare) fgCtx.fillRect(p.x - renderSize/2, p.y - renderSize/2, renderSize, renderSize);
+                else { fgCtx.arc(p.x, p.y, renderSize, 0, Math.PI*2); fgCtx.fill(); }
+                fgCtx.closePath();
+            }
+            
+            // 상태창 업데이트
+            let p1TimerDisplay = player1.state === 'split' || player1.state === 'stopped' || player1.state === 'returning' ? "INV" : Math.ceil(Math.max(player1.detonationTimer, 0)) + "s";
+            
+            let p2Text = player2.isDead ? "<span style='color:#555'>DEAD</span>" : Math.ceil(Math.max(player2.hp, 0));
+            let p3Text = player3.isDead ? "<span style='color:#555'>DEAD</span>" : Math.ceil(Math.max(player3.hp, 0));
+
+            let redStateTag = "<span style='color:#CCC'>[NORMAL]</span>";
+            if (player1.knockbackBounces > 0) redStateTag = "<span style='color:#FF0000'>[KNOCKBACK]</span>";
+            else if (player1.state === 'fusing') redStateTag = "<span style='color:#FF4400'>[FUSING]</span>";
+            else if (player1.state === 'split' || player1.state === 'stopped' || player1.state === 'returning') redStateTag = "<span style='color:#FFCC00'>[INVINCIBLE]</span>";
+
+            let greenStateTag = "<span style='color:#CCC'>[NORMAL]</span>";
+            if (player2.knockbackBounces > 0) greenStateTag = "<span style='color:#FF0000'>[KNOCKBACK]</span>";
+            else if (player2.stickState === 'cooldown') greenStateTag = `<span style='color:#FFaa00'>[CD: ${Math.ceil((600 - player2.stickTimer) / 60)}s]</span>`;
+            else if (player2.stickState === 'swinging') greenStateTag = "<span style='color:#FFFFFF'>[SWINGING]</span>";
+
+            let blueStateTag = "<span style='color:#CCC'>[NORMAL]</span>";
+            if (player3.knockbackBounces > 0) blueStateTag = "<span style='color:#FF0000'>[KNOCKBACK]</span>";
+            else if (player3.stickState === 'cooldown') blueStateTag = `<span style='color:#FFaa00'>[CD: ${Math.ceil((600 - player3.stickTimer) / 60)}s]</span>`;
+            else if (player3.stickState === 'swinging') blueStateTag = "<span style='color:#FFFFFF'>[SWINGING]</span>";
+
+            document.getElementById("statusBar").innerHTML = 
+                `<div class="status-hp">
+                    <span style="color:#22CC44">GREEN HP: ${p2Text}</span> &nbsp;&nbsp;|&nbsp;&nbsp; 
+                    <span style="color:#FF4444">CREEPER: ${p1TimerDisplay}</span> &nbsp;&nbsp;|&nbsp;&nbsp; 
+                    <span style="color:#88CCFF">BLUE HP: ${p3Text}</span>
+                </div>
+                <div class="status-effects">
+                    <span style="color:#22CC44">G: ${greenStateTag}</span> &nbsp;|&nbsp; 
+                    <span style="color:#FF4444">R: ${redStateTag}</span> &nbsp;|&nbsp; 
+                    <span style="color:#88CCFF">B: ${blueStateTag}</span>
+                </div>`;
+
+            animationId = requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('keydown', e => {
+            let k = e.key.toLowerCase();
+            if (['w', 'a', 's', 'd'].includes(k)) keys[k] = true;
+            if (k === 'j') keys.j = true;
+            
+            if (k === 'j' || k === ' ') {
+                const overlay = document.getElementById("startOverlay");
+                if (overlay && overlay.offsetParent !== null && !isStarted) {
+                    overlay.style.display = "none";
+                    isStarted = true; player1.lastTime = Date.now(); initAudio(); animate();
+                }
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            let k = e.key.toLowerCase();
+            if (['w', 'a', 's', 'd'].includes(k)) keys[k] = false;
+            if (k === 'j') keys.j = false;
+        });
+
+        document.getElementById("startOverlay").addEventListener('click', function(e) { 
+            if(!isStarted) { 
+                e.preventDefault(); this.style.display = "none"; 
+                isStarted = true; player1.lastTime = Date.now(); initAudio(); animate();
+            } 
+        });
+    </script>
+</body>
+</html>
