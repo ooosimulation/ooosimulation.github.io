@@ -265,7 +265,7 @@
                 else { this.minX = 0; this.maxX = 1100; }
 
                 if (this.type === 'red') {
-                    this.weapon = 'tnt'; this.state = 'normal'; this.detonationTimer = 10.0;
+                    this.weapon = 'tnt'; this.state = 'normal'; this.detonationTimer = 50.0;
                     this.lastTime = Date.now(); this.fuseTimer = 0; this.fuseMaxTimer = 3.0;
                     this.pieces = []; this.explodeX = 0; this.explodeY = 0;
                 }
@@ -382,7 +382,6 @@
                     let enemyInRight = (enemy.x + enemy.radius >= 550);
                     let isHit = (isLeftMap && enemyInLeft) || (!isLeftMap && enemyInRight);
 
-                    // 상대방(파란공) 진영에서 터지면 초록공(유저)은 절대 데미지 받지 않음
                     if (!isLeftMap && enemy.type === 'green') {
                         isHit = false;
                     }
@@ -439,7 +438,7 @@
                         } else { p.x = this.explodeX; p.y = this.explodeY; p.rotation = 0; }
                     }
                     if (allReturned) {
-                        this.state = 'normal'; this.detonationTimer = 10.0; this.lastTime = Date.now();
+                        this.state = 'normal'; this.detonationTimer = 50.0; this.lastTime = Date.now();
                         this.x = this.explodeX; this.y = this.explodeY; this.pieces = [];
                         createHitEffect(this.x, this.y, '#FF4444', 3);
                         let newAngle = Math.random() * Math.PI * 2;
@@ -502,19 +501,15 @@
                     } else this.triggerAttack = false; 
                 }
 
-                // AI 파란공 배회, 무조건 공격 및 DVD 바운스 로직
                 if (this.type === 'blue' && this.knockbackBounces <= 0) {
                     let creeper = enemies.find(e => e.type === 'red');
-                    if (creeper) this.angleToEnemy = Math.atan2(creeper.y - this.y, creeper.x - this.x); // 항상 크리퍼 바라봄
+                    if (creeper) this.angleToEnemy = Math.atan2(creeper.y - this.y, creeper.x - this.x); 
                     
                     if (this.stickState === 'idle') {
-                        // normal이거나 fusing 상태(폭발 3초 전)일 때 모두 공격 대상에 포함
                         let isCreeperInTerritory = creeper && (creeper.state === 'normal' || creeper.state === 'fusing') && creeper.x > 550;
                         if (isCreeperInTerritory) {
-                            // 크리퍼가 넘어왔고 쿨이 없다면 바로 공격 진입 (예외 없음)
                             this.stickState = 'charging'; this.stickTimer = 0; playCustomSound(audioStickCharge);
                         }
-                        // idle 상태일 때 dx, dy를 건드리지 않음으로써 튕기는 DVD 바운스 완벽 유지
                     }
                 }
 
@@ -526,7 +521,6 @@
                     this.angle += diff * 0.25;
                 }
 
-                // 스틱 공격 및 5초 쿨타임 (300프레임)
                 if (this.type === 'green' || this.type === 'blue') {
                     if (this.knockbackBounces > 0 && (this.stickState === 'charging' || this.stickState === 'swinging')) {
                         this.stickState = 'idle'; this.stickTimer = 0; stopCustomSound(audioStickCharge);
@@ -567,7 +561,6 @@
                         if(this.stickTimer >= 12) { this.stickState = 'cooldown'; this.stickTimer = 0; }
                     } else if(this.stickState === 'cooldown') {
                         this.stickTimer++; if(this.stickTimer > 30) this.stickAngleOffset += (0-this.stickAngleOffset)*0.05; 
-                        // 5초 쿨타임 (300프레임)
                         if(this.stickTimer > 300) { this.stickState = 'idle'; this.stickTimer = 0; }
                     } else if (this.stickState === 'idle') {
                         this.stickAngleOffset += (0-this.stickAngleOffset)*0.1;
@@ -586,6 +579,10 @@
                     if (this.knockbackBounces > 0) {
                         this.knockbackBounces--; hitStopTimer = 10; 
                         if (this.type !== 'red') this.hp -= 2; 
+                        if (this.type === 'red') {
+                            this.detonationTimer -= 1.0;
+                            if (this.detonationTimer < 0) this.detonationTimer = 0;
+                        }
                         playSound('crash'); createHitEffect(this.x, this.y, "#FFFFFF", 2);
                         if (this.knockbackBounces <= 0) {
                             let spd = Math.hypot(this.dx, this.dy);
