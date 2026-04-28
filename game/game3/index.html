@@ -131,7 +131,7 @@
                     <div id="startOverlay">
                         <div class="start-text">CLICK TO START</div>
                         <div class="start-sub">Creeper Ball</div>
-                        <div class="controls-info">[WASD]: Move<br><br>[J]: Charge Attack (10s Cooldown)</div>
+                        <div class="controls-info">[WASD]: Move<br><br>[J]: Charge Attack (5s Cooldown)<br><br>[R]: Restart Game</div>
                     </div>
                 </div>
                 
@@ -193,6 +193,11 @@
         let collisionCooldown = 0; 
         let frameCount = 0;
         let hitStopTimer = 0; 
+        
+        let isGameOver = false;
+        let isWin = false;
+        let gameStartTime = 0;
+        let finalClearTime = 0;
 
         function createHitEffect(x, y, colorCode = null, sizeMult = 1, isSquare = false) {
             for (let i = 0; i < 20 * sizeMult; i++) {
@@ -221,10 +226,8 @@
                 this.isDead = false; 
                 this.angle = Math.atan2(this.dy, this.dx); this.angleToEnemy = 0; 
                 
-                // 파란공 무작위 배회용 각도
-                this.wanderAngle = Math.random() * Math.PI * 2;
-
                 this.wallDamageCooldown = 0;
+                this.wallSoundCooldown = 0; // 벽 마찰음 스팸 방지
                 this.knockbackBounces = 0; 
 
                 // 맵 제한
@@ -233,7 +236,7 @@
                 } else if (this.type === 'blue') {
                     this.minX = 550; this.maxX = 1100;
                 } else {
-                    this.minX = 0; this.maxX = 1100; 
+                    this.minX = 0; this.maxX = 1100; // 크리퍼는 전체 맵
                 }
 
                 if (this.type === 'red') {
@@ -347,7 +350,6 @@
                     if(stickImg.complete && stickImg.naturalWidth > 0) fgCtx.drawImage(stickImg,5,-120,110,110); 
                     fgCtx.restore();
                     
-                    // 양손 그립 (freeHandLerp가 1에 가까워질수록 양손으로 잡음)
                     fgCtx.fillStyle=this.color; fgCtx.strokeStyle=this.darkColor; fgCtx.lineWidth=3; 
                     fgCtx.beginPath(); fgCtx.arc(45,35,12,0,Math.PI*2); fgCtx.fill(); fgCtx.stroke(); 
                     fgCtx.beginPath(); fgCtx.arc(45+(75-45)*this.freeHandLerp, -35+(35+35)*this.freeHandLerp, 12, 0, Math.PI*2); fgCtx.fill(); fgCtx.stroke(); 
@@ -483,6 +485,11 @@
                         this.x = this.explodeX; this.y = this.explodeY;
                         this.pieces = [];
                         createHitEffect(this.x, this.y, '#FF4444', 3);
+                        
+                        // 복구 후 크리퍼가 다시 이동하기 시작
+                        let newAngle = Math.random() * Math.PI * 2;
+                        this.dx = Math.cos(newAngle) * defaultSpeed;
+                        this.dy = Math.sin(newAngle) * defaultSpeed * 0.8;
                     }
                 }
             }
@@ -529,8 +536,8 @@
 
                 if (isHitStop) return;
                 if (this.wallDamageCooldown > 0) this.wallDamageCooldown--;
+                if (this.wallSoundCooldown > 0) this.wallSoundCooldown--;
 
-                // --- 1. 양손 그립(freeHandLerp) 및 잔상 투명도 업데이트 ---
                 if (this.type === 'green' || this.type === 'blue') {
                     if (this.stickState === 'charging' || this.stickState === 'swinging') {
                         this.freeHandLerp = Math.min(1, this.freeHandLerp + 0.15);
@@ -545,7 +552,7 @@
                     }
                 }
 
-                // --- 2. 초록색(유저) 이동 및 공격 트리거 ---
+                // --- 초록색(유저) 이동 및 공격 트리거 ---
                 if (this.type === 'green') {
                     let ax = 0, ay = 0;
                     if (keys.w) ay -= defaultSpeed;
@@ -579,20 +586,24 @@
                     }
                 }
 
-                // --- 3. 파란색(CPU) 배회 및 공격 AI ---
+                // --- 파란색(CPU) 배회 및 공격 AI ---
                 if (this.type === 'blue' && this.knockbackBounces <= 0) {
                     let creeper = enemies.find(e => e.type === 'red');
                     
+                    // 파란공은 언제나 크리퍼를 정확히 쳐다봄
+                    if (creeper) {
+                        this.angleToEnemy = Math.atan2(creeper.y - this.y, creeper.x - this.x);
+                    }
+                    
                     if (this.stickState === 'idle') {
-                        // 기본적으로는 무작위 배회 (Wander)
-                        if (frameCount % 60 === 0 || (this.dx === 0 && this.dy === 0)) {
-                            this.wanderAngle = Math.random() * Math.PI * 2;
+                        // 현재 이동 속도가 없으면 멈추지 않고 다시 임의의 방향으로 움직임 시작
+                        if (this.dx === 0 && this.dy === 0) {
+                            let a = Math.random() * Math.PI * 2;
+                            this.dx = Math.cos(a) * defaultSpeed;
+                            this.dy = Math.sin(a) * defaultSpeed;
                         }
-                        this.angleToEnemy = this.wanderAngle;
-                        this.dx = Math.cos(this.angleToEnemy) * (defaultSpeed * 0.6);
-                        this.dy = Math.sin(this.angleToEnemy) * (defaultSpeed * 0.6);
-                        
-                        // 크리퍼가 파란 진영(x > 550)으로 넘어왔을 때 다가가며 차징 시작
+
+                        // 크리퍼가 파란 진영(x > 550)으로 넘어왔을 때 공격 범위에 들면 차징 시작
                         if (creeper && creeper.state === 'normal' && creeper.x > 550) {
                             if (Math.hypot(creeper.x - this.x, creeper.y - this.y) < this.radius + creeper.radius + 150) {
                                 this.stickState = 'charging';
@@ -600,9 +611,6 @@
                                 playCustomSound(audioStickCharge);
                             }
                         }
-                    } else if (this.stickState === 'charging') {
-                        // 차징 중에는 크리퍼를 정확히 노려봄
-                        if (creeper) this.angleToEnemy = Math.atan2(creeper.y - this.y, creeper.x - this.x);
                     }
                 }
 
@@ -616,7 +624,7 @@
                     this.angle += diff * 0.25;
                 }
 
-                // --- 4. 3초 차징 스틱 공격 및 쿨타임 처리 ---
+                // --- 3초 차징 스틱 공격 및 5초 쿨타임 처리 ---
                 if (this.type === 'green' || this.type === 'blue') {
                     if (this.knockbackBounces > 0) {
                         if (this.stickState === 'charging' || this.stickState === 'swinging') {
@@ -637,7 +645,7 @@
                             stopCustomSound(audioStickCharge);
                             playCustomSound(audioStickSwing);
                             
-                            // 파란공(AI)만 공격 시 대쉬 적용
+                            // AI만 스윙 순간에 대쉬 발동
                             if (this.type === 'blue') {
                                 let dashAngle = this.angle;
                                 let creeper = enemies.find(e => e.type === 'red');
@@ -675,7 +683,9 @@
                     } else if(this.stickState === 'cooldown') {
                         this.stickTimer++; 
                         if(this.stickTimer > 30) this.stickAngleOffset += (0-this.stickAngleOffset)*0.05; 
-                        if(this.stickTimer > 600) { this.stickState = 'idle'; this.stickTimer = 0; }
+                        
+                        // 5초 쿨타임 (300프레임)
+                        if(this.stickTimer > 300) { this.stickState = 'idle'; this.stickTimer = 0; }
                     } else if (this.stickState === 'idle') {
                         this.stickAngleOffset += (0-this.stickAngleOffset)*0.1;
                     }
@@ -708,11 +718,17 @@
                                 this.dy = (this.dy / spd) * inertiaSpeed;
                             }
                         }
-                    } else { playSound('bounce'); }
+                    } else { 
+                        // 벽 마찰음 스팸 방지 (드르르륵 소리 제거)
+                        if (this.wallSoundCooldown <= 0) {
+                            playSound('bounce');
+                            this.wallSoundCooldown = 5;
+                        }
+                    }
                 }
 
                 let currentSpeed = Math.hypot(this.dx, this.dy);
-                let targetSpeed = (this.type === 'green' || this.type === 'blue') ? defaultSpeed : defaultSpeed;
+                let targetSpeed = defaultSpeed;
                 
                 if ((this.type === 'green' || this.type === 'blue') && this.stickState === 'charging') {
                     targetSpeed = defaultSpeed * Math.max(0.1, 0.5 - (this.stickTimer / 180 * 0.4));
@@ -727,8 +743,10 @@
                     if ((this.type === 'green' || this.type === 'blue') && this.stickState === 'swinging') {
                         if (currentSpeed > targetSpeed) { this.dx *= 0.88; this.dy *= 0.88; }
                     } else {
-                        if (currentSpeed > targetSpeed) { this.dx *= 0.96; this.dy *= 0.96; } 
-                        else if (currentSpeed < targetSpeed - 0.2 && targetSpeed > 0 && this.type !== 'red') { this.dx *= 1.05; this.dy *= 1.05; }
+                        if (this.type !== 'green') {
+                            if (currentSpeed > targetSpeed) { this.dx *= 0.96; this.dy *= 0.96; } 
+                            else if (currentSpeed < targetSpeed - 0.2 && targetSpeed > 0 && this.type !== 'red') { this.dx *= 1.05; this.dy *= 1.05; }
+                        }
                     }
                 }
             }
@@ -741,6 +759,20 @@
         let players = [player1, player2, player3];
 
         let isStarted = false; let startDelayTimer = 120; 
+        
+        function resetGame() {
+            player1 = new Ball(550, 275, "#FF4444", "#CC1111", 'red');
+            player2 = new Ball(150, 275, "#22CC44", "#147A28", 'green');
+            player3 = new Ball(950, 275, "#88CCFF", "#4488CC", 'blue');
+            players = [player1, player2, player3];
+            particles = [];
+            hitStopTimer = 0;
+            collisionCooldown = 0;
+            isGameOver = false;
+            isWin = false;
+            startDelayTimer = 120;
+            playCustomSound(audioStickHit);
+        }
 
         function handleBodyCollisions() {
             if (collisionCooldown > 0) collisionCooldown--;
@@ -762,15 +794,14 @@
                         let nx = dx / distance; let ny = dy / distance; 
                         overlap = Math.min(overlap, 10);
 
-                        // --- 5. 크리퍼 질량 무한대 설정 (길막 불가능하게) ---
                         let p1IsRed = p1.type === 'red';
                         let p2IsRed = p2.type === 'red';
                         
+                        // 크리퍼 질량을 무한대로 설정 (자기 갈 길 막히지 않음)
                         let m1 = p1IsRed ? 1000000 : 1;
                         let m2 = p2IsRed ? 1000000 : 1;
                         let totalM = m1 + m2;
 
-                        // 위치 보정 (크리퍼는 밀려나지 않음)
                         p1.x -= nx * overlap * (m2 / totalM);
                         p1.y -= ny * overlap * (m2 / totalM);
                         p2.x += nx * overlap * (m1 / totalM);
@@ -782,7 +813,7 @@
                         if (velAlongNormal > 0 && collisionCooldown === 0) {
                             let bounceSpeed = 6; 
                             
-                            // 플레이어만 튕겨져 나가고, 크리퍼는 속도/방향 영향 없음
+                            // 플레이어는 크리퍼에 닿으면 살짝 튕겨나감
                             if (p1IsRed) {
                                 p2.dx += nx * bounceSpeed; p2.dy += ny * bounceSpeed;
                                 if (p2.type !== 'red') p2.hp -= COLLISION_DMG;
@@ -819,16 +850,29 @@
                 players.forEach(p => p.draw());
                 fgCtx.fillStyle = "#FFF"; fgCtx.font = "30px 'Press Start 2P', cursive"; fgCtx.textAlign = "center"; fgCtx.textBaseline = "middle";
                 if (Math.floor(startDelayTimer / 15) % 2 === 0) fgCtx.fillText("READY...", fgCanvas.width/2, fgCanvas.height/2);
-                startDelayTimer--; animationId = requestAnimationFrame(animate); return; 
+                startDelayTimer--; 
+                if (startDelayTimer === 0) gameStartTime = performance.now();
+                animationId = requestAnimationFrame(animate); return; 
             }
             
             frameCount++; 
 
+            // 게임 오버 체크
+            if (!isGameOver) {
+                if (player2.isDead || player3.isDead) {
+                    isGameOver = true;
+                    isWin = player3.isDead && !player2.isDead;
+                    finalClearTime = performance.now() - gameStartTime;
+                }
+            }
+
             let isHitStop = false;
             if (hitStopTimer > 0) { isHitStop = true; hitStopTimer--; } 
             
-            players.forEach(p => p.update(players.filter(e => e !== p), isHitStop));
-            if (!isHitStop) handleBodyCollisions();
+            if (!isGameOver) {
+                players.forEach(p => p.update(players.filter(e => e !== p), isHitStop));
+                if (!isHitStop) handleBodyCollisions();
+            }
 
             for (let i = particles.length - 1; i >= 0; i--) { 
                 let p = particles[i]; p.x += p.dx; p.y += p.dy; p.life--; 
@@ -865,6 +909,23 @@
                 fgCtx.closePath();
             }
             
+            // 게임오버 화면 렌더링
+            if (isGameOver) {
+                fgCtx.fillStyle = "rgba(0,0,0,0.5)";
+                fgCtx.fillRect(0, 0, fgCanvas.width, fgCanvas.height);
+                fgCtx.fillStyle = "#FFF";
+                fgCtx.font = "40px 'Press Start 2P', cursive";
+                fgCtx.textAlign = "center";
+                fgCtx.textBaseline = "middle";
+                fgCtx.fillText(isWin ? "YOU WIN!" : "GAME OVER", fgCanvas.width / 2, fgCanvas.height / 2 - 20);
+                
+                fgCtx.font = "12px 'Press Start 2P', cursive";
+                fgCtx.fillStyle = "#AAA";
+                if (Math.floor(Date.now() / 500) % 2 === 0) {
+                    fgCtx.fillText("PRESS 'R' TO RESTART", fgCanvas.width / 2, fgCanvas.height / 2 + 30);
+                }
+            }
+
             let p1TimerDisplay = player1.state === 'split' || player1.state === 'stopped' || player1.state === 'returning' ? "INV" : Math.ceil(Math.max(player1.detonationTimer, 0)) + "s";
             
             let p2Text = player2.isDead ? "<span style='color:#555'>DEAD</span>" : Math.ceil(Math.max(player2.hp, 0));
@@ -877,13 +938,13 @@
 
             let greenStateTag = "<span style='color:#CCC'>[NORMAL]</span>";
             if (player2.knockbackBounces > 0) greenStateTag = "<span style='color:#FF0000'>[KNOCKBACK]</span>";
-            else if (player2.stickState === 'cooldown') greenStateTag = `<span style='color:#FFaa00'>[CD: ${Math.ceil((600 - player2.stickTimer) / 60)}s]</span>`;
+            else if (player2.stickState === 'cooldown') greenStateTag = `<span style='color:#FFaa00'>[CD: ${Math.ceil((300 - player2.stickTimer) / 60)}s]</span>`;
             else if (player2.stickState === 'charging') greenStateTag = "<span style='color:#FF5555'>[CHARGING]</span>";
             else if (player2.stickState === 'swinging') greenStateTag = "<span style='color:#FFFFFF'>[SWINGING]</span>";
 
             let blueStateTag = "<span style='color:#CCC'>[NORMAL]</span>";
             if (player3.knockbackBounces > 0) blueStateTag = "<span style='color:#FF0000'>[KNOCKBACK]</span>";
-            else if (player3.stickState === 'cooldown') blueStateTag = `<span style='color:#FFaa00'>[CD: ${Math.ceil((600 - player3.stickTimer) / 60)}s]</span>`;
+            else if (player3.stickState === 'cooldown') blueStateTag = `<span style='color:#FFaa00'>[CD: ${Math.ceil((300 - player3.stickTimer) / 60)}s]</span>`;
             else if (player3.stickState === 'charging') blueStateTag = "<span style='color:#88CCFF'>[CHARGING]</span>";
             else if (player3.stickState === 'swinging') blueStateTag = "<span style='color:#FFFFFF'>[SWINGING]</span>";
 
@@ -906,6 +967,11 @@
             let k = e.key.toLowerCase();
             if (['w', 'a', 's', 'd'].includes(k)) keys[k] = true;
             
+            if (k === 'r') {
+                if (isStarted) resetGame();
+                return;
+            }
+
             if (k === 'j' || k === ' ') {
                 const overlay = document.getElementById("startOverlay");
                 if (overlay && overlay.offsetParent !== null && !isStarted) {
