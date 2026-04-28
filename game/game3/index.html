@@ -190,7 +190,6 @@
                 const input = document.getElementById('playerNameInput');
                 const typedName = (input?.value || '').trim();
                 
-                // 만약 빈칸이면 기존 디스코드 이름이나 기본값을 유지합니다.
                 if (typedName) {
                     window.discordUserName = typedName.substring(0, 32);
                 }
@@ -203,7 +202,6 @@
             });
         }
 
-        // 페이지 로드 시 오버레이 생성
         window.addEventListener('load', createNameOverlay);
     </script>
 
@@ -266,6 +264,15 @@
         let shareButtonBounds = null;
         let unlockedAchievements = [];
 
+        // 타이머 및 타임스텝 변수 추가
+        let isStarted = false; 
+        let startDelayTimer = 120; 
+        let animationId = null;
+        let loopLastTime = 0;
+        let accumulator = 0;
+        const LOGIC_HZ = 165;
+        const logicStep = 1000 / LOGIC_HZ;
+
         const formatTime = ms => {
             let t = Math.floor(ms);
             let m = Math.floor(t / 60000).toString().padStart(2, '0');
@@ -280,7 +287,6 @@
             shareStatusMessage = 'SHARING...';
             shareStatusTimer = 180;
             try {
-                // 주의: ngrok 주소 등 API 경로 확인 필요
                 const response = await fetch('/api/submit-record', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -701,8 +707,6 @@
         let player3 = new Ball(950, 275, "#88CCFF", "#4488CC", 'blue');
         let players = [player1, player2, player3];
 
-        let isStarted = false; let startDelayTimer = 120; 
-        
         function resetGame() {
             player1 = new Ball(550, 275, "#FF4444", "#CC1111", 'red');
             player2 = new Ball(150, 275, "#22CC44", "#147A28", 'green');
@@ -712,6 +716,11 @@
             isGameOver = false; isWin = false; startDelayTimer = 120;
             hasSharedRecord = false; shareStatusMessage = ''; shareStatusTimer = 0; shareButtonBounds = null;
             unlockedAchievements = [];
+
+            // 타임스텝 변수 초기화
+            loopLastTime = performance.now();
+            accumulator = 0;
+            
             playCustomSound(audioStickHit);
         }
 
@@ -756,82 +765,65 @@
             }
         }
 
-        // --- 여기서부터 메인 루프 핵심 변경 부분 ---
-        let animationId;
-        let lastTime = performance.now();
-        let accumulator = 0;
-        const TARGET_FRAME_MS = 1000 / 165; // 고정 목표 프레임: 165Hz
+        // ==========================================
+        // 1. 게임 로직 업데이트 영역 (무조건 165Hz로 동작)
+        // ==========================================
+        function updateLogic() {
+            if (isStarted && startDelayTimer > 0) {
+                startDelayTimer--;
+                if (startDelayTimer === 0) gameStartTime = performance.now();
+                return;
+            }
 
-        function animate() {
-            let now = performance.now();
-            let deltaTime = now - lastTime;
-            lastTime = now;
-            
-            if (deltaTime > 250) deltaTime = 250; // 다른 탭에 다녀왔을 때 프레임 폭주 방지
-            accumulator += deltaTime;
+            frameCount++;
+            if (shareStatusTimer > 0) shareStatusTimer--;
 
+            if (!isGameOver) {
+                if (player2.isDead || player3.isDead) {
+                    isGameOver = true;
+                    isWin = player3.isDead && !player2.isDead;
+                    finalClearTime = performance.now() - gameStartTime;
+                    unlockedAchievements = [];
+                    if (isWin) {
+                        let endHp = Math.ceil(Math.max(player2.hp, 0));
+                        if (endHp === 100) unlockedAchievements.push("FLAWLESS (100 HP)");
+                        if (endHp <= 5) unlockedAchievements.push("CLUTCH (<= 5 HP)");
+                        if (finalClearTime <= 60000) unlockedAchievements.push("SPEEDRUNNER (< 1 MIN)");
+                    }
+                }
+            }
+
+            let isHitStop = false;
+            if (hitStopTimer > 0) { isHitStop = true; hitStopTimer--; }
+
+            if (!isGameOver) {
+                players.forEach(p => p.update(players.filter(e => e !== p), isHitStop));
+                if (!isHitStop) handleBodyCollisions();
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i]; p.x += p.dx; p.y += p.dy; p.life--;
+                if (p.life <= 0) particles.splice(i, 1);
+            }
+        }
+
+        // ==========================================
+        // 2. 화면 그리기 영역 (주사율에 맞춰 실행)
+        // ==========================================
+        function renderGraphics() {
             bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
             bgCtx.save(); bgCtx.beginPath(); bgCtx.moveTo(550, 0); bgCtx.lineTo(550, 550);
             bgCtx.lineWidth = 6; bgCtx.strokeStyle = "rgba(255, 255, 255, 0.4)";
             bgCtx.setLineDash([15, 15]); bgCtx.stroke(); bgCtx.restore();
 
             if (isStarted && startDelayTimer > 0) {
-                // 시작 카운트다운도 165Hz 기준으로 돌아가게 변경
-                while (accumulator >= TARGET_FRAME_MS) {
-                    startDelayTimer--;
-                    accumulator -= TARGET_FRAME_MS;
-                }
-                if (startDelayTimer <= 0) {
-                    startDelayTimer = 0;
-                    gameStartTime = performance.now();
-                }
-
                 fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
                 players.forEach(p => p.draw());
                 fgCtx.fillStyle = "#FFF"; fgCtx.font = "30px 'Press Start 2P', cursive"; fgCtx.textAlign = "center"; fgCtx.textBaseline = "middle";
                 if (Math.floor(startDelayTimer / 15) % 2 === 0) fgCtx.fillText("READY...", fgCanvas.width/2, fgCanvas.height/2);
-                
-                animationId = requestAnimationFrame(animate); 
-                return; 
-            }
-            
-            // 핵심 물리 업데이트 로직 (모니터 주사율 상관없이 무조건 초당 165번 실행되도록 보장)
-            while (accumulator >= TARGET_FRAME_MS) {
-                frameCount++; 
-                if (shareStatusTimer > 0) shareStatusTimer--;
-
-                if (!isGameOver) {
-                    if (player2.isDead || player3.isDead) {
-                        isGameOver = true;
-                        isWin = player3.isDead && !player2.isDead;
-                        finalClearTime = performance.now() - gameStartTime;
-                        unlockedAchievements = [];
-                        if (isWin) {
-                            let endHp = Math.ceil(Math.max(player2.hp, 0));
-                            if (endHp === 100) unlockedAchievements.push("FLAWLESS (100 HP)");
-                            if (endHp <= 5) unlockedAchievements.push("CLUTCH (<= 5 HP)");
-                            if (finalClearTime <= 60000) unlockedAchievements.push("SPEEDRUNNER (< 1 MIN)");
-                        }
-                    }
-                }
-
-                let isHitStop = false;
-                if (hitStopTimer > 0) { isHitStop = true; hitStopTimer--; } 
-                
-                if (!isGameOver) {
-                    players.forEach(p => p.update(players.filter(e => e !== p), isHitStop));
-                    if (!isHitStop) handleBodyCollisions();
-                }
-
-                for (let i = particles.length - 1; i >= 0; i--) { 
-                    let p = particles[i]; p.x += p.dx; p.y += p.dy; p.life--; 
-                    if (p.life <= 0) particles.splice(i, 1); 
-                }
-
-                accumulator -= TARGET_FRAME_MS;
+                return;
             }
 
-            // ---------- 여기서부터 화면에 그리는 렌더링 영역 ----------
             let shakeAmt = 0;
             if (hitStopTimer > 0) shakeAmt = Math.min(hitStopTimer, 12) * 1.5;
             if (shakeAmt > 0) wrapperDom.style.transform = `translate(${(Math.random() - 0.5) * shakeAmt}px, ${(Math.random() - 0.5) * shakeAmt}px)`;
@@ -857,14 +849,14 @@
             players.forEach(p => p.draw());
 
             for (let i = 0; i < particles.length; i++) {
-                let p = particles[i]; fgCtx.beginPath(); 
+                let p = particles[i]; fgCtx.beginPath();
                 let renderSize = p.maxLife ? Math.max(0, p.size * (p.life/p.maxLife)) : Math.max(0, p.size * (p.life/30));
-                fgCtx.fillStyle = p.color; 
+                fgCtx.fillStyle = p.color;
                 if (p.isSquare) fgCtx.fillRect(p.x - renderSize/2, p.y - renderSize/2, renderSize, renderSize);
                 else { fgCtx.arc(p.x, p.y, renderSize, 0, Math.PI*2); fgCtx.fill(); }
                 fgCtx.closePath();
             }
-            
+
             if (isGameOver) {
                 fgCtx.fillStyle = "rgba(0,0,0,0.5)";
                 fgCtx.fillRect(0, 0, fgCanvas.width, fgCanvas.height);
@@ -872,7 +864,7 @@
                 fgCtx.font = "40px 'Press Start 2P', cursive";
                 fgCtx.textAlign = "center";
                 fgCtx.textBaseline = "middle";
-                
+
                 if (isWin) {
                     fgCtx.fillText("YOU WIN!", fgCanvas.width/2, fgCanvas.height/2 - 60);
 
@@ -953,9 +945,31 @@
                     <span style="color:#FF4444">R: ${redStateTag}</span> &nbsp;|&nbsp; 
                     <span style="color:#88CCFF">B: ${blueStateTag}</span>
                 </div>`;
-
-            animationId = requestAnimationFrame(animate);
         }
+
+        // ==========================================
+        // 3. 메인 게임 루프 (고정 타임스텝)
+        // ==========================================
+        const animate = (currentTime) => {
+            if (!lastTime) lastTime = currentTime;
+            let deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
+            
+            // 탭을 다녀왔을 때 프레임 폭주 방지
+            if (deltaTime > 250) deltaTime = 250;
+            
+            accumulator += deltaTime;
+
+            // 로직은 무조건 목표 프레임(165Hz)으로 돌아가도록 강제 실행
+            while (accumulator >= logicStep) {
+                updateLogic();
+                accumulator -= logicStep;
+            }
+
+            // 그림 그리기는 현재 모니터 주사율에 맞춰 1번만 실행
+            renderGraphics();
+            animationId = requestAnimationFrame(animate);
+        };
 
         fgCanvas.addEventListener('click', (e) => {
             if (isStarted && isGameOver && isWin && shareButtonBounds && !hasSharedRecord) {
@@ -984,9 +998,12 @@
                 const overlay = document.getElementById("startOverlay");
                 if (overlay && overlay.offsetParent !== null && !isStarted) {
                     overlay.style.display = "none";
-                    isStarted = true; player1.lastTime = Date.now(); 
-                    lastTime = performance.now(); accumulator = 0; // 타임스텝 초기화
-                    initAudio(); animate();
+                    isStarted = true;
+                    player1.lastTime = Date.now();
+                    lastTime = performance.now();
+                    accumulator = 0;
+                    initAudio();
+                    if (!animationId) animationId = requestAnimationFrame(animate);
                 } else if (isStarted && k === 'j' && !isGameOver) {
                     player2.triggerAttack = true;
                 }
@@ -1001,9 +1018,12 @@
         document.getElementById("startOverlay").addEventListener('click', function(e) { 
             if(!isStarted) { 
                 e.preventDefault(); this.style.display = "none"; 
-                isStarted = true; player1.lastTime = Date.now(); 
-                lastTime = performance.now(); accumulator = 0; // 타임스텝 초기화
-                initAudio(); animate();
+                isStarted = true;
+                player1.lastTime = Date.now();
+                lastTime = performance.now();
+                accumulator = 0;
+                initAudio();
+                if (!animationId) animationId = requestAnimationFrame(animate);
             } 
         });
     </script>
