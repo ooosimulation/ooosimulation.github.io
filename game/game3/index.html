@@ -156,10 +156,8 @@
         const audioStickHit = new Audio("../baseball.mp3");
         const audioStickSwing = new Audio("../swing.mp3");
 
-        // 키 입력 상태
         const keys = { w: false, a: false, s: false, d: false };
 
-        // --- 사운드 ---
         let audioCtx;
         function initAudio() { 
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
@@ -223,7 +221,7 @@
                 this.isDead = false; 
                 this.angle = Math.atan2(this.dy, this.dx); this.angleToEnemy = 0; 
                 
-                // 파란공 무작위 배회 각도
+                // 파란공 무작위 배회용 각도
                 this.wanderAngle = Math.random() * Math.PI * 2;
 
                 this.wallDamageCooldown = 0;
@@ -235,10 +233,9 @@
                 } else if (this.type === 'blue') {
                     this.minX = 550; this.maxX = 1100;
                 } else {
-                    this.minX = 0; this.maxX = 1100; // 크리퍼는 전체 맵
+                    this.minX = 0; this.maxX = 1100; 
                 }
 
-                // 빨간공(크리퍼) 전용 속성
                 if (this.type === 'red') {
                     this.weapon = 'tnt';
                     this.state = 'normal';
@@ -251,7 +248,6 @@
                     this.explodeY = 0;
                 }
                 
-                // 초록공, 파란공 전용 속성
                 if (this.type === 'green' || this.type === 'blue') {
                     this.weapon = 'knockback_stick';
                     this.stickState = 'idle'; 
@@ -260,7 +256,7 @@
                     this.swingTrails = []; 
                     this.freeHandLerp = 0;
                     this.dashTrails = []; 
-                    this.triggerAttack = false; // 타격 트리거
+                    this.triggerAttack = false; 
                 }
             }
 
@@ -340,7 +336,6 @@
                         fgCtx.restore(); 
                     }
                     
-                    // 차징 이펙트 시각화
                     fgCtx.save(); fgCtx.rotate(bsa); 
                     if(this.stickState==='charging') {
                         let cr = this.stickTimer/180;
@@ -351,11 +346,14 @@
                     fgCtx.save(); fgCtx.translate(0,35); fgCtx.rotate(Math.PI/4); 
                     if(stickImg.complete && stickImg.naturalWidth > 0) fgCtx.drawImage(stickImg,5,-120,110,110); 
                     fgCtx.restore();
-                    fgCtx.fillStyle=this.color; fgCtx.strokeStyle=this.darkColor; fgCtx.lineWidth=3; fgCtx.beginPath(); fgCtx.arc(45,35,12,0,Math.PI*2); fgCtx.fill(); fgCtx.stroke(); fgCtx.beginPath(); fgCtx.arc(45+(75-45)*this.freeHandLerp, -35+(35+35)*this.freeHandLerp, 12, 0, Math.PI*2); fgCtx.fill(); fgCtx.stroke(); 
+                    
+                    // 양손 그립 (freeHandLerp가 1에 가까워질수록 양손으로 잡음)
+                    fgCtx.fillStyle=this.color; fgCtx.strokeStyle=this.darkColor; fgCtx.lineWidth=3; 
+                    fgCtx.beginPath(); fgCtx.arc(45,35,12,0,Math.PI*2); fgCtx.fill(); fgCtx.stroke(); 
+                    fgCtx.beginPath(); fgCtx.arc(45+(75-45)*this.freeHandLerp, -35+(35+35)*this.freeHandLerp, 12, 0, Math.PI*2); fgCtx.fill(); fgCtx.stroke(); 
                     fgCtx.restore(); fgCtx.restore(); 
                 }
 
-                // 중앙 텍스트 (체력 또는 크리퍼 타이머)
                 fgCtx.font = "14px 'Press Start 2P', cursive"; fgCtx.textAlign = "center"; fgCtx.textBaseline = "middle";
                 fgCtx.lineWidth = 3; fgCtx.strokeStyle = "#000"; 
                 
@@ -532,7 +530,14 @@
                 if (isHitStop) return;
                 if (this.wallDamageCooldown > 0) this.wallDamageCooldown--;
 
+                // --- 1. 양손 그립(freeHandLerp) 및 잔상 투명도 업데이트 ---
                 if (this.type === 'green' || this.type === 'blue') {
+                    if (this.stickState === 'charging' || this.stickState === 'swinging') {
+                        this.freeHandLerp = Math.min(1, this.freeHandLerp + 0.15);
+                    } else {
+                        this.freeHandLerp = Math.max(0, this.freeHandLerp - 0.15);
+                    }
+
                     for(let i=this.swingTrails.length-1; i>=0; i--) if(--this.swingTrails[i].life<=0) this.swingTrails.splice(i,1);
                     for(let i=this.dashTrails.length-1; i>=0; i--) {
                         this.dashTrails[i].alpha -= 0.05;
@@ -540,7 +545,7 @@
                     }
                 }
 
-                // --- 초록색(유저) 이동 및 공격 로직 ---
+                // --- 2. 초록색(유저) 이동 및 공격 트리거 ---
                 if (this.type === 'green') {
                     let ax = 0, ay = 0;
                     if (keys.w) ay -= defaultSpeed;
@@ -564,7 +569,6 @@
                         }
                     }
 
-                    // 차징 공격 트리거
                     if (this.triggerAttack && this.stickState === 'idle' && this.knockbackBounces <= 0) {
                         this.stickState = 'charging';
                         this.stickTimer = 0;
@@ -575,31 +579,30 @@
                     }
                 }
 
-                // --- 파란색(CPU) 인공지능 배회 및 공격 로직 ---
+                // --- 3. 파란색(CPU) 배회 및 공격 AI ---
                 if (this.type === 'blue' && this.knockbackBounces <= 0) {
                     let creeper = enemies.find(e => e.type === 'red');
                     
-                    // 크리퍼가 파란 진영(x > 550)에 넘어왔을 때만 적대적으로 반응
-                    if (creeper && creeper.state === 'normal' && creeper.x > 550) {
-                        this.angleToEnemy = Math.atan2(creeper.y - this.y, creeper.x - this.x);
-                        this.dx = Math.cos(this.angleToEnemy) * defaultSpeed;
-                        this.dy = Math.sin(this.angleToEnemy) * defaultSpeed;
-                        
-                        // 사거리 내에 들어오면 3초 차징 시작
-                        if (Math.hypot(creeper.x - this.x, creeper.y - this.y) < this.radius + creeper.radius + 150 && this.stickState === 'idle') {
-                            this.stickState = 'charging';
-                            this.stickTimer = 0;
-                            playCustomSound(audioStickCharge);
-                        }
-                    } else {
-                        // 크리퍼가 넘어오기 전에는 무작위로 자기 구역 안에서 배회 (Wander)
-                        if (frameCount % 60 === 0 || this.dx === 0) {
+                    if (this.stickState === 'idle') {
+                        // 기본적으로는 무작위 배회 (Wander)
+                        if (frameCount % 60 === 0 || (this.dx === 0 && this.dy === 0)) {
                             this.wanderAngle = Math.random() * Math.PI * 2;
                         }
                         this.angleToEnemy = this.wanderAngle;
-                        // 배회 중에는 속도를 약간 줄임
                         this.dx = Math.cos(this.angleToEnemy) * (defaultSpeed * 0.6);
                         this.dy = Math.sin(this.angleToEnemy) * (defaultSpeed * 0.6);
+                        
+                        // 크리퍼가 파란 진영(x > 550)으로 넘어왔을 때 다가가며 차징 시작
+                        if (creeper && creeper.state === 'normal' && creeper.x > 550) {
+                            if (Math.hypot(creeper.x - this.x, creeper.y - this.y) < this.radius + creeper.radius + 150) {
+                                this.stickState = 'charging';
+                                this.stickTimer = 0;
+                                playCustomSound(audioStickCharge);
+                            }
+                        }
+                    } else if (this.stickState === 'charging') {
+                        // 차징 중에는 크리퍼를 정확히 노려봄
+                        if (creeper) this.angleToEnemy = Math.atan2(creeper.y - this.y, creeper.x - this.x);
                     }
                 }
 
@@ -613,9 +616,8 @@
                     this.angle += diff * 0.25;
                 }
 
-                // --- 3초 차징 스틱 공격 및 쿨타임 사이클 ---
+                // --- 4. 3초 차징 스틱 공격 및 쿨타임 처리 ---
                 if (this.type === 'green' || this.type === 'blue') {
-                    // 넉백 맞으면 차징/스윙 즉시 캔슬
                     if (this.knockbackBounces > 0) {
                         if (this.stickState === 'charging' || this.stickState === 'swinging') {
                             this.stickState = 'idle';
@@ -626,30 +628,29 @@
 
                     if (this.stickState === 'charging') {
                         this.stickTimer++;
-                        let cr = this.stickTimer / 180; // 3초 (180프레임) 차징
+                        let cr = this.stickTimer / 180; 
                         this.stickAngleOffset += (-Math.PI*0.75 - this.stickAngleOffset)*0.05 + (Math.random()-0.5)*0.15*cr;
                         
-                        // 차징 완료 후 휘두르기
                         if (this.stickTimer >= 180) { 
                             this.stickState = 'swinging';
                             this.stickTimer = 0;
                             stopCustomSound(audioStickCharge);
                             playCustomSound(audioStickSwing);
                             
-                            // 스윙 시 대쉬 보너스
-                            let dashAngle = this.angle;
+                            // 파란공(AI)만 공격 시 대쉬 적용
                             if (this.type === 'blue') {
+                                let dashAngle = this.angle;
                                 let creeper = enemies.find(e => e.type === 'red');
                                 if (creeper) dashAngle = Math.atan2(creeper.y - this.y, creeper.x - this.x);
+                                this.dx = Math.cos(dashAngle) * 16;
+                                this.dy = Math.sin(dashAngle) * 16;
                             }
-                            this.dx = Math.cos(dashAngle) * 16;
-                            this.dy = Math.sin(dashAngle) * 16;
                         }
                     } else if (this.stickState === 'swinging') {
                         this.stickTimer++; let prog = this.stickTimer/12; 
                         this.stickAngleOffset = -Math.PI*0.75 + (Math.PI*1.35)*Math.sin(prog*Math.PI/2);
                         this.swingTrails.push({angle:this.angle+this.stickAngleOffset, life:15});
-                        if (this.stickTimer <= 5) this.dashTrails.push({x: this.x, y: this.y, alpha: 0.3});
+                        if (this.stickTimer <= 5 && this.type === 'blue') this.dashTrails.push({x: this.x, y: this.y, alpha: 0.3});
 
                         if(this.stickTimer === 6) {
                             let hitAny = false;
@@ -674,8 +675,6 @@
                     } else if(this.stickState === 'cooldown') {
                         this.stickTimer++; 
                         if(this.stickTimer > 30) this.stickAngleOffset += (0-this.stickAngleOffset)*0.05; 
-                        
-                        // 10초 쿨타임 대기 (600프레임)
                         if(this.stickTimer > 600) { this.stickState = 'idle'; this.stickTimer = 0; }
                     } else if (this.stickState === 'idle') {
                         this.stickAngleOffset += (0-this.stickAngleOffset)*0.1;
@@ -715,7 +714,6 @@
                 let currentSpeed = Math.hypot(this.dx, this.dy);
                 let targetSpeed = (this.type === 'green' || this.type === 'blue') ? defaultSpeed : defaultSpeed;
                 
-                // 차징 중일 때는 이속이 서서히 10%까지 느려짐
                 if ((this.type === 'green' || this.type === 'blue') && this.stickState === 'charging') {
                     targetSpeed = defaultSpeed * Math.max(0.1, 0.5 - (this.stickTimer / 180 * 0.4));
                 }
@@ -764,26 +762,37 @@
                         let nx = dx / distance; let ny = dy / distance; 
                         overlap = Math.min(overlap, 10);
 
-                        let m1 = 1; let m2 = 1;
+                        // --- 5. 크리퍼 질량 무한대 설정 (길막 불가능하게) ---
+                        let p1IsRed = p1.type === 'red';
+                        let p2IsRed = p2.type === 'red';
+                        
+                        let m1 = p1IsRed ? 1000000 : 1;
+                        let m2 = p2IsRed ? 1000000 : 1;
                         let totalM = m1 + m2;
 
-                        p1.x -= nx * overlap * (m2 / totalM); p1.y -= ny * overlap * (m2 / totalM);
-                        p2.x += nx * overlap * (m1 / totalM); p2.y += ny * overlap * (m1 / totalM);
+                        // 위치 보정 (크리퍼는 밀려나지 않음)
+                        p1.x -= nx * overlap * (m2 / totalM);
+                        p1.y -= ny * overlap * (m2 / totalM);
+                        p2.x += nx * overlap * (m1 / totalM);
+                        p2.y += ny * overlap * (m1 / totalM);
 
                         let dvx = p1.dx - p2.dx; let dvy = p1.dy - p2.dy;
                         let velAlongNormal = dvx * nx + dvy * ny;
                         
                         if (velAlongNormal > 0 && collisionCooldown === 0) {
-                            let restitution = 1; let impulse = (1 + restitution) * velAlongNormal / 2; 
-                            impulse = Math.min(impulse, 8);
-
-                            p1.dx -= impulse * nx; p1.dy -= impulse * ny; 
-                            p2.dx += impulse * nx; p2.dy += impulse * ny; 
+                            let bounceSpeed = 6; 
                             
-                            let isCreeperInvolved = (p1.type === 'red' || p2.type === 'red');
-                            if (!isCreeperInvolved) {
-                                p1.hp -= COLLISION_DMG; 
-                                p2.hp -= COLLISION_DMG; 
+                            // 플레이어만 튕겨져 나가고, 크리퍼는 속도/방향 영향 없음
+                            if (p1IsRed) {
+                                p2.dx += nx * bounceSpeed; p2.dy += ny * bounceSpeed;
+                                if (p2.type !== 'red') p2.hp -= COLLISION_DMG;
+                            } else if (p2IsRed) {
+                                p1.dx -= nx * bounceSpeed; p1.dy -= ny * bounceSpeed;
+                                if (p1.type !== 'red') p1.hp -= COLLISION_DMG;
+                            } else {
+                                p1.dx -= nx * bounceSpeed * 0.5; p1.dy -= ny * bounceSpeed * 0.5;
+                                p2.dx += nx * bounceSpeed * 0.5; p2.dy += ny * bounceSpeed * 0.5;
+                                p1.hp -= COLLISION_DMG; p2.hp -= COLLISION_DMG;
                             }
                             
                             createHitEffect(p1.x, p1.y);
@@ -834,7 +843,6 @@
 
             fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
 
-            // 대형 폭발 카운터 (크리퍼 타이머) 배경
             let displayTime = Math.ceil(Math.max(player1.detonationTimer, 0));
             if (player1.state === 'split' || player1.state === 'stopped' || player1.state === 'returning') {
                 displayTime = "-";
@@ -857,7 +865,6 @@
                 fgCtx.closePath();
             }
             
-            // 상태창 업데이트
             let p1TimerDisplay = player1.state === 'split' || player1.state === 'stopped' || player1.state === 'returning' ? "INV" : Math.ceil(Math.max(player1.detonationTimer, 0)) + "s";
             
             let p2Text = player2.isDead ? "<span style='color:#555'>DEAD</span>" : Math.ceil(Math.max(player2.hp, 0));
@@ -905,7 +912,6 @@
                     overlay.style.display = "none";
                     isStarted = true; player1.lastTime = Date.now(); initAudio(); animate();
                 } else if (isStarted && k === 'j') {
-                    // 게임 시작 후 J키 누르면 공격 트리거
                     player2.triggerAttack = true;
                 }
             }
