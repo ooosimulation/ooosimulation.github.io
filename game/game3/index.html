@@ -90,7 +90,7 @@
     <script type="module">
     async function setupDiscord() {
         try {
-            // 동적 import를 사용하여 외부 브라우저 환경에서의 치명적 에러를 방지합니다.
+            // 디스코드 외부 웹 브라우저 환경에서도 에러 없이 작동하도록 처리
             const module = await import("https://esm.sh/@discord/embedded-app-sdk");
             const DiscordSDK = module.DiscordSDK;
             const discordSdk = new DiscordSDK("1492558716027797574");
@@ -111,7 +111,7 @@
     }
 
     setupDiscord();
-</script>
+    </script>
 </head>
 <body>
     <div class="container">
@@ -630,10 +630,12 @@
                 let hitWall = false;
                 let r = this.radius;
                 
+                // ===== [버그 수정된 부분] canvas.height 대신 fgCanvas.height 사용 =====
                 if (this.x + r >= this.maxX) { this.x = this.maxX - r; this.dx = -Math.abs(this.dx); hitWall = true; }
                 if (this.x - r <= this.minX) { this.x = this.minX + r; this.dx = Math.abs(this.dx); hitWall = true; }
-                if (this.y + r >= canvas.height) { this.y = canvas.height - r; this.dy = -Math.abs(this.dy); hitWall = true; }
+                if (this.y + r >= fgCanvas.height) { this.y = fgCanvas.height - r; this.dy = -Math.abs(this.dy); hitWall = true; }
                 if (this.y - r <= 0) { this.y = r; this.dy = Math.abs(this.dy); hitWall = true; }
+                // =======================================================================
                 
                 if (hitWall) {
                     if (this.knockbackBounces > 0) {
