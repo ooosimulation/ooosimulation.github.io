@@ -281,7 +281,7 @@
             shareStatusTimer = 180;
             try {
                 // 주의: ngrok 주소 등 API 경로 확인 필요
-                const response = await fetch('/api/submit-record', {
+                const response = await fetch('/submit-record', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
