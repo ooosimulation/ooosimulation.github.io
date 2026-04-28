@@ -88,25 +88,30 @@
     </style>
 
     <script type="module">
-        import { DiscordSDK } from "https://esm.sh/@discord/embedded-app-sdk";
-        const discordSdk = new DiscordSDK("1492558716027797574");
+    async function setupDiscord() {
+        try {
+            // 동적 import를 사용하여 외부 브라우저 환경에서의 치명적 에러를 방지합니다.
+            const module = await import("https://esm.sh/@discord/embedded-app-sdk");
+            const DiscordSDK = module.DiscordSDK;
+            const discordSdk = new DiscordSDK("1492558716027797574");
 
-        window.discordSdk = discordSdk;
-        window.discordUserName = "Unknown Player";
+            window.discordSdk = discordSdk;
+            window.discordUserName = "Unknown Player";
 
-        async function setupDiscord() {
             await discordSdk.ready();
-            try {
-                const instanceUser = discordSdk.instanceManager?.currentUser;
-                if (instanceUser) {
-                    window.discordUserName = instanceUser.global_name || instanceUser.username || "Unknown Player";
-                }
-            } catch (e) {
-                console.error("Failed to get Discord user from instanceManager", e);
+            
+            const instanceUser = discordSdk.instanceManager?.currentUser;
+            if (instanceUser) {
+                window.discordUserName = instanceUser.global_name || instanceUser.username || "Unknown Player";
             }
+        } catch (e) {
+            console.warn("디스코드 외부 환경이므로 SDK 연동을 생략하고 일반 웹 모드로 실행합니다.");
+            window.discordUserName = "Web Player";
         }
-        setupDiscord();
-    </script>
+    }
+
+    setupDiscord();
+</script>
 </head>
 <body>
     <div class="container">
