@@ -213,7 +213,7 @@
             shareStatusMessage = 'SHARING...';
             shareStatusTimer = 180;
             try {
-                const response = await fetch('/api/submit-record', {
+                const response = await fetch('https://fe66-115-21-98-171.ngrok-free.app/api/submit-record', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
