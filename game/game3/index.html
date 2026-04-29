@@ -89,19 +89,26 @@
         #gameWrapper {
             position: relative;
             overflow: hidden; 
+            border-radius: 16px; /* CRT 특유의 둥근 모서리 구현 */
         }
 
+        /* 2. 스캔라인 + 볼록한 깊이감을 주는 가장자리 음영(비네팅) */
         #gameWrapper::before {
             content: " ";
             display: block;
             position: absolute;
             top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
             z-index: 10;
             background-size: 100% 2px, 3px 100%;
             pointer-events: none; 
+            
+            /* 테두리를 어둡게 칠해서 화면 중앙이 앞으로 튀어나와 보이는 착시를 줌 */
+            box-shadow: inset 0 0 60px rgba(0,0,0,0.7), inset 0 0 15px rgba(0,0,0,0.5);
         }
 
+        /* 3. 화면 깜빡임 및 이동 줄무늬 (기존 동일) */
         #gameWrapper::after {
             content: " ";
             display: block;
@@ -114,8 +121,15 @@
             animation: flicker 0.15s infinite, scroll-line 5s linear infinite;
         }
 
-        #canvasWrapper {
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+        /* 4. 볼록한 유리 표면의 빛 반사(Glare) 효과 */
+        #canvasWrapper::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            /* 화면 한가운데에 살짝 하얀 빛을 반사시켜 렌즈 표면처럼 보이게 함 */
+            background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 65%);
+            pointer-events: none;
+            z-index: 11;
         }
 
         @keyframes flicker {
