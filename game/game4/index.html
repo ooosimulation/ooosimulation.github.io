@@ -44,7 +44,7 @@
     
     #statusBar { width: 100%; height: 85px; padding: 10px; border-top: 2px solid #555; color: #FFF; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box; }
     .status-hp { font-size: 11px; margin-bottom: 5px; text-shadow: 1px 1px 0 #000; }
-    .status-effects { font-size: 9px; color: #CCC; line-height: 1.4; word-break: keep-all; } /* 🌟 추가됨: 효과 태그 스타일 복구 */
+    .status-effects { font-size: 9px; color: #CCC; line-height: 1.4; word-break: keep-all; } 
 
     #lobbyScreen {
       position: absolute; top: 60px; left: 0; width: 100%; height: calc(100% - 145px);
@@ -144,12 +144,14 @@
         osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(t+0.5); return null;
     }
 
-    // 🌟 변경 및 추가: MP3 파일 오리지널 사운드 로직 완벽 복구
     const loadSnd = s => new Audio("../" + s);
     const chargeSound = loadSnd("spear charging.mp3");
     const hitSound = loadSnd("baseball.mp3");
     const swingSound = loadSnd("swing.mp3");
+    
     const playCustomSound = o => { if(o){ o.currentTime=0; o.play().catch(e=>{}); } };
+    // 🌟 추가됨: 사운드를 강제로 멈추는 오리지널 헬퍼 함수 복구
+    const stopCustomSound = o => { if(o){ o.pause(); o.currentTime=0; } };
 
     const stickImg = new Image(); 
     stickImg.src = "../knockback stick.gif";
@@ -194,17 +196,21 @@
       isGameOver = false;
     });
 
-    // 🌟 추가됨: 서버에서 차징, 스윙 소리 명령을 받으면 MP3 재생
     socket.on('playSound', (data) => {
       initAudio();
       if(data.type === 'charge') playCustomSound(chargeSound);
       if(data.type === 'swing') playCustomSound(swingSound);
     });
 
+    // 🌟 추가됨: 서버에서 정지 명령이 오면 찌릿찌릿 차징 소리를 끕니다.
+    socket.on('stopSound', (data) => {
+      if(data.type === 'charge') stopCustomSound(chargeSound);
+    });
+
     socket.on('playEffect', (data) => {
       initAudio();
       if (data.type === 'hit') {
-        playCustomSound(hitSound); // 🌟 변경됨: 주파수음 대신 오리지널 야구빠따 mp3 재생
+        playCustomSound(hitSound); 
         hitStopTimer = 15; 
         for(let i=0; i<30; i++) particles.push({ x: data.x, y: data.y, dx: (Math.random()-0.5)*15, dy: (Math.random()-0.5)*15, life: 20+Math.random()*15, size: Math.random()*5+2, color: data.color });
       } 
@@ -225,7 +231,6 @@
       winnerText = data.winner;
     });
 
-    // 🌟 추가됨: 오리지널 상태창(UI) 태그 표시 함수 복원
     const getTags = p => {
         if(p.isDead) return "<span style='color:#555'>[DEAD]</span>"; 
         let t=[];
@@ -238,7 +243,6 @@
     socket.on('gameState', (state) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // 🌟 변경됨: 소수점 이하 버림 처리 (Math.ceil) 및 오리지널 쿨타임 표시 복구
       let hp1 = Math.ceil(Math.max(0, state.p1.hp));
       let hp2 = Math.ceil(Math.max(0, state.p2.hp));
       document.getElementById("statusBar").innerHTML = `<div class="status-hp">P1 HP: ${hp1} &nbsp;&nbsp;|&nbsp;&nbsp; P2 HP: ${hp2}</div><div class="status-effects">P1: ${getTags(state.p1)} &nbsp;&nbsp;|&nbsp;&nbsp; P2: ${getTags(state.p2)}</div>`;
@@ -270,7 +274,7 @@
         ctx.save(); ctx.rotate(bsa); 
         
         if(ball.stickState === 'charging') {
-          let cr = ball.stickTimer / 180; // 🌟 165Hz 엔진에 맞춰 180 프레임 기준으로 변경
+          let cr = ball.stickTimer / 180; 
           ctx.shadowColor = "#B040FF"; ctx.shadowBlur = 15 + cr * 30; 
           ctx.beginPath(); ctx.arc(80, 35, 15 + Math.random() * 25 * cr, 0, Math.PI * 2); 
           ctx.fillStyle = `rgba(180,50,255,${cr * 0.8})`; ctx.fill(); ctx.lineWidth = 2;
@@ -301,7 +305,6 @@
         ctx.textBaseline="middle"; 
         ctx.lineWidth=3; 
         ctx.strokeStyle="#000"; 
-        // 🌟 변경됨: 공 안쪽 체력 텍스트도 소수점 이하 버림 처리 (Math.ceil)
         let dHp=Math.ceil(Math.max(ball.hp,0)); 
         ctx.strokeText(dHp,0,0); 
         ctx.fillStyle="#FFF"; 
