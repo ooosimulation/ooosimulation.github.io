@@ -117,48 +117,47 @@
     const ctx = canvas.getContext('2d');
     const uiStatusText = document.getElementById('uiStatusText');
 
-    // 🌟 오리지널 막대기 이미지 불러오기 (경로가 ../ 인 것을 가정)
+    // --- 🌟 오디오 및 파티클 세팅 ---
+    const loadSnd = s => new Audio("../" + s); // 원본 경로 기준
+    const chargeSound = loadSnd("spear charging.mp3");
+    const swingSound = loadSnd("swing.mp3");
+    const hitSound = loadSnd("baseball.mp3");
+    const heavyHitSound = loadSnd("break2.mp3");
+    const deathSound = loadSnd("fight.mp3");
+
+    const playAudio = (snd) => { if(snd){ snd.currentTime=0; snd.play().catch(e=>{}); } };
+
     const stickImg = new Image(); 
     stickImg.src = "../knockback stick.gif";
+
+    let particles = [];
+    let hitStopTimer = 0; // 타격 시 화면 흔들림 타이머
+    let isGameOver = false;
+    let winnerText = "";
 
     const keys = { w: false, a: false, s: false, d: false };
 
     // --- 키보드 이벤트 ---
     window.addEventListener('keydown', (e) => {
       let k = e.key.toLowerCase();
-      if(['w','a','s','d'].includes(k)) {
-        keys[k] = true;
-        socket.emit('playerInput', keys);
-      }
-      // 🌟 J키를 누르면 서버로 'attack' 신호를 보냅니다!
-      if (k === 'j') {
-        socket.emit('playerAction', 'attack');
-      }
+      if(['w','a','s','d'].includes(k)) { keys[k] = true; socket.emit('playerInput', keys); }
+      if (k === 'j') { socket.emit('playerAction', 'attack'); }
     });
 
     window.addEventListener('keyup', (e) => {
       let k = e.key.toLowerCase();
-      if(['w','a','s','d'].includes(k)) {
-        keys[k] = false;
-        socket.emit('playerInput', keys);
-      }
+      if(['w','a','s','d'].includes(k)) { keys[k] = false; socket.emit('playerInput', keys); }
     });
 
     // --- 버튼 이벤트 ---
-    btnCreate.addEventListener('click', () => {
-      btnCreate.innerText = "CREATING..."; socket.emit('createRoom'); 
-    });
-
+    btnCreate.addEventListener('click', () => { btnCreate.innerText = "CREATING..."; socket.emit('createRoom'); });
     btnJoin.addEventListener('click', () => {
       const code = inputRoomCode.value.trim();
-      if(code.length === 4) {
-        btnJoin.innerText = "JOINING..."; socket.emit('joinRoom', code);
-      } else {
-        joinStatus.innerText = "ENTER 4 DIGITS!"; joinStatus.style.display = "block";
-      }
+      if(code.length === 4) { btnJoin.innerText = "JOINING..."; socket.emit('joinRoom', code); }
+      else { joinStatus.innerText = "ENTER 4 DIGITS!"; joinStatus.style.display = "block"; }
     });
 
-    // --- 소켓 이벤트 ---
+    // --- 소켓 이벤트 (사운드 및 이펙트 수신) ---
     socket.on('roomCreated', (roomCode) => {
       createStatus.innerHTML = `CODE: <span style="color:#FFF; font-size:16px;">${roomCode}</span><br><br>WAITING...`;
       createStatus.style.display = "block"; btnCreate.style.display = "none";
@@ -170,24 +169,81 @@
 
     socket.on('startGame', () => {
       lobbyScreen.style.display = "none"; 
-      uiStatusText.innerHTML = `P1 HP: 100 &nbsp;&nbsp;|&nbsp;&nbsp; P2 HP: 100`; 
+      isGameOver = false;
     });
 
-    // 🌟 서버에서 온 정답을 바탕으로 캔버스에 그리기 (오리지널 비주얼 완전 복구)
+    // 🌟 서버에서 효과음 재생 명령이 왔을 때
+    socket.on('playSound', (data) => {
+      if(data.type === 'charge') playAudio(chargeSound);
+      if(data.type === 'swing') playAudio(swingSound);
+    });
+
+    // 🌟 서버에서 타격 이펙트(파티클+소리) 명령이 왔을 때
+    socket.on('playEffect', (data) => {
+      if (data.type === 'hit') {
+        playAudio(hitSound);
+        hitStopTimer = 15; // 15프레임 동안 화면 흔들림
+        for(let i=0; i<30; i++) particles.push({ x: data.x, y: data.y, dx: (Math.random()-0.5)*15, dy: (Math.random()-0.5)*15, life: 20+Math.random()*15, size: Math.random()*5+2, color: data.color });
+      } 
+      else if (data.type === 'heavyHit') {
+        playAudio(heavyHitSound);
+        hitStopTimer = 10;
+        for(let i=0; i<15; i++) particles.push({ x: data.x, y: data.y, dx: (Math.random()-0.5)*8, dy: (Math.random()-0.5)*8, life: 15+Math.random()*10, size: Math.random()*3+2, color: data.color });
+      }
+      else if (data.type === 'death') {
+        playAudio(deathSound);
+        hitStopTimer = 30; // 강하게 흔들림
+        for(let i=0; i<60; i++) particles.push({ x: data.x, y: data.y, dx: (Math.random()-0.5)*20, dy: (Math.random()-0.5)*20, life: 30+Math.random()*30, size: Math.random()*6+3, color: data.color });
+      }
+    });
+
+    // 🌟 서버에서 게임 오버 판정을 내렸을 때
+    socket.on('gameOver', (data) => {
+      isGameOver = true;
+      winnerText = data.winner;
+    });
+
+    // 🌟 애니메이션 렌더링 루프 (매 프레임 그리기)
     socket.on('gameState', (state) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // HP UI 업데이트
+      let hp1 = Math.max(0, state.p1.hp);
+      let hp2 = Math.max(0, state.p2.hp);
+      let tags1 = state.p1.isDead ? "[DEAD]" : (state.p1.isKnockedBack ? "<span style='color:#F00'>[FLYING]</span>" : "[NORMAL]");
+      let tags2 = state.p2.isDead ? "[DEAD]" : (state.p2.isKnockedBack ? "<span style='color:#F00'>[FLYING]</span>" : "[NORMAL]");
+      
+      uiStatusText.innerHTML = `P1 HP: ${hp1} ${tags1} &nbsp;&nbsp;|&nbsp;&nbsp; P2 HP: ${hp2} ${tags2}`;
+
+      // 화면 흔들림(Hit Stop) 적용
+      ctx.save();
+      if(hitStopTimer > 0) { 
+        hitStopTimer--; 
+        let sa = Math.min(hitStopTimer, 12) * 0.8; 
+        ctx.translate((Math.random()-0.5)*sa, (Math.random()-0.5)*sa); 
+      }
+
+      // 파티클 그리기
+      for(let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.dx; p.y += p.dy; p.life--;
+        if(p.life <= 0) particles.splice(i, 1);
+        else {
+          ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(0, p.size*(p.life/30)), 0, Math.PI*2); 
+          ctx.fillStyle = p.color; ctx.fill(); ctx.closePath();
+        }
+      }
+
+      // 공 그리는 공통 함수
       const drawBall = (ball) => {
+        if (ball.isDead) return; // 죽으면 그리지 않음
+
         ctx.save();
         ctx.translate(ball.x, ball.y);
 
-        // 1. 넉백 스틱 그리기
         let bsa = ball.angle + ball.stickAngleOffset;
+        ctx.save(); ctx.rotate(bsa); 
         
-        ctx.save(); 
-        ctx.rotate(bsa); 
-        
-        // 차징 이펙트
         if(ball.stickState === 'charging') {
           let cr = ball.stickTimer / 65; 
           ctx.shadowColor = "#B040FF"; ctx.shadowBlur = 15 + cr * 30; 
@@ -200,40 +256,37 @@
           }
         } else { ctx.shadowBlur = 0; }
 
-        // 스틱 이미지 렌더링
-        ctx.save(); 
-        ctx.translate(0, 35); 
-        ctx.rotate(Math.PI / 4); 
+        ctx.save(); ctx.translate(0, 35); ctx.rotate(Math.PI / 4); 
         if (stickImg.complete && stickImg.naturalWidth > 0) ctx.drawImage(stickImg, 5, -120, 110, 110); 
         ctx.restore();
 
-        // 양손 그리기
         let freeHandLerp = ball.stickState === 'charging' ? Math.min(1, ball.stickTimer / 65) : 0;
-        ctx.fillStyle = ball.color; 
-        ctx.strokeStyle = ball.darkColor; 
-        ctx.lineWidth = 3; 
-        ctx.beginPath(); ctx.arc(45, 35, 12, 0, Math.PI * 2); // 오른손
-        ctx.fill(); ctx.stroke(); 
-        ctx.beginPath(); ctx.arc(45 + (75 - 45) * freeHandLerp, -35 + (35 + 35) * freeHandLerp, 12, 0, Math.PI * 2); // 왼손
+        ctx.fillStyle = ball.color; ctx.strokeStyle = ball.darkColor; ctx.lineWidth = 3; 
+        ctx.beginPath(); ctx.arc(45, 35, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); 
+        ctx.beginPath(); ctx.arc(45 + (75 - 45) * freeHandLerp, -35 + (35 + 35) * freeHandLerp, 12, 0, Math.PI * 2); 
         ctx.fill(); ctx.stroke(); 
         ctx.restore(); 
 
-        // 2. 몸통(공) 그리기
-        ctx.rotate(ball.angle); 
-        ctx.beginPath(); 
-        ctx.arc(0, 0, 45, 0, Math.PI * 2); 
-        ctx.fillStyle = ball.color; 
-        ctx.fill(); 
-        ctx.lineWidth = 3; 
-        ctx.strokeStyle = ball.darkColor; 
-        ctx.stroke(); 
-        ctx.closePath();
-        
+        ctx.rotate(ball.angle); ctx.beginPath(); ctx.arc(0, 0, 45, 0, Math.PI * 2); 
+        ctx.fillStyle = ball.color; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = ball.darkColor; ctx.stroke(); ctx.closePath();
         ctx.restore();
       };
 
       drawBall(state.p1);
       drawBall(state.p2);
+      ctx.restore(); // Hit Stop(흔들림) 복구
+
+      // 게임 오버 UI 그리기
+      if (isGameOver) {
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#FFF"; ctx.font = "30px 'Press Start 2P', cursive"; ctx.textAlign = "center";
+        ctx.fillText("WINNER:", canvas.width/2, canvas.height/2 - 30);
+        ctx.fillStyle = winnerText.includes('GREEN') ? "#22CC44" : "#88CCFF";
+        ctx.fillText(winnerText, canvas.width/2, canvas.height/2 + 20);
+        ctx.font = "12px 'Press Start 2P', cursive"; ctx.fillStyle = "#AAA";
+        ctx.fillText("REFRESH TO REPLAY", canvas.width/2, canvas.height/2 + 80);
+      }
     });
 
   </script>
