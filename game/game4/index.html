@@ -117,15 +117,22 @@
     const ctx = canvas.getContext('2d');
     const uiStatusText = document.getElementById('uiStatusText');
 
-    // 현재 눌려있는 키 상태 저장소
+    // 🌟 오리지널 막대기 이미지 불러오기 (경로가 ../ 인 것을 가정)
+    const stickImg = new Image(); 
+    stickImg.src = "../knockback stick.gif";
+
     const keys = { w: false, a: false, s: false, d: false };
 
-    // --- 키보드 이벤트 (WASD를 누를 때마다 서버로 전송!) ---
+    // --- 키보드 이벤트 ---
     window.addEventListener('keydown', (e) => {
       let k = e.key.toLowerCase();
       if(['w','a','s','d'].includes(k)) {
         keys[k] = true;
-        socket.emit('playerInput', keys); // 서버야, 나 W 눌렀어!
+        socket.emit('playerInput', keys);
+      }
+      // 🌟 J키를 누르면 서버로 'attack' 신호를 보냅니다!
+      if (k === 'j') {
+        socket.emit('playerAction', 'attack');
       }
     });
 
@@ -133,7 +140,7 @@
       let k = e.key.toLowerCase();
       if(['w','a','s','d'].includes(k)) {
         keys[k] = false;
-        socket.emit('playerInput', keys); // 서버야, 나 W 뗐어!
+        socket.emit('playerInput', keys);
       }
     });
 
@@ -162,30 +169,69 @@
     });
 
     socket.on('startGame', () => {
-      lobbyScreen.style.display = "none"; // 로비 치우기
-      uiStatusText.innerHTML = `P1 HP: 100 &nbsp;&nbsp;|&nbsp;&nbsp; P2 HP: 100`; // 상태창 세팅
+      lobbyScreen.style.display = "none"; 
+      uiStatusText.innerHTML = `P1 HP: 100 &nbsp;&nbsp;|&nbsp;&nbsp; P2 HP: 100`; 
     });
 
-    // 🌟 대망의 그리기 로직: 서버에서 온 정답(위치)을 그대로 캔버스에 그립니다!
+    // 🌟 서버에서 온 정답을 바탕으로 캔버스에 그리기 (오리지널 비주얼 완전 복구)
     socket.on('gameState', (state) => {
-      // 1. 이전 프레임 지우기
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // 2. 공 그리는 공통 함수
       const drawBall = (ball) => {
         ctx.save();
-        ctx.beginPath();
-        ctx.arc(ball.x, ball.y, 45, 0, Math.PI * 2); // 오리지널 반지름 45
-        ctx.fillStyle = ball.color;
-        ctx.fill();
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = ball.darkColor;
-        ctx.stroke();
+        ctx.translate(ball.x, ball.y);
+
+        // 1. 넉백 스틱 그리기
+        let bsa = ball.angle + ball.stickAngleOffset;
+        
+        ctx.save(); 
+        ctx.rotate(bsa); 
+        
+        // 차징 이펙트
+        if(ball.stickState === 'charging') {
+          let cr = ball.stickTimer / 65; 
+          ctx.shadowColor = "#B040FF"; ctx.shadowBlur = 15 + cr * 30; 
+          ctx.beginPath(); ctx.arc(80, 35, 15 + Math.random() * 25 * cr, 0, Math.PI * 2); 
+          ctx.fillStyle = `rgba(180,50,255,${cr * 0.8})`; ctx.fill(); ctx.lineWidth = 2;
+          for(let i=0; i<5; i++) { 
+            let ea = Math.random() * Math.PI * 2, ed = 70 - cr * 50; 
+            ctx.beginPath(); ctx.moveTo(80 + Math.cos(ea) * ed, 35 + Math.sin(ea) * ed); ctx.lineTo(80, 35); 
+            ctx.strokeStyle = `rgba(220,100,255,${Math.random() * cr})`; ctx.stroke(); 
+          }
+        } else { ctx.shadowBlur = 0; }
+
+        // 스틱 이미지 렌더링
+        ctx.save(); 
+        ctx.translate(0, 35); 
+        ctx.rotate(Math.PI / 4); 
+        if (stickImg.complete && stickImg.naturalWidth > 0) ctx.drawImage(stickImg, 5, -120, 110, 110); 
+        ctx.restore();
+
+        // 양손 그리기
+        let freeHandLerp = ball.stickState === 'charging' ? Math.min(1, ball.stickTimer / 65) : 0;
+        ctx.fillStyle = ball.color; 
+        ctx.strokeStyle = ball.darkColor; 
+        ctx.lineWidth = 3; 
+        ctx.beginPath(); ctx.arc(45, 35, 12, 0, Math.PI * 2); // 오른손
+        ctx.fill(); ctx.stroke(); 
+        ctx.beginPath(); ctx.arc(45 + (75 - 45) * freeHandLerp, -35 + (35 + 35) * freeHandLerp, 12, 0, Math.PI * 2); // 왼손
+        ctx.fill(); ctx.stroke(); 
+        ctx.restore(); 
+
+        // 2. 몸통(공) 그리기
+        ctx.rotate(ball.angle); 
+        ctx.beginPath(); 
+        ctx.arc(0, 0, 45, 0, Math.PI * 2); 
+        ctx.fillStyle = ball.color; 
+        ctx.fill(); 
+        ctx.lineWidth = 3; 
+        ctx.strokeStyle = ball.darkColor; 
+        ctx.stroke(); 
         ctx.closePath();
+        
         ctx.restore();
       };
 
-      // 3. 서버가 알려준 위치에 초록 공(P1)과 파란 공(P2) 그리기
       drawBall(state.p1);
       drawBall(state.p2);
     });
