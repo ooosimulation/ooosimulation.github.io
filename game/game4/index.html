@@ -117,6 +117,7 @@
   <script>
     // ⚠️ 자신의 ngrok 주소로 교체하세요!
     const socket = io("https://8e3f-115-21-98-171.ngrok-free.app", {
+      transports: ['websocket'],
       extraHeaders: { "ngrok-skip-browser-warning": "true" }
     }); 
 
