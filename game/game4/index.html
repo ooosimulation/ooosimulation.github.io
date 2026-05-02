@@ -78,7 +78,11 @@
 
   <script>
     // ⚠️ 서버 주소를 자신의 ngrok 주소로 꼭 변경해 주세요!
-    const socket = io("https://자신의-ngrok-주소.ngrok.app"); 
+    const socket = io("https://8e3f-115-21-98-171.ngrok-free.app", {
+      extraHeaders: {
+        "ngrok-skip-browser-warning": "true"
+      }
+    });
 
     let currentRoomCode = "";
 
