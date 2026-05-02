@@ -5,19 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ooosimulation - Multiplayer</title>
   
+  <link rel="icon" type="image/png" href="../favicon2.png">
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
-  <!-- 🌟 오리지널 폰트 세팅 -->
   <style>
     @font-face {
       font-family: 'Press Start 2P';
       src: url('../PressStart2P-Regular.ttf') format('truetype');
       font-weight: 400; font-style: normal;
     }
-  </style>
 
-  <!-- 🌟 오리지널 디자인 (우주 배경, 컨테이너, UI) 완벽 복원 -->
-  <style>
     body {
       margin: 0; font-family: 'Press Start 2P', cursive; color: white; text-align: center;
       min-height: 100vh; background-color: #030712;
@@ -48,7 +45,6 @@
     #statusBar { width: 100%; height: 85px; padding: 10px; border-top: 2px solid #555; color: #FFF; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box; }
     .status-hp { font-size: 11px; margin-bottom: 5px; text-shadow: 1px 1px 0 #000; }
 
-    /* 대기실 오버레이 */
     #lobbyScreen {
       position: absolute; top: 60px; left: 0; width: 100%; height: calc(100% - 145px);
       background-color: rgba(0, 0, 0, 0.95); display: flex; flex-direction: column; 
@@ -58,8 +54,30 @@
     .btn { width: 100%; padding: 12px; font-family: inherit; font-size: 10px; cursor: pointer; }
     .btn-create { border: 2px solid #88CCFF; background: #0b1a2a; color: #88CCFF; }
     .btn-join { border: 2px solid #22CC44; background: #0b2a12; color: #22CC44; }
-    .input-code { width: 100%; box-sizing: border-box; padding: 12px; border: 2px solid #555; background: #111; color: #FFF; font-family: inherit; font-size: 12px; text-align: center; margin-bottom: 10px; }
+    .input-code { width: 100%; box-sizing: border-box; padding: 12px; border: 2px solid #555; background: #111; color: #FFF; font-family: inherit; font-size: 12px; text-align: center; margin-bottom: 10px; text-transform: uppercase;}
   </style>
+
+  <!-- 🌟 오리지널 디스코드 SDK 스크립트 추가 -->
+  <script type="module">
+    import { DiscordSDK } from "https://esm.sh/@discord/embedded-app-sdk";
+    const discordSdk = new DiscordSDK("1495120151627173969");
+
+    window.discordSdk = discordSdk;
+    window.discordUserName = "Unknown Player";
+
+    async function setupDiscord() {
+      await discordSdk.ready();
+      try {
+        const instanceUser = discordSdk.instanceManager?.currentUser;
+        if (instanceUser) {
+          window.discordUserName = instanceUser.global_name || instanceUser.username || "Unknown Player";
+        }
+      } catch (e) {
+        console.error("Failed to get Discord user", e);
+      }
+    }
+    setupDiscord();
+  </script>
 </head>
 <body>
 
@@ -67,14 +85,12 @@
     <div id="gameWrapper">
       <div id="gameContainer">
           
-          <!-- 오리지널 타이틀 바 -->
           <div id="titleBar">
               <div class="title-left">STICK (P1)</div>
               <div class="title-vs">VS</div>
               <div class="title-right">STICK (P2)</div>
           </div>
 
-          <!-- 로비 화면 -->
           <div id="lobbyScreen">
             <div class="box">
               <button id="btnCreate" class="btn btn-create">CREATE MATCH</button>
@@ -88,10 +104,8 @@
             </div>
           </div>
 
-          <!-- 게임 캔버스 -->
           <canvas id="gameCanvas" width="550" height="550"></canvas>
           
-          <!-- 오리지널 상태 표시줄 -->
           <div id="statusBar">
             <div class="status-hp" id="uiStatusText">WAITING FOR MULTIPLAYER MATCH...</div>
           </div>
@@ -117,27 +131,31 @@
     const ctx = canvas.getContext('2d');
     const uiStatusText = document.getElementById('uiStatusText');
 
-    // --- 🌟 오디오 및 파티클 세팅 ---
-    const loadSnd = s => new Audio("../" + s); // 원본 경로 기준
-    const chargeSound = loadSnd("spear charging.mp3");
-    const swingSound = loadSnd("swing.mp3");
-    const hitSound = loadSnd("baseball.mp3");
-    const heavyHitSound = loadSnd("break2.mp3");
-    const deathSound = loadSnd("fight.mp3");
+    // 🌟 오리지널 주파수 오디오 합성기(Synthesizer) 완벽 복원
+    let audioCtx;
+    const initAudio = () => { if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); };
 
-    const playAudio = (snd) => { if(snd){ snd.currentTime=0; snd.play().catch(e=>{}); } };
+    function playSound(type) {
+        if(!audioCtx) return null;
+        let osc = audioCtx.createOscillator(), gain = audioCtx.createGain(), t = audioCtx.currentTime;
+        const setS = (ty, f1, f2, g1, g2, d) => { osc.type=ty; osc.frequency.setValueAtTime(f1,t); osc.frequency.exponentialRampToValueAtTime(f2,t+d); gain.gain.setValueAtTime(g1,t); gain.gain.exponentialRampToValueAtTime(g2,t+d); };
+        if(type==='hit') setS("sawtooth", 250, 50, 0.2, 0.01, 0.1);
+        else if(type==='bounce') setS("sine", 200, 80, 0.05, 0.001, 0.1);
+        else if(type==='heavyHit') setS("sawtooth", 120, 10, 0.5, 0.01, 0.4); // 🌟 오리지널 튕기는 소리
+        else if(type==='death') setS("square", 100, 10, 0.3, 0.01, 0.5);
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(t+0.5); return null;
+    }
 
     const stickImg = new Image(); 
     stickImg.src = "../knockback stick.gif";
 
     let particles = [];
-    let hitStopTimer = 0; // 타격 시 화면 흔들림 타이머
+    let hitStopTimer = 0;
     let isGameOver = false;
     let winnerText = "";
 
     const keys = { w: false, a: false, s: false, d: false };
 
-    // --- 키보드 이벤트 ---
     window.addEventListener('keydown', (e) => {
       let k = e.key.toLowerCase();
       if(['w','a','s','d'].includes(k)) { keys[k] = true; socket.emit('playerInput', keys); }
@@ -149,15 +167,14 @@
       if(['w','a','s','d'].includes(k)) { keys[k] = false; socket.emit('playerInput', keys); }
     });
 
-    // --- 버튼 이벤트 ---
-    btnCreate.addEventListener('click', () => { btnCreate.innerText = "CREATING..."; socket.emit('createRoom'); });
+    btnCreate.addEventListener('click', () => { btnCreate.innerText = "CREATING..."; socket.emit('createRoom'); initAudio(); });
     btnJoin.addEventListener('click', () => {
+      initAudio();
       const code = inputRoomCode.value.trim();
       if(code.length === 4) { btnJoin.innerText = "JOINING..."; socket.emit('joinRoom', code); }
       else { joinStatus.innerText = "ENTER 4 DIGITS!"; joinStatus.style.display = "block"; }
     });
 
-    // --- 소켓 이벤트 (사운드 및 이펙트 수신) ---
     socket.on('roomCreated', (roomCode) => {
       createStatus.innerHTML = `CODE: <span style="color:#FFF; font-size:16px;">${roomCode}</span><br><br>WAITING...`;
       createStatus.style.display = "block"; btnCreate.style.display = "none";
@@ -172,42 +189,35 @@
       isGameOver = false;
     });
 
-    // 🌟 서버에서 효과음 재생 명령이 왔을 때
-    socket.on('playSound', (data) => {
-      if(data.type === 'charge') playAudio(chargeSound);
-      if(data.type === 'swing') playAudio(swingSound);
-    });
-
-    // 🌟 서버에서 타격 이펙트(파티클+소리) 명령이 왔을 때
+    // 🌟 오리지널 사운드 함수로 교체 (mp3 제거)
     socket.on('playEffect', (data) => {
+      initAudio();
       if (data.type === 'hit') {
-        playAudio(hitSound);
-        hitStopTimer = 15; // 15프레임 동안 화면 흔들림
+        playSound('hit');
+        hitStopTimer = 15; 
         for(let i=0; i<30; i++) particles.push({ x: data.x, y: data.y, dx: (Math.random()-0.5)*15, dy: (Math.random()-0.5)*15, life: 20+Math.random()*15, size: Math.random()*5+2, color: data.color });
       } 
       else if (data.type === 'heavyHit') {
-        playAudio(heavyHitSound);
+        playSound('heavyHit'); // 🌟 오리지널 벽 튕기는 소리 적용 완료!
         hitStopTimer = 10;
         for(let i=0; i<15; i++) particles.push({ x: data.x, y: data.y, dx: (Math.random()-0.5)*8, dy: (Math.random()-0.5)*8, life: 15+Math.random()*10, size: Math.random()*3+2, color: data.color });
       }
       else if (data.type === 'death') {
-        playAudio(deathSound);
-        hitStopTimer = 30; // 강하게 흔들림
+        playSound('death');
+        hitStopTimer = 30; 
         for(let i=0; i<60; i++) particles.push({ x: data.x, y: data.y, dx: (Math.random()-0.5)*20, dy: (Math.random()-0.5)*20, life: 30+Math.random()*30, size: Math.random()*6+3, color: data.color });
       }
     });
 
-    // 🌟 서버에서 게임 오버 판정을 내렸을 때
+    // 🌟 불필요한 시작음(readySound)을 완전히 제거하여 게임 종료 시 소리 안 나게 변경 완료!
     socket.on('gameOver', (data) => {
       isGameOver = true;
       winnerText = data.winner;
     });
 
-    // 🌟 애니메이션 렌더링 루프 (매 프레임 그리기)
     socket.on('gameState', (state) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // HP UI 업데이트
       let hp1 = Math.max(0, state.p1.hp);
       let hp2 = Math.max(0, state.p2.hp);
       let tags1 = state.p1.isDead ? "[DEAD]" : (state.p1.isKnockedBack ? "<span style='color:#F00'>[FLYING]</span>" : "[NORMAL]");
@@ -215,7 +225,6 @@
       
       uiStatusText.innerHTML = `P1 HP: ${hp1} ${tags1} &nbsp;&nbsp;|&nbsp;&nbsp; P2 HP: ${hp2} ${tags2}`;
 
-      // 화면 흔들림(Hit Stop) 적용
       ctx.save();
       if(hitStopTimer > 0) { 
         hitStopTimer--; 
@@ -223,7 +232,6 @@
         ctx.translate((Math.random()-0.5)*sa, (Math.random()-0.5)*sa); 
       }
 
-      // 파티클 그리기
       for(let i = particles.length - 1; i >= 0; i--) {
         let p = particles[i];
         p.x += p.dx; p.y += p.dy; p.life--;
@@ -234,9 +242,8 @@
         }
       }
 
-      // 공 그리는 공통 함수
       const drawBall = (ball) => {
-        if (ball.isDead) return; // 죽으면 그리지 않음
+        if (ball.isDead) return;
 
         ctx.save();
         ctx.translate(ball.x, ball.y);
@@ -269,14 +276,26 @@
 
         ctx.rotate(ball.angle); ctx.beginPath(); ctx.arc(0, 0, 45, 0, Math.PI * 2); 
         ctx.fillStyle = ball.color; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = ball.darkColor; ctx.stroke(); ctx.closePath();
+        
+        // 🌟 오리지널 요소 완벽 복원: 공 안쪽에 체력 텍스트 표시!
+        ctx.rotate(-ball.angle); 
+        ctx.font="14px 'Press Start 2P', cursive"; 
+        ctx.textAlign="center"; 
+        ctx.textBaseline="middle"; 
+        ctx.lineWidth=3; 
+        ctx.strokeStyle="#000"; 
+        let dHp=Math.ceil(Math.max(ball.hp,0)); 
+        ctx.strokeText(dHp,0,0); 
+        ctx.fillStyle="#FFF"; 
+        ctx.fillText(dHp,0,0);
+
         ctx.restore();
       };
 
       drawBall(state.p1);
       drawBall(state.p2);
-      ctx.restore(); // Hit Stop(흔들림) 복구
+      ctx.restore(); 
 
-      // 게임 오버 UI 그리기
       if (isGameOver) {
         ctx.fillStyle = "rgba(0,0,0,0.7)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -288,7 +307,6 @@
         ctx.fillText("REFRESH TO REPLAY", canvas.width/2, canvas.height/2 + 80);
       }
     });
-
   </script>
 </body>
 </html>
