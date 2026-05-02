@@ -116,7 +116,7 @@
 
   <script>
     // ⚠️ 자신의 ngrok 주소로 교체하세요!
-    const socket = io("wss://${location.host}", {
+    const socket = io("https://8e3f-115-21-98-171.ngrok-free.app", {
       transports: ['websocket'], // 🌟 [추가됨] 디스코드 액티비티 환경에서 통신을 강제로 뚫어주는 핵심 옵션!
       extraHeaders: { "ngrok-skip-browser-warning": "true" }
     }); 
