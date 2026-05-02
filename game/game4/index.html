@@ -44,6 +44,7 @@
     
     #statusBar { width: 100%; height: 85px; padding: 10px; border-top: 2px solid #555; color: #FFF; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box; }
     .status-hp { font-size: 11px; margin-bottom: 5px; text-shadow: 1px 1px 0 #000; }
+    .status-effects { font-size: 9px; color: #CCC; line-height: 1.4; word-break: keep-all; } /* 🌟 추가됨: 효과 태그 스타일 복구 */
 
     #lobbyScreen {
       position: absolute; top: 60px; left: 0; width: 100%; height: calc(100% - 145px);
@@ -57,7 +58,6 @@
     .input-code { width: 100%; box-sizing: border-box; padding: 12px; border: 2px solid #555; background: #111; color: #FFF; font-family: inherit; font-size: 12px; text-align: center; margin-bottom: 10px; text-transform: uppercase;}
   </style>
 
-  <!-- 🌟 오리지널 디스코드 SDK 스크립트 추가 -->
   <script type="module">
     import { DiscordSDK } from "https://esm.sh/@discord/embedded-app-sdk";
     const discordSdk = new DiscordSDK("1495120151627173969");
@@ -131,7 +131,6 @@
     const ctx = canvas.getContext('2d');
     const uiStatusText = document.getElementById('uiStatusText');
 
-    // 🌟 오리지널 주파수 오디오 합성기(Synthesizer) 완벽 복원
     let audioCtx;
     const initAudio = () => { if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); };
 
@@ -139,12 +138,18 @@
         if(!audioCtx) return null;
         let osc = audioCtx.createOscillator(), gain = audioCtx.createGain(), t = audioCtx.currentTime;
         const setS = (ty, f1, f2, g1, g2, d) => { osc.type=ty; osc.frequency.setValueAtTime(f1,t); osc.frequency.exponentialRampToValueAtTime(f2,t+d); gain.gain.setValueAtTime(g1,t); gain.gain.exponentialRampToValueAtTime(g2,t+d); };
-        if(type==='hit') setS("sawtooth", 250, 50, 0.2, 0.01, 0.1);
-        else if(type==='bounce') setS("sine", 200, 80, 0.05, 0.001, 0.1);
-        else if(type==='heavyHit') setS("sawtooth", 120, 10, 0.5, 0.01, 0.4); // 🌟 오리지널 튕기는 소리
+        if(type==='bounce') setS("sine", 200, 80, 0.05, 0.001, 0.1);
+        else if(type==='heavyHit') setS("sawtooth", 120, 10, 0.5, 0.01, 0.4); 
         else if(type==='death') setS("square", 100, 10, 0.3, 0.01, 0.5);
         osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(t+0.5); return null;
     }
+
+    // 🌟 변경 및 추가: MP3 파일 오리지널 사운드 로직 완벽 복구
+    const loadSnd = s => new Audio("../" + s);
+    const chargeSound = loadSnd("spear charging.mp3");
+    const hitSound = loadSnd("baseball.mp3");
+    const swingSound = loadSnd("swing.mp3");
+    const playCustomSound = o => { if(o){ o.currentTime=0; o.play().catch(e=>{}); } };
 
     const stickImg = new Image(); 
     stickImg.src = "../knockback stick.gif";
@@ -189,16 +194,22 @@
       isGameOver = false;
     });
 
-    // 🌟 오리지널 사운드 함수로 교체 (mp3 제거)
+    // 🌟 추가됨: 서버에서 차징, 스윙 소리 명령을 받으면 MP3 재생
+    socket.on('playSound', (data) => {
+      initAudio();
+      if(data.type === 'charge') playCustomSound(chargeSound);
+      if(data.type === 'swing') playCustomSound(swingSound);
+    });
+
     socket.on('playEffect', (data) => {
       initAudio();
       if (data.type === 'hit') {
-        playSound('hit');
+        playCustomSound(hitSound); // 🌟 변경됨: 주파수음 대신 오리지널 야구빠따 mp3 재생
         hitStopTimer = 15; 
         for(let i=0; i<30; i++) particles.push({ x: data.x, y: data.y, dx: (Math.random()-0.5)*15, dy: (Math.random()-0.5)*15, life: 20+Math.random()*15, size: Math.random()*5+2, color: data.color });
       } 
       else if (data.type === 'heavyHit') {
-        playSound('heavyHit'); // 🌟 오리지널 벽 튕기는 소리 적용 완료!
+        playSound('heavyHit'); 
         hitStopTimer = 10;
         for(let i=0; i<15; i++) particles.push({ x: data.x, y: data.y, dx: (Math.random()-0.5)*8, dy: (Math.random()-0.5)*8, life: 15+Math.random()*10, size: Math.random()*3+2, color: data.color });
       }
@@ -209,21 +220,28 @@
       }
     });
 
-    // 🌟 불필요한 시작음(readySound)을 완전히 제거하여 게임 종료 시 소리 안 나게 변경 완료!
     socket.on('gameOver', (data) => {
       isGameOver = true;
       winnerText = data.winner;
     });
 
+    // 🌟 추가됨: 오리지널 상태창(UI) 태그 표시 함수 복원
+    const getTags = p => {
+        if(p.isDead) return "<span style='color:#555'>[DEAD]</span>"; 
+        let t=[];
+        if(p.stickState === 'charging') t.push("<span style='color:#FF5555'>[CHARGING]</span>");
+        if(p.stickState === 'cooldown') t.push(`<span style='color:#FFaa00'>[CD: ${Math.ceil((600-p.stickTimer)/60)}s]</span>`);
+        if(p.isKnockedBack) t.push(`<span style='color:#FF0000'>[FLYING: ${p.bounceCount}]</span>`);
+        return t.length ? t.join(" ") : "<span style='color:#555'>[NORMAL]</span>";
+    };
+
     socket.on('gameState', (state) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      let hp1 = Math.max(0, state.p1.hp);
-      let hp2 = Math.max(0, state.p2.hp);
-      let tags1 = state.p1.isDead ? "[DEAD]" : (state.p1.isKnockedBack ? "<span style='color:#F00'>[FLYING]</span>" : "[NORMAL]");
-      let tags2 = state.p2.isDead ? "[DEAD]" : (state.p2.isKnockedBack ? "<span style='color:#F00'>[FLYING]</span>" : "[NORMAL]");
-      
-      uiStatusText.innerHTML = `P1 HP: ${hp1} ${tags1} &nbsp;&nbsp;|&nbsp;&nbsp; P2 HP: ${hp2} ${tags2}`;
+      // 🌟 변경됨: 소수점 이하 버림 처리 (Math.ceil) 및 오리지널 쿨타임 표시 복구
+      let hp1 = Math.ceil(Math.max(0, state.p1.hp));
+      let hp2 = Math.ceil(Math.max(0, state.p2.hp));
+      document.getElementById("statusBar").innerHTML = `<div class="status-hp">P1 HP: ${hp1} &nbsp;&nbsp;|&nbsp;&nbsp; P2 HP: ${hp2}</div><div class="status-effects">P1: ${getTags(state.p1)} &nbsp;&nbsp;|&nbsp;&nbsp; P2: ${getTags(state.p2)}</div>`;
 
       ctx.save();
       if(hitStopTimer > 0) { 
@@ -252,7 +270,7 @@
         ctx.save(); ctx.rotate(bsa); 
         
         if(ball.stickState === 'charging') {
-          let cr = ball.stickTimer / 65; 
+          let cr = ball.stickTimer / 180; // 🌟 165Hz 엔진에 맞춰 180 프레임 기준으로 변경
           ctx.shadowColor = "#B040FF"; ctx.shadowBlur = 15 + cr * 30; 
           ctx.beginPath(); ctx.arc(80, 35, 15 + Math.random() * 25 * cr, 0, Math.PI * 2); 
           ctx.fillStyle = `rgba(180,50,255,${cr * 0.8})`; ctx.fill(); ctx.lineWidth = 2;
@@ -267,7 +285,7 @@
         if (stickImg.complete && stickImg.naturalWidth > 0) ctx.drawImage(stickImg, 5, -120, 110, 110); 
         ctx.restore();
 
-        let freeHandLerp = ball.stickState === 'charging' ? Math.min(1, ball.stickTimer / 65) : 0;
+        let freeHandLerp = ball.stickState === 'charging' ? Math.min(1, ball.stickTimer / 180) : 0;
         ctx.fillStyle = ball.color; ctx.strokeStyle = ball.darkColor; ctx.lineWidth = 3; 
         ctx.beginPath(); ctx.arc(45, 35, 12, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); 
         ctx.beginPath(); ctx.arc(45 + (75 - 45) * freeHandLerp, -35 + (35 + 35) * freeHandLerp, 12, 0, Math.PI * 2); 
@@ -277,13 +295,13 @@
         ctx.rotate(ball.angle); ctx.beginPath(); ctx.arc(0, 0, 45, 0, Math.PI * 2); 
         ctx.fillStyle = ball.color; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = ball.darkColor; ctx.stroke(); ctx.closePath();
         
-        // 🌟 오리지널 요소 완벽 복원: 공 안쪽에 체력 텍스트 표시!
         ctx.rotate(-ball.angle); 
         ctx.font="14px 'Press Start 2P', cursive"; 
         ctx.textAlign="center"; 
         ctx.textBaseline="middle"; 
         ctx.lineWidth=3; 
         ctx.strokeStyle="#000"; 
+        // 🌟 변경됨: 공 안쪽 체력 텍스트도 소수점 이하 버림 처리 (Math.ceil)
         let dHp=Math.ceil(Math.max(ball.hp,0)); 
         ctx.strokeText(dHp,0,0); 
         ctx.fillStyle="#FFF"; 
