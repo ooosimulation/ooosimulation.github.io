@@ -1,1 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stick VS Stick - Multiplayer</title>
+  
+  <!-- Socket.io 통신 모듈 (필수) -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
+  <!-- 폰트 및 기본 레트로 스타일 -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+    body {
+      margin: 0; font-family: 'Press Start 2P', cursive; color: white;
+      background-color: #030712; display: flex; justify-content: center; align-items: center;
+      min-height: 100vh; overflow: hidden;
+      /* 기존에 쓰시던 우주 느낌의 배경 효과 (심플 버전) */
+      background-image: radial-gradient(circle at 50% 50%, rgba(53, 80, 160, 0.18), transparent 55%),
+                        linear-gradient(to bottom, #02040a 0%, #081225 45%, #101a3a 100%);
+    }
+
+    #appContainer {
+      position: relative; width: 100%; max-width: 550px;
+      background-color: #000; border: 4px solid #FFF; border-radius: 10px;
+      box-shadow: 0 0 20px rgba(255,255,255,0.15); overflow: hidden;
+    }
+
+    /* 상단 타이틀 바 */
+    #titleBar {
+      display: flex; justify-content: center; align-items: center;
+      background-color: #000; padding: 15px 0; border-bottom: 2px solid #555;
+    }
+    .title-text { font-size: 16px; color: #88CCFF; text-shadow: 2px 2px 0 #000; }
+
+    /* 게임 캔버스 (처음엔 숨김) */
+    #gameCanvas {
+      background-color: #000; display: none; width: 100%; height: auto; aspect-ratio: 1/1;
+    }
+
+    /* 대기실(로비) 화면 */
+    #lobbyScreen {
+      position: absolute; top: 50px; left: 0; width: 100%; height: calc(100% - 50px);
+      background-color: rgba(0, 0, 0, 0.95); display: flex; flex-direction: column; 
+      align-items: center; justify-content: center; z-index: 20;
+    }
+
+    .box { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px; margin-bottom: 20px; width: 70%; text-align: center; }
+    .btn { width: 100%; padding: 12px; font-family: inherit; font-size: 10px; cursor: pointer; transition: 0.2s; }
+    .btn-create { border: 2px solid #88CCFF; background: #0b1a2a; color: #88CCFF; }
+    .btn-join { border: 2px solid #22CC44; background: #0b2a12; color: #22CC44; }
+    .input-code { width: 100%; box-sizing: border-box; padding: 12px; border: 2px solid #555; background: #111; color: #FFF; font-family: inherit; font-size: 12px; text-align: center; margin-bottom: 10px; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+
+  <div id="appContainer">
+    <div id="titleBar">
+      <div class="title-text">STICK VS STICK</div>
+    </div>
+    
+    <!-- 실제 게임이 그려질 캔버스 (방에 들어가면 나타남) -->
+    <canvas id="gameCanvas" width="550" height="550"></canvas>
+
+    <!-- 게임 로비 UI -->
+    <div id="lobbyScreen">
+      <!-- Create Room -->
+      <div class="box">
+        <button id="btnCreate" class="btn btn-create">CREATE MATCH</button>
+        <div id="createStatus" style="color: #FFD700; font-size: 10px; margin-top: 15px; line-height: 1.8; display: none;"></div>
+      </div>
+
+      <div style="color: #777; font-size: 10px; margin-bottom: 20px;">- OR -</div>
+
+      <!-- Join Room -->
+      <div class="box">
+        <input id="inputRoomCode" class="input-code" type="text" maxlength="4" placeholder="4-DIGIT CODE">
+        <button id="btnJoin" class="btn btn-join">JOIN MATCH</button>
+        <div id="joinStatus" style="color: #FF5555; font-size: 9px; margin-top: 10px; display: none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ⚠️ 서버 주소를 방금 만든 자신의 ngrok 주소로 변경하세요! (끝에 슬래시 없이)
+    const socket = io("https://자신의-ngrok-주소.ngrok.app"); 
+
+    let currentRoomCode = "";
+
+    // DOM 요소를 가져옵니다.
+    const btnCreate = document.getElementById('btnCreate');
+    const createStatus = document.getElementById('createStatus');
+    const btnJoin = document.getElementById('btnJoin');
+    const inputRoomCode = document.getElementById('inputRoomCode');
+    const joinStatus = document.getElementById('joinStatus');
+    const lobbyScreen = document.getElementById('lobbyScreen');
+    const gameCanvas = document.getElementById('gameCanvas');
+
+    // --- 버튼 클릭 이벤트 ---
+    btnCreate.addEventListener('click', () => {
+      btnCreate.innerText = "CREATING...";
+      socket.emit('createRoom'); 
+    });
+
+    btnJoin.addEventListener('click', () => {
+      const code = inputRoomCode.value.trim();
+      if(code.length === 4) {
+        btnJoin.innerText = "JOINING...";
+        socket.emit('joinRoom', code);
+      } else {
+        joinStatus.innerText = "ENTER 4 DIGITS!";
+        joinStatus.style.display = "block";
+        btnJoin.innerText = "JOIN MATCH";
+      }
+    });
+
+    // --- 서버 통신(Socket) 이벤트 처리 ---
+    
+    // 1. 방을 만들고 코드를 받았을 때
+    socket.on('roomCreated', (roomCode) => {
+      currentRoomCode = roomCode;
+      createStatus.innerHTML = `ROOM CODE:<br><br><span style="color:#FFF; font-size:18px;">${roomCode}</span><br><br><span style="color:#AAA;">WAITING...</span>`;
+      createStatus.style.display = "block";
+      btnCreate.style.display = "none";
+    });
+
+    // 2. 방 입장에 실패했을 때 (에러)
+    socket.on('joinError', (errorMsg) => {
+      joinStatus.innerText = errorMsg;
+      joinStatus.style.display = "block";
+      btnJoin.innerText = "JOIN MATCH";
+    });
+
+    // 3. 두 명이 꽉 차서 게임 시작 신호를 받았을 때!
+    socket.on('startGame', (data) => {
+      console.log("매치 성사! 방 번호:", data.roomCode);
+      
+      // 로비 화면을 숨기고 캔버스를 띄웁니다!
+      lobbyScreen.style.display = "none";
+      gameCanvas.style.display = "block";
+      
+      // 임시로 게임 화면이 켜졌다는 것을 그려줍니다.
+      const ctx = gameCanvas.getContext("2d");
+      ctx.fillStyle = "#22CC44";
+      ctx.font = "20px 'Press Start 2P', cursive";
+      ctx.textAlign = "center";
+      ctx.fillText("GAME CONNECTED!", 275, 275);
+      
+      // (다음 단계에서 여기에 진짜 스틱 vs 스틱 물리 엔진이 들어갑니다)
+    });
+  </script>
+
+</body>
+</html>
