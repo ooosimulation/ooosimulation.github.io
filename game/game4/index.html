@@ -3,88 +3,108 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stick VS Stick - Multiplayer</title>
+  <title>ooosimulation - Multiplayer</title>
   
-  <!-- Socket.io 통신 모듈 (필수) -->
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
+  <!-- 🌟 오리지널 폰트 세팅 -->
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    @font-face {
+      font-family: 'Press Start 2P';
+      src: url('../PressStart2P-Regular.ttf') format('truetype');
+      font-weight: 400; font-style: normal;
+    }
+  </style>
 
+  <!-- 🌟 오리지널 디자인 (우주 배경, 컨테이너, UI) 완벽 복원 -->
+  <style>
     body {
-      margin: 0; font-family: 'Press Start 2P', cursive; color: white;
-      background-color: #030712; display: flex; justify-content: center; align-items: center;
-      min-height: 100vh; overflow: hidden;
-      background-image: radial-gradient(circle at 50% 50%, rgba(53, 80, 160, 0.18), transparent 55%),
-                        linear-gradient(to bottom, #02040a 0%, #081225 45%, #101a3a 100%);
-    }
-
-    #appContainer {
-      position: relative; width: 100%; max-width: 550px; 
-      height: 550px; /* 🌟 쪼그라들지 않게 높이를 550px로 고정! */
-      background-color: #000; border: 4px solid #FFF; border-radius: 10px;
-      box-shadow: 0 0 20px rgba(255,255,255,0.15); overflow: hidden;
-    }
-
-    #titleBar {
+      margin: 0; font-family: 'Press Start 2P', cursive; color: white; text-align: center;
+      min-height: 100vh; background-color: #030712;
+      background-image:
+        radial-gradient(circle at 7% 12%, rgba(255,255,255,0.95) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 18% 78%, rgba(255,255,255,0.75) 0 1px, transparent 1.5px),
+        radial-gradient(circle at 50% 50%, rgba(53, 80, 160, 0.18), transparent 55%),
+        linear-gradient(to bottom, #02040a 0%, #081225 45%, #101a3a 100%);
+      background-attachment: fixed; overflow-x: hidden;
       display: flex; justify-content: center; align-items: center;
-      background-color: #000; padding: 15px 0; border-bottom: 2px solid #555;
-    }
-    .title-text { font-size: 16px; color: #88CCFF; text-shadow: 2px 2px 0 #000; }
-
-    #gameCanvas {
-      background-color: #000; display: none; width: 100%; height: auto; 
     }
 
+    .container { width: 100%; max-width: 550px; padding: 10px; position: relative; z-index: 2; }
+    #gameWrapper { 
+      width: 100%; background-color: #000; border: 4px solid #FFF; 
+      border-radius: 10px; box-shadow: 0 0 20px rgba(255,255,255,0.15);
+      overflow: hidden; position: relative;
+    }
+    #gameContainer { position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; }
+    
+    #titleBar { width: 100%; display: flex; justify-content: space-around; align-items: center; background-color: #000; padding: 15px 0; border-bottom: 2px solid #555; }
+    .title-left { font-size: 18px; color: #22CC44; text-shadow: 2px 2px 0 #000; } 
+    .title-vs { font-size: 14px; color: #FFFFFF; }
+    .title-right { font-size: 18px; color: #88CCFF; text-shadow: 2px 2px 0 #000; } 
+    
+    #gameCanvas { background-color: #000; display: block; width: 100%; height: auto; aspect-ratio: 1/1; cursor: crosshair; }
+    
+    #statusBar { width: 100%; height: 85px; padding: 10px; border-top: 2px solid #555; color: #FFF; display: flex; flex-direction: column; justify-content: center; box-sizing: border-box; }
+    .status-hp { font-size: 11px; margin-bottom: 5px; text-shadow: 1px 1px 0 #000; }
+
+    /* 대기실 오버레이 */
     #lobbyScreen {
-      position: absolute; top: 50px; left: 0; width: 100%; height: calc(100% - 50px);
+      position: absolute; top: 60px; left: 0; width: 100%; height: calc(100% - 145px);
       background-color: rgba(0, 0, 0, 0.95); display: flex; flex-direction: column; 
-      align-items: center; justify-content: center; z-index: 20;
+      align-items: center; justify-content: center; z-index: 10;
     }
-
-    .box { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px; margin-bottom: 20px; width: 70%; text-align: center; }
-    .btn { width: 100%; padding: 12px; font-family: inherit; font-size: 10px; cursor: pointer; transition: 0.2s; }
+    .box { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px; width: 70%; }
+    .btn { width: 100%; padding: 12px; font-family: inherit; font-size: 10px; cursor: pointer; }
     .btn-create { border: 2px solid #88CCFF; background: #0b1a2a; color: #88CCFF; }
     .btn-join { border: 2px solid #22CC44; background: #0b2a12; color: #22CC44; }
-    .input-code { width: 100%; box-sizing: border-box; padding: 12px; border: 2px solid #555; background: #111; color: #FFF; font-family: inherit; font-size: 12px; text-align: center; margin-bottom: 10px; text-transform: uppercase; }
+    .input-code { width: 100%; box-sizing: border-box; padding: 12px; border: 2px solid #555; background: #111; color: #FFF; font-family: inherit; font-size: 12px; text-align: center; margin-bottom: 10px; }
   </style>
 </head>
 <body>
 
-  <div id="appContainer">
-    <div id="titleBar">
-      <div class="title-text">STICK VS STICK</div>
-    </div>
-    
-    <canvas id="gameCanvas" width="550" height="498"></canvas>
+  <div class="container">
+    <div id="gameWrapper">
+      <div id="gameContainer">
+          
+          <!-- 오리지널 타이틀 바 -->
+          <div id="titleBar">
+              <div class="title-left">STICK (P1)</div>
+              <div class="title-vs">VS</div>
+              <div class="title-right">STICK (P2)</div>
+          </div>
 
-    <div id="lobbyScreen">
-      <!-- Create Room -->
-      <div class="box">
-        <button id="btnCreate" class="btn btn-create">CREATE MATCH</button>
-        <div id="createStatus" style="color: #FFD700; font-size: 10px; margin-top: 15px; line-height: 1.8; display: none;"></div>
-      </div>
+          <!-- 로비 화면 -->
+          <div id="lobbyScreen">
+            <div class="box">
+              <button id="btnCreate" class="btn btn-create">CREATE MATCH</button>
+              <div id="createStatus" style="color: #FFD700; font-size: 10px; margin-top: 15px; display: none;"></div>
+            </div>
+            <div style="color: #777; font-size: 10px; margin-bottom: 20px;">- OR -</div>
+            <div class="box">
+              <input id="inputRoomCode" class="input-code" type="text" maxlength="4" placeholder="4-DIGIT CODE">
+              <button id="btnJoin" class="btn btn-join">JOIN MATCH</button>
+              <div id="joinStatus" style="color: #FF5555; font-size: 9px; margin-top: 10px; display: none;"></div>
+            </div>
+          </div>
 
-      <div style="color: #777; font-size: 10px; margin-bottom: 20px;">- OR -</div>
+          <!-- 게임 캔버스 -->
+          <canvas id="gameCanvas" width="550" height="550"></canvas>
+          
+          <!-- 오리지널 상태 표시줄 -->
+          <div id="statusBar">
+            <div class="status-hp" id="uiStatusText">WAITING FOR MULTIPLAYER MATCH...</div>
+          </div>
 
-      <!-- Join Room -->
-      <div class="box">
-        <input id="inputRoomCode" class="input-code" type="text" maxlength="4" placeholder="4-DIGIT CODE">
-        <button id="btnJoin" class="btn btn-join">JOIN MATCH</button>
-        <div id="joinStatus" style="color: #FF5555; font-size: 9px; margin-top: 10px; display: none;"></div>
       </div>
     </div>
   </div>
 
   <script>
-    // ⚠️ 서버 주소를 자신의 ngrok 주소로 꼭 변경해 주세요!
+    // ⚠️ 자신의 ngrok 주소로 교체하세요!
     const socket = io("https://8e3f-115-21-98-171.ngrok-free.app", {
-      extraHeaders: {
-        "ngrok-skip-browser-warning": "true"
-      }
-    });
-
-    let currentRoomCode = "";
+      extraHeaders: { "ngrok-skip-browser-warning": "true" }
+    }); 
 
     const btnCreate = document.getElementById('btnCreate');
     const createStatus = document.getElementById('createStatus');
@@ -92,56 +112,84 @@
     const inputRoomCode = document.getElementById('inputRoomCode');
     const joinStatus = document.getElementById('joinStatus');
     const lobbyScreen = document.getElementById('lobbyScreen');
-    const gameCanvas = document.getElementById('gameCanvas');
+    
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const uiStatusText = document.getElementById('uiStatusText');
 
-    // [CREATE MATCH] 버튼 클릭 시
-    btnCreate.addEventListener('click', () => {
-      btnCreate.innerText = "CREATING...";
-      socket.emit('createRoom'); 
+    // 현재 눌려있는 키 상태 저장소
+    const keys = { w: false, a: false, s: false, d: false };
+
+    // --- 키보드 이벤트 (WASD를 누를 때마다 서버로 전송!) ---
+    window.addEventListener('keydown', (e) => {
+      let k = e.key.toLowerCase();
+      if(['w','a','s','d'].includes(k)) {
+        keys[k] = true;
+        socket.emit('playerInput', keys); // 서버야, 나 W 눌렀어!
+      }
     });
 
-    // [JOIN MATCH] 버튼 클릭 시
+    window.addEventListener('keyup', (e) => {
+      let k = e.key.toLowerCase();
+      if(['w','a','s','d'].includes(k)) {
+        keys[k] = false;
+        socket.emit('playerInput', keys); // 서버야, 나 W 뗐어!
+      }
+    });
+
+    // --- 버튼 이벤트 ---
+    btnCreate.addEventListener('click', () => {
+      btnCreate.innerText = "CREATING..."; socket.emit('createRoom'); 
+    });
+
     btnJoin.addEventListener('click', () => {
       const code = inputRoomCode.value.trim();
       if(code.length === 4) {
-        btnJoin.innerText = "JOINING...";
-        socket.emit('joinRoom', code);
+        btnJoin.innerText = "JOINING..."; socket.emit('joinRoom', code);
       } else {
-        joinStatus.innerText = "ENTER 4 DIGITS!";
-        joinStatus.style.display = "block";
-        btnJoin.innerText = "JOIN MATCH";
+        joinStatus.innerText = "ENTER 4 DIGITS!"; joinStatus.style.display = "block";
       }
     });
-    
-    // 1. 코드를 성공적으로 발급받았을 때
+
+    // --- 소켓 이벤트 ---
     socket.on('roomCreated', (roomCode) => {
-      currentRoomCode = roomCode;
-      createStatus.innerHTML = `ROOM CODE:<br><br><span style="color:#FFF; font-size:18px;">${roomCode}</span><br><br><span style="color:#AAA;">WAITING...</span>`;
-      createStatus.style.display = "block";
-      btnCreate.style.display = "none";
+      createStatus.innerHTML = `CODE: <span style="color:#FFF; font-size:16px;">${roomCode}</span><br><br>WAITING...`;
+      createStatus.style.display = "block"; btnCreate.style.display = "none";
     });
 
-    // 2. 방 입장에 실패했을 때
     socket.on('joinError', (errorMsg) => {
-      joinStatus.innerText = errorMsg;
-      joinStatus.style.display = "block";
-      btnJoin.innerText = "JOIN MATCH";
+      joinStatus.innerText = errorMsg; joinStatus.style.display = "block"; btnJoin.innerText = "JOIN MATCH";
     });
 
-    // 3. 게임 시작 신호를 받았을 때
-    socket.on('startGame', (data) => {
-      console.log("매치 성사! 방 번호:", data.roomCode);
-      
-      lobbyScreen.style.display = "none";
-      gameCanvas.style.display = "block";
-      
-      const ctx = gameCanvas.getContext("2d");
-      ctx.fillStyle = "#22CC44";
-      ctx.font = "20px 'Press Start 2P', cursive";
-      ctx.textAlign = "center";
-      ctx.fillText("GAME CONNECTED!", gameCanvas.width / 2, gameCanvas.height / 2);
+    socket.on('startGame', () => {
+      lobbyScreen.style.display = "none"; // 로비 치우기
+      uiStatusText.innerHTML = `P1 HP: 100 &nbsp;&nbsp;|&nbsp;&nbsp; P2 HP: 100`; // 상태창 세팅
     });
+
+    // 🌟 대망의 그리기 로직: 서버에서 온 정답(위치)을 그대로 캔버스에 그립니다!
+    socket.on('gameState', (state) => {
+      // 1. 이전 프레임 지우기
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 2. 공 그리는 공통 함수
+      const drawBall = (ball) => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, 45, 0, Math.PI * 2); // 오리지널 반지름 45
+        ctx.fillStyle = ball.color;
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = ball.darkColor;
+        ctx.stroke();
+        ctx.closePath();
+        ctx.restore();
+      };
+
+      // 3. 서버가 알려준 위치에 초록 공(P1)과 파란 공(P2) 그리기
+      drawBall(state.p1);
+      drawBall(state.p2);
+    });
+
   </script>
-
 </body>
 </html>
