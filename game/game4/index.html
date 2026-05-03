@@ -144,7 +144,6 @@
         if(type==='bounce') setS("sine", 200, 80, 0.05, 0.001, 0.1);
         else if(type==='heavyHit') setS("sawtooth", 120, 10, 0.5, 0.01, 0.4); 
         else if(type==='death') setS("square", 100, 10, 0.3, 0.01, 0.5);
-        // 🌟 [추가됨] '슉' 하는 느낌의 대쉬 효과음
         else if(type==='dash') setS("sine", 600, 150, 0.2, 0.001, 0.25);
         
         osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(t+0.5); return null;
@@ -155,6 +154,10 @@
     const hitSound = loadSnd("baseball.mp3");
     const swingSound = loadSnd("swing.mp3");
     
+    // 🌟 [추가됨] Ready, Fight 효과음 로드 (파일 경로에 해당 mp3가 있어야 합니다)
+    const readySound = loadSnd("ready.mp3");
+    const fightSound = loadSnd("fight.mp3");
+    
     const playCustomSound = o => { if(o){ o.currentTime=0; o.play().catch(e=>{}); } };
     const stopCustomSound = o => { if(o){ o.pause(); o.currentTime=0; } };
 
@@ -163,7 +166,12 @@
 
     let particles = [];
     let hitStopTimer = 0;
-    let isGameOver = false;
+    
+    // 🌟 [추가/변경됨] 상태 변수 추가 (gamePhase, 투표 현황, Fight 텍스트 타이머)
+    let isGameOver = false; 
+    let gamePhase = 'waiting'; 
+    let fightTextTimer = 0;
+    let restartVotes = { p1: false, p2: false };
     let winnerText = "";
 
     const keys = { w: false, a: false, s: false, d: false };
@@ -173,6 +181,8 @@
       if(['w','a','s','d'].includes(k)) { keys[k] = true; socket.emit('playerInput', keys); }
       if (k === 'j') { socket.emit('playerAction', 'attack'); }
       if (k === 'k') { socket.emit('playerAction', 'dash'); }
+      // 🌟 [추가됨] R 키 입력 시 서버에 재시작 투표 요청 전송
+      if (k === 'r') { socket.emit('requestRestart'); }
     });
 
     window.addEventListener('keyup', (e) => {
@@ -202,11 +212,30 @@
       isGameOver = false;
     });
 
+    // 🌟 [추가됨] Ready, Fight, 투표 상황 소켓 이벤트 수신
+    socket.on('readyPhase', () => {
+      initAudio();
+      gamePhase = 'ready';
+      isGameOver = false;
+      restartVotes = { p1: false, p2: false };
+      playCustomSound(readySound);
+    });
+
+    socket.on('fightPhase', () => {
+      initAudio();
+      gamePhase = 'playing';
+      fightTextTimer = 60; // 약 1초(60프레임) 동안 FIGHT 글씨 표시
+      playCustomSound(fightSound);
+    });
+
+    socket.on('voteUpdate', (votes) => {
+      restartVotes = votes;
+    });
+
     socket.on('playSound', (data) => {
       initAudio();
       if(data.type === 'charge') playCustomSound(chargeSound);
       if(data.type === 'swing') playCustomSound(swingSound);
-      // 🌟 [추가됨] 대쉬 효과음 재생 명령 수신
       if(data.type === 'dash') playSound('dash');
     });
 
@@ -235,6 +264,7 @@
 
     socket.on('gameOver', (data) => {
       isGameOver = true;
+      gamePhase = 'gameover'; // 🌟 상태 전환 추가
       winnerText = data.winner;
     });
 
@@ -281,10 +311,8 @@
         ctx.save();
         ctx.translate(ball.x, ball.y);
 
-        // 🌟 [추가됨] 대쉬 시 진행 반대 방향으로 잔상 그리기
         if (ball.isDashing) {
           ctx.save();
-          // 4개의 잔상을 점점 투명하고 멀게 그립니다.
           for (let i = 1; i <= 4; i++) {
             ctx.globalAlpha = 0.5 - (i * 0.1); 
             let trailX = -Math.cos(ball.angle) * (18 * i);
@@ -345,15 +373,44 @@
       drawBall(state.p2);
       ctx.restore(); 
 
-      if (isGameOver) {
+      // 🌟 [추가/변경됨] 화면 위에 그리는 UI 로직 추가
+      if (gamePhase === 'ready') {
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#FFD700"; ctx.font = "30px 'Press Start 2P', cursive"; ctx.textAlign = "center";
+        ctx.fillText("READY...", canvas.width/2, canvas.height/2);
+      }
+
+      if (gamePhase === 'playing' && fightTextTimer > 0) {
+        fightTextTimer--;
+        ctx.fillStyle = "#FF0000"; ctx.font = "45px 'Press Start 2P', cursive"; ctx.textAlign = "center";
+        ctx.fillText("FIGHT!", canvas.width/2, canvas.height/2);
+      }
+
+      // 🌟 [변경됨] 기존 isGameOver 블록을 투표 UI가 포함된 gameover 페이즈 블록으로 변경
+      if (gamePhase === 'gameover') {
         ctx.fillStyle = "rgba(0,0,0,0.7)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
         ctx.fillStyle = "#FFF"; ctx.font = "30px 'Press Start 2P', cursive"; ctx.textAlign = "center";
-        ctx.fillText("WINNER:", canvas.width/2, canvas.height/2 - 30);
+        ctx.fillText("WINNER:", canvas.width/2, canvas.height/2 - 50);
+        
         ctx.fillStyle = winnerText.includes('GREEN') ? "#22CC44" : "#88CCFF";
-        ctx.fillText(winnerText, canvas.width/2, canvas.height/2 + 20);
+        ctx.fillText(winnerText, canvas.width/2, canvas.height/2);
+        
+        // 투표 안내 문구
         ctx.font = "12px 'Press Start 2P', cursive"; ctx.fillStyle = "#AAA";
-        ctx.fillText("REFRESH TO REPLAY", canvas.width/2, canvas.height/2 + 80);
+        ctx.fillText("PRESS 'R' TO REMATCH", canvas.width/2, canvas.height/2 + 60);
+
+        // 각 플레이어 투표 현황 렌더링
+        let p1VoteText = restartVotes.p1 ? "[P1: READY]" : "[P1: WAIT]";
+        let p2VoteText = restartVotes.p2 ? "[P2: READY]" : "[P2: WAIT]";
+        
+        ctx.fillStyle = restartVotes.p1 ? "#22CC44" : "#555";
+        ctx.fillText(p1VoteText, canvas.width/2 - 80, canvas.height/2 + 100);
+        
+        ctx.fillStyle = restartVotes.p2 ? "#88CCFF" : "#555";
+        ctx.fillText(p2VoteText, canvas.width/2 + 80, canvas.height/2 + 100);
       }
     });
   </script>
