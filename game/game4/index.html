@@ -117,7 +117,7 @@
   <script>
     // ⚠️ 자신의 ngrok 주소로 교체하세요!
     const socket = io("https://8e3f-115-21-98-171.ngrok-free.app", {
-  path: "/socket.io", // 명시적으로 경로 지정
+  path: "/socket.io", 
   transports: ['websocket'],
   extraHeaders: { "ngrok-skip-browser-warning": "true" }
 }); 
@@ -152,7 +152,6 @@
     const swingSound = loadSnd("swing.mp3");
     
     const playCustomSound = o => { if(o){ o.currentTime=0; o.play().catch(e=>{}); } };
-    // 🌟 추가됨: 사운드를 강제로 멈추는 오리지널 헬퍼 함수 복구
     const stopCustomSound = o => { if(o){ o.pause(); o.currentTime=0; } };
 
     const stickImg = new Image(); 
@@ -169,6 +168,8 @@
       let k = e.key.toLowerCase();
       if(['w','a','s','d'].includes(k)) { keys[k] = true; socket.emit('playerInput', keys); }
       if (k === 'j') { socket.emit('playerAction', 'attack'); }
+      // 🌟 [추가됨] K키(대쉬) 입력 시 서버에 신호 전송
+      if (k === 'k') { socket.emit('playerAction', 'dash'); }
     });
 
     window.addEventListener('keyup', (e) => {
@@ -204,7 +205,6 @@
       if(data.type === 'swing') playCustomSound(swingSound);
     });
 
-    // 🌟 추가됨: 서버에서 정지 명령이 오면 찌릿찌릿 차징 소리를 끕니다.
     socket.on('stopSound', (data) => {
       if(data.type === 'charge') stopCustomSound(chargeSound);
     });
@@ -237,7 +237,13 @@
         if(p.isDead) return "<span style='color:#555'>[DEAD]</span>"; 
         let t=[];
         if(p.stickState === 'charging') t.push("<span style='color:#FF5555'>[CHARGING]</span>");
-        if(p.stickState === 'cooldown') t.push(`<span style='color:#FFaa00'>[CD: ${Math.ceil((600-p.stickTimer)/60)}s]</span>`);
+        
+        // 🌟 [변경됨] 공격 쿨타임을 좀 더 명확하게 'ATK CD'로 변경
+        if(p.stickState === 'cooldown') t.push(`<span style='color:#FFaa00'>[ATK CD: ${Math.ceil((600-p.stickTimer)/60)}s]</span>`);
+        
+        // 🌟 [추가됨] 대쉬 쿨타임 UI 표시
+        if(p.dashCooldown > 0) t.push(`<span style='color:#00FFFF'>[DASH CD: ${Math.ceil(p.dashCooldown/60)}s]</span>`);
+        
         if(p.isKnockedBack) t.push(`<span style='color:#FF0000'>[FLYING: ${p.bounceCount}]</span>`);
         return t.length ? t.join(" ") : "<span style='color:#555'>[NORMAL]</span>";
     };
