@@ -118,7 +118,7 @@
     // ⚠️ 자신의 ngrok 주소로 교체하세요!
     const socket = io("https://c44b-115-21-98-171.ngrok-free.app", {
   path: "/socket.io", 
-  transports: ['websocket'],
+  // transports: ['websocket'], <-- 🌟 이 줄을 아예 지우거나 주석 처리하세요!
   extraHeaders: { "ngrok-skip-browser-warning": "true" }
 }); 
 
