@@ -1,1 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Battle - Bow VS Wither Boss</title>
+    <link rel="stylesheet" href="style.css">
+    <div style="display: none;">
+        <img src="bow01.png">
+        <img src="bow02.png">
+        <img src="bow03.png">
+        <img src="bow04.png">
+        <img src="bow05.png">
+    </div>
 
+    <script type="module">
+    async function setupDiscord() {
+        try {
+            const module = await import("https://esm.sh/@discord/embedded-app-sdk");
+            const DiscordSDK = module.DiscordSDK;
+            // 💡 생성하신 디스코드 애플리케이션의 Client ID를 이곳에 적어주시면 됩니다.
+            const discordSdk = new DiscordSDK("1498621378679799858");
+
+            window.discordSdk = discordSdk;
+            window.discordUserName = "Unknown Player";
+
+            await discordSdk.ready();
+            
+            const instanceUser = discordSdk.instanceManager?.currentUser;
+            if (instanceUser) {
+                window.discordUserName = instanceUser.global_name || instanceUser.username || "Unknown Player";
+            }
+        } catch (e) {
+            console.warn("디스코드 외부 환경이므로 SDK 연동을 생략하고 일반 웹 모드로 실행합니다.");
+            window.discordUserName = "Web Player";
+        }
+    }
+    setupDiscord();
+    </script>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="titleBar">
+            <div id="bossHpContainer">
+                <div id="bossHpFill"></div>
+            </div>
+        </div>
+
+        <div id="canvasWrapper">
+            <canvas id="bgCanvas" width="550" height="550"></canvas>
+            <canvas id="fgCanvas" width="550" height="550"></canvas>
+            
+            <div id="keyContainer">
+                <div class="key-row">
+                    <div id="key-w" class="key-cap">W</div>
+                </div>
+                <div class="key-row">
+                    <div id="key-a" class="key-cap">A</div>
+                    <div id="key-s" class="key-cap">S</div>
+                    <div id="key-d" class="key-cap">D</div>
+                    <div id="key-dash" class="key-cap dash-cap">DASH</div>
+                </div>
+            </div>
+
+            <div id="startOverlay">
+                <div class="start-text">PRESS SPACE OR CLICK TO START</div>
+                <div class="start-sub">Bow VS Wither</div>
+                <div class="hint-text">Ultimate 1vs1 Boss Raid Battle!</div>
+            </div>
+        </div>
+        
+        <div id="statusBar"></div>
+    </div>
+
+    <script>
+        function createNameOverlay() {
+            const nameOverlay = document.createElement('div');
+            nameOverlay.id = 'nameOverlay';
+            nameOverlay.style.cssText = `
+                position: fixed;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: rgba(0, 0, 0, 0.75);
+                z-index: 99999;
+            `;
+
+            nameOverlay.innerHTML = `
+                <div style="
+                    width: min(88vw, 360px);
+                    background: #000;
+                    border: 3px solid #fff;
+                    border-radius: 0px;
+                    padding: 22px 18px;
+                    color: #fff;
+                    font-family: 'Courier New', Courier, monospace;
+                    text-align: center;
+                ">
+                    <div style="font-size: 16px; font-weight: bold; line-height: 1.5; margin-bottom: 14px; color: #88ccff;">ENTER YOUR NAME</div>
+                    <div style="font-size: 12px; line-height: 1.7; margin-bottom: 16px; color: #ccc;">This name will be shown in the clear record.</div>
+                    
+                    <input id="playerNameInput" type="text" maxlength="32" placeholder="Player Name" style="
+                        width: 100%; box-sizing: border-box; padding: 12px 10px; border: 2px solid #555;
+                        background: #111; color: #fff; font-family: 'Courier New', Courier, monospace;
+                        font-size: 13px; text-align: center; outline: none;
+                    "/>
+
+                    <div style="font-size: 11px; line-height: 1.6; margin-top: 12px; margin-bottom: 16px; color: #999;">Leave it blank to use Discord Profile.</div>
+                    
+                    <button id="startNameButton" style="
+                        width: 100%; padding: 12px 10px; border: 2px solid #22cc44;
+                        background: #0b2a12; color: #22cc44; font-family: 'Courier New', Courier, monospace; font-size: 13px; font-weight: bold; cursor: pointer;
+                    ">CONFIRM</button>
+                </div>
+            `;
+
+            document.body.appendChild(nameOverlay);
+
+            function confirmPlayerName() {
+                const input = document.getElementById('playerNameInput');
+                const typedName = (input?.value || '').trim();
+                
+                if (typedName) {
+                    window.discordUserName = typedName.substring(0, 32);
+                }
+                nameOverlay.remove();
+            }
+
+            document.getElementById('startNameButton').addEventListener('click', confirmPlayerName);
+            document.getElementById('playerNameInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') confirmPlayerName();
+            });
+        }
+
+        // 페이지 가동 시 네임 오버레이 실행하도록 리스너 배치
+        window.addEventListener('load', createNameOverlay);
+    </script>
+
+    <script type="module" src="./src/main.js"></script>
+</body>
+</html>
