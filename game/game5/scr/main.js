@@ -41,19 +41,28 @@ const keyElements = {
 };
 
 // ==========================================
-// 무기 인스턴스 생성 순서 정돈 (오류 방지)
+// 무기 인스턴스 생성 순서 정돈 (오류 방지 및 웹 우회 가동 안전장치 추가)
 // ==========================================
-const goatHornWeapon = new GoatHorn(); 
-const lightningRodWeapon = new LightningRod(); 
-const enderDragonWeapon = new EnderDragon(); 
-const tridentWeapon = new Trident(); 
-const pistonWeapon = new Piston(); 
-const pickaxeWeapon = new Pickaxe(); 
-const snowballWeapon = new Snowball(); 
-const witherWeapon = new Wither(); 
-const wardenWeapon = new Warden(); 
-const boatWeapon = new Boat(); 
-const bowWeapon = new Bow(); 
+// 🌟 [변경] 특정 무기 파일이 서버에 없더라도 전체 스크립트가 마비되는 현상을 완벽히 방어합니다.
+let goatHornWeapon, lightningRodWeapon, enderDragonWeapon, tridentWeapon, pistonWeapon;
+let pickaxeWeapon, snowballWeapon, witherWeapon, wardenWeapon, boatWeapon, bowWeapon;
+
+try { goatHornWeapon = new GoatHorn(); } catch(e) { console.warn("GoatHorn 로드 생략"); }
+try { lightningRodWeapon = new LightningRod(); } catch(e) { console.warn("LightningRod 로드 생략"); }
+try { enderDragonWeapon = new EnderDragon(); } catch(e) { console.warn("EnderDragon 로드 생략"); }
+try { tridentWeapon = new Trident(); } catch(e) { console.warn("Trident 로드 생략"); }
+try { pistonWeapon = new Piston(); } catch(e) { console.warn("Piston 로드 생략"); }
+try { pickaxeWeapon = new Pickaxe(); } catch(e) { console.warn("Pickaxe 로드 생략"); }
+try { snowballWeapon = new Snowball(); } catch(e) { console.warn("Snowball 로드 생략"); }
+try { witherWeapon = new Wither(); } catch(e) { console.warn("Wither 로드 완화"); }
+try { wardenWeapon = new Warden(); } catch(e) { console.warn("Warden 로드 생략"); }
+try { boatWeapon = new Boat(); } catch(e) { console.warn("Boat 로드 생략"); }
+try { bowWeapon = new Bow(); } catch(e) { console.warn("Bow 로드 완화"); }
+
+// 🌟 [추가] 일반 웹 브라우저 테스트 중 타 무기 파일이 온전히 없는 상황이어도, 
+// 시뮬레이션 기본 틀이 절대 터지지 않도록 예비 인스턴스를 바인딩하여 스타트를 보장합니다.
+if (!witherWeapon) witherWeapon = { name: "WITHER", update: () => {}, drawForeground: () => {}, drawBackground: () => {} };
+if (!bowWeapon) bowWeapon = { name: "BOW", update: () => {}, drawForeground: () => {}, drawBackground: () => {}, updateMousePosition: () => {} };
 
 // ==========================================
 // 활(Bow) VS 위더 보스 레이드전 세팅 유지
