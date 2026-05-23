@@ -374,16 +374,19 @@ function animate(newtime) {
             if (startDelayTimer > 0) {
                 startDelayTimer--;
                 
+                // 🌟 [변경 및 보정]: READY 도중에도 공 내부 무기의 프레임 카운트가 정상 업데이트되도록 하되,
+                // 플레이어가 키 입력으로 무빙하거나 보스가 마음대로 돌아다니지 못하게 '위치 좌표'만 완벽하게 고정 락(Lock)을 걸어둡니다.
+                players.forEach(p => {
+                    let enemies = players.filter(e => e !== p);
+                    // 강제로 패시브/공격 키 프레임을 흘려보내어 활 투명화 현상 및 위더 무한 대기 현상을 차단합니다.
+                    p.update(enemies, fgCanvas, null); 
+                });
+
                 player1.x = 275; player1.y = 400;
                 player1.dx = 0; player1.dy = 0;
                 
                 boss.x = 275; boss.y = 150;
                 boss.dx = 0; boss.dy = 0;
-                
-                if (boss.weapon && boss.weapon.name === 'WITHER') {
-                    boss.weapon.witherState = 'spawning';
-                    boss.weapon.spawnTimer = 288;
-                }
 
                 if (startDelayTimer === 0) {
                     gameStartTime = performance.now();
@@ -469,7 +472,6 @@ function animate(newtime) {
 
     if (startDelayTimer > 0) {
         fgCtx.save();
-        // 🌟 [변경]: 기존 투명도 0.4(rgba(0,0,0,0.4)) 사각형 채우기 구문이 맵 전체 레이아웃을 덮어 검게 변하는 현상을 막기 위해 제거 및 텍스트 알파 분리
         fgCtx.fillStyle = "#FFF200";
         fgCtx.font = "900 55px 'Arial Black', sans-serif";
         fgCtx.textAlign = "center";
