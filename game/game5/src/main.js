@@ -225,7 +225,7 @@ window.addEventListener('keyup', function(e) {
 fgCanvas.addEventListener('mousedown', function(e) {
     if (!isStarted || e.button !== 0) return;
 
-    // 🌟 [추가] READY 카운트다운(startDelayTimer) 중에는 마우스 클릭 대시 입력을 막아 정지 상태를 유지합니다.
+    // 🌟 [유지] READY 카운트다운 중에는 마우스 클릭 입력을 완전히 비활성화합니다.
     if (startDelayTimer > 0) return;
 
     if (isGameOver && isWin && shareButtonBounds && !hasSharedRecord) {
@@ -373,14 +373,36 @@ function animate(newtime) {
             EffectManager.hitStopTimer--;
         } else {
             if (startDelayTimer > 0) {
-                // 🌟 [변경] READY 카운트다운 동안은 플레이어와 보스가 시작 위치에 고정되도록 강제 고정 락(Lock)을 켭니다.
-                // 이로 인해 시작하자마자 공들이 맵 구석으로 텔레포트하거나 잔상이 남는 버그가 완벽하게 교정됩니다.
+                // 🌟 [변경 및 보정]: READY 카운트다운(2초) 동안 물리 계산 및 속도 업데이트 조작을 일체 잠그고,
+                // 지정된 고정 격전 포지션에 완벽하게 묶어둡니다. 이로 인해 공들이 정지 상태를 견고히 유지합니다.
                 startDelayTimer--;
                 
                 player1.x = 275; player1.y = 400;
-                boss.x = 275; boss.y = 150;
+                player1.dx = 0; player1.dy = 0;
                 
-                if (startDelayTimer === 0) gameStartTime = performance.now();
+                boss.x = 275; boss.y = 150;
+                boss.dx = 0; boss.dy = 0;
+                
+                // 보스의 변신 대기 시간을 READY 카운트다운 동안 강제 고정하여 드로잉 잔상을 완벽 차단합니다.
+                if (boss.weapon && boss.weapon.name === 'WITHER') {
+                    boss.weapon.witherState = 'spawning';
+                    boss.weapon.spawnTimer = 288;
+                }
+
+                if (startDelayTimer === 0) {
+                    gameStartTime = performance.now();
+                    // 🌟 [추가]: 카운트다운이 종료되는 바로 그 프레임(BATTLE START!)에 자유 무빙용 최초 각도와 속도 벡터를 실시간 주입합니다.
+                    let initAngleP1 = Math.random() * Math.PI * 2;
+                    let initAngleB = Math.random() * Math.PI * 2;
+                    
+                    player1.dx = Math.cos(initAngleP1) * playerSpeed;
+                    player1.dy = Math.sin(initAngleP1) * playerSpeed;
+                    player1.angle = Math.atan2(player1.dy, player1.dx);
+
+                    boss.dx = Math.cos(initAngleB) * (playerSpeed * 1.5);
+                    boss.dy = Math.sin(initAngleB) * (playerSpeed * 1.5);
+                    boss.angle = Math.atan2(boss.dy, boss.dx);
+                }
             } else if (!isGameOver) {
                 if (boss.isDead || player1.isDead) {
                     isGameOver = true;
@@ -420,7 +442,7 @@ function animate(newtime) {
     }
 
     // =========================================================================
-    // 🌟 렌더링 영역: 이제 물리 락과 완벽히 연동되어 READY 상태일 때도 공들이 정지 상태로 화면에 선명히 보입니다.
+    // 🌟 렌더링 영역: 이제 보스의 입체 무기 레이아웃이 물리 잠금과 매칭되어 화면 중앙에 흔들림 없이 선명하게 보입니다.
     // =========================================================================
     bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
     fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
@@ -442,7 +464,6 @@ function animate(newtime) {
         }
     }
 
-    // 🌟 [변경] 배경 요소 드로잉 판정 완화: READY 상태일 때도 보스의 어둠 연출이 정상 표현되도록 보정
     players.forEach(p => {
         if (p && !p.isDead && p.weapon && p.weapon.drawBackground) {
             bgCtx.save();
