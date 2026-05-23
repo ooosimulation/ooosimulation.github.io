@@ -178,7 +178,7 @@ export default class Wither extends BaseWeapon {
                     owner.angle = Math.atan2(owner.dy, owner.dx);
                     owner.angleToEnemy = owner.angle;
 
-                    // 🌟 [변경] 시작 시 주변 플레이어를 밀쳐내던 충격 파동 데미지/넉백 로직 제거 처리
+                    // 🌟 [유지] 시작 시 주변 플레이어를 밀쳐내던 충격 파동 데미지/넉백 로직 제거 유지
                     /*
                     for (let e of enemies) {
                         if (e.isDead || e.team === owner.team) continue;
@@ -204,7 +204,7 @@ export default class Wither extends BaseWeapon {
                     EffectManager.createHighQualityExplosion(owner.x, owner.y);
                     EffectManager.triggerHitStop(25); 
 
-                    // 🌟 [변경] 파란색 위더 각성(2페이즈) 시 주변 플레이어를 밀쳐내던 파동 데미지/넉백 로직 제거 처리
+                    // 🌟 [유지] 파란색 위더 각성(2페이즈) 시 주변 플레이어를 밀쳐내던 파동 데미지/넉백 로직 제거 유지
                     /*
                     for (let e of enemies) {
                         if (e.isDead || e.team === owner.team) continue;
@@ -352,6 +352,10 @@ export default class Wither extends BaseWeapon {
             if (!hitWall) {
                 for (let e of enemies) {
                     if (e.isDead || e.team === owner.team) continue;
+                    
+                    // 🌟 [추가]: 해골 투사체가 날아갈 때 타겟 플레이어가 대시 중(e.dashTimer > 0)이라면 고스트 상태처럼 피격 처리를 건너뜁니다.
+                    if (e.dashTimer > 0) continue;
+
                     let dist = Math.hypot(e.x - skull.x, e.y - skull.y);
                     if (dist < hitRadius + e.radius) { 
                         hitEnemy = e;
@@ -365,6 +369,10 @@ export default class Wither extends BaseWeapon {
 
                 for (let e of enemies) {
                     if (e.isDead || e.team === owner.team) continue;
+                    
+                    // 🌟 [추가]: 폭발 범위 피해 계산 시에도 대시 중인 타겟은 스플래시 대미지 및 넉백 피해를 무시합니다.
+                    if (e.dashTimer > 0) continue;
+
                     let dist = Math.hypot(e.x - skull.x, e.y - skull.y);
                     
                     if (dist <= blastRadius + e.radius) {
