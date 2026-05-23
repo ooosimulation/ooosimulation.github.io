@@ -38,7 +38,7 @@ export default class Bow extends BaseWeapon {
         // 공 위에 배율을 표시해 줄 부유 텍스트 배열 유지
         this.floatingTexts = [];
 
-        // 🌟 [추가]: 위더 및 스켈레톤 공격 피격 감지용 이전 체력 기록 변수
+        // 🌟 [유지]: 위더 및 스켈레톤 공격 피격 감지용 이전 체력 기록 변수
         this.lastOwnerHp = null;
     }
 
@@ -87,17 +87,17 @@ export default class Bow extends BaseWeapon {
     }
 
     update(owner, enemies, target, canvas) {
-        // 🌟 [추가]: 최초 실행 시 현재 체력을 백업
+        // 🌟 [유지]: 최초 실행 시 현재 체력을 백업
         if (this.lastOwnerHp === null) {
             this.lastOwnerHp = owner.hp;
         }
 
-        // 🌟 [추가]: 보스(Wither)나 쫄몹(Skeleton)에게 맞아서 체력이 깎였을 때 연사속도 감속 패널티 부여
+        // 🌟 [변경]: 보스나 쫄몹에게 피격 시 공격속도 감소 패널티 수치를 적당히 줄어들게 완화 조율
         if (owner.hp < this.lastOwnerHp) {
             let hpDecreased = this.lastOwnerHp - owner.hp;
             
-            // 데미지를 입었을 때 현재 장전 배율에서 패널티 차감 (최하 1.0 제한)
-            let bowLoss = this.chargeSpeedMultiplier * 0.25; // 피격 시 공속 배율 25% 급감
+            // 🌟 [변경]: 기존 25% 급감에서 10% 감소(0.10)로 수치를 크게 낮춰 완화했습니다.
+            let bowLoss = this.chargeSpeedMultiplier * 0.10; 
             let prevMult = this.chargeSpeedMultiplier;
             this.chargeSpeedMultiplier = Math.max(1.0, this.chargeSpeedMultiplier - bowLoss);
 
@@ -113,9 +113,9 @@ export default class Bow extends BaseWeapon {
                 });
             }
 
-            // 피격 시 쿨타임 패널티 추가 및 장전 한계치 원복 조율
-            this.cooldownTimer = Math.min(this.maxCooldown, this.cooldownTimer + 30);
-            this.maxCooldown = Math.min(288, this.maxCooldown + 12);
+            // 🌟 [변경]: 피격 시 추가되는 쿨타임 가중치 및 한계치 복원량도 절반 이하로 줄여 패널티를 완화했습니다.
+            this.cooldownTimer = Math.min(this.maxCooldown, this.cooldownTimer + 12); // 기존 +30에서 완화
+            this.maxCooldown = Math.min(288, this.maxCooldown + 4);                  // 기존 +12에서 완화
         }
         // 다음 프레임 비교를 위해 실시간 체력 갱신 동기화
         this.lastOwnerHp = owner.hp;
