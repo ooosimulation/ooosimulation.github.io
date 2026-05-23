@@ -70,6 +70,12 @@ export default class GameBall {
         
         this.dashAfterimages = [];     // 잔상 보관 배열
         this.dashCooldownTimer = 0;    // 대시 쿨타임용 프레임 타이머
+
+        // 🌟 [추가]: 대시 3스택 최대 충전 시스템 변수 정의
+        this.dashStacks = 3;           // 현재 보유한 대시 횟수 (시작 시 3개 완충)
+        this.maxDashStacks = 3;        // 최대 대시 보유 한도
+        this.dashChargeFrame = 0;      // 현재 칸의 충전 진행 프레임 타이머
+        this.maxDashChargeFrame = 144; // 1스택당 필요한 충전 시간 (1초 = 144프레임)
     }
 
     get hp() {
@@ -94,10 +100,13 @@ export default class GameBall {
 
     // 대시 스킬 트리거 함수
     triggerDash(keysPressed) {
-        if (this.isDead || this.dashTimer > 0 || this.dashCooldownTimer > 0 || this.freezeTimer > 0 || this.timeStopFreeze > 0 || this.paralysisTimer > 0) return;
+        if (this.isDead || this.dashTimer > 0 || this.freezeTimer > 0 || this.timeStopFreeze > 0 || this.paralysisTimer > 0) return;
 
         // 넉백을 강하게 당하는 와중에는 대시 스킬을 써서 조종권을 임의로 탈취할 수 없도록 방어 조건을 유지합니다.
         if (this.knockbackBounces > 0 || this.isBoatKnocked) return;
+
+        // 🌟 [변경]: 대시 쿨타임 타이머 대신 보유 스택 개수(dashStacks)를 검사하여 0개이면 발사 차단
+        if (this.dashStacks <= 0) return;
 
         let moveX = 0;
         let moveY = 0;
@@ -117,8 +126,8 @@ export default class GameBall {
         this.dy = Math.sin(dashAngle) * this.dashSpeed;
         this.dashTimer = this.dashMaxDuration;
         
-        // 대시 쿨타임을 1초(144프레임)로 축소 적용합니다.
-        this.dashCooldownTimer = 144;
+        // 🌟 [변경]: 대시 성공 시 스택을 1개 차감합니다.
+        this.dashStacks--;
 
         SoundManager.play('dash');
     }
@@ -217,9 +226,15 @@ export default class GameBall {
 
         if (this.pistonSlideTimer > 0) this.pistonSlideTimer--;
 
-        // 대시 쿨타임 및 지속 업데이트
-        if (this.dashCooldownTimer > 0) {
-            this.dashCooldownTimer--;
+        // 🌟 [변경]: 대시 3스택 충전 실시간 로직 (스택이 풀충전이 아닐 때만 1초 간격으로 스택 회복)
+        if (this.dashStacks < this.maxDashStacks) {
+            this.dashChargeFrame++;
+            if (this.dashChargeFrame >= this.maxDashChargeFrame) {
+                this.dashStacks++;
+                this.dashChargeFrame = 0;
+            }
+        } else {
+            this.dashChargeFrame = 0;
         }
 
         if (this.dashTimer > 0) {
@@ -707,21 +722,45 @@ export default class GameBall {
             ctx.restore(); 
         }
 
-        // 플레이어 공 위에 대시 쿨타임 남은 시간을 알려주는 입체 게이지바 UI 렌더링
-        if (this.team === 'player' && this.dashCooldownTimer > 0) {
+        // 🌟 [변경]: 플레이어 공 위에 대시 3칸 스택 및 충전 상태를 언제나 "상시 드로잉" 하는 게이지바 UI
+        if (this.team === 'player') {
             ctx.save();
             ctx.translate(drawX, drawY - this.radius - 12); 
             
             let barW = 54;
-            let barH = 6;
-            let progressRatio = (144 - this.dashCooldownTimer) / 144; 
-            if (progressRatio < 0) progressRatio = 0;
+            let barH = 7; // 입체감 두께 살짝 조정
 
+            // 1. 검은색 배경 캔버스 베이스 깔기
             ctx.fillStyle = "#000000";
             ctx.fillRect(-barW / 2, -barH / 2, barW, barH);
 
+            // 2. 현재 보유한 온전한 스택(dashStacks) + 현재 충전 중인 프레임 비율 계산 후 렌더링 폭 도출
+            let totalProgress = this.dashStacks + (this.dashStacks < this.maxDashStacks ? (this.dashChargeFrame / this.maxDashChargeFrame) : 0);
+            let fillWidth = (barW - 2) * (totalProgress / this.maxDashStacks);
+            if (fillWidth < 0) fillWidth = 0;
+            if (fillWidth > barW - 2) fillWidth = barW - 2;
+
+            // 3. 대시 전용 민트색(#00FFFF) 라이브 가동 주입
             ctx.fillStyle = "#00FFFF";
-            ctx.fillRect(-barW / 2 + 1, -barH / 2 + 1, (barW - 2) * progressRatio, barH - 2);
+            ctx.fillRect(-barW / 2 + 1, -barH / 2 + 1, fillWidth, barH - 2);
+
+            // 4. 게이지바 내부 3칸 등분 구분을 위한 정밀 절선(세로선) 스케치 추가
+            ctx.strokeStyle = "rgba(0, 0, 0, 0.65)";
+            ctx.lineWidth = 1.5;
+            
+            // 1번째 칸 경계 절선 위치
+            let lineX1 = -barW / 2 + (barW / 3);
+            ctx.beginPath();
+            ctx.moveTo(lineX1, -barH / 2 + 1);
+            ctx.lineTo(lineX1, barH / 2 - 1);
+            ctx.stroke();
+
+            // 2번째 칸 경계 절선 위치
+            let lineX2 = -barW / 2 + (barW / 3 * 2);
+            ctx.beginPath();
+            ctx.moveTo(lineX2, -barH / 2 + 1);
+            ctx.lineTo(lineX2, barH / 2 - 1);
+            ctx.stroke();
             
             ctx.restore();
         }
