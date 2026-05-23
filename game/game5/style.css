@@ -1,1 +1,134 @@
+/* style.css */
 
+body { 
+    background-color: #000; color: white; margin: 0; padding: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100vh; font-family: 'Impact', 'Arial Black', sans-serif;
+    overflow: hidden; 
+}
+
+#gameContainer { position: relative; width: 550px; display: flex; flex-direction: column; align-items: center; }
+
+#titleBar {
+    width: 100%; display: flex; justify-content: center; align-items: center;
+    margin-bottom: 15px; 
+}
+
+#bossHpContainer {
+    width: 100%; height: 24px; 
+    background-color: #222; 
+    border: 4px solid #555; 
+    border-radius: 0px; 
+    outline: 2px solid #000; 
+    overflow: hidden;
+    box-shadow: inset 3px 3px 0px rgba(0, 0, 0, 0.7); 
+}
+
+/* ★ 디자인 반영: 보스 체력바 색상을 하이라이트와 그림자가 들어간 위더 입체 회색 레이아웃으로 변경 */
+#bossHpFill {
+    width: 100%; height: 100%;
+    background-color: #CCCCCC; /* 메인 회색 */
+    border-top: 4px solid #FFFFFF; /* 밝은 하이라이트 */
+    border-bottom: 4px solid #777777; /* 어두운 회색 그림자 */
+    box-sizing: border-box; 
+    transition: width 0.2s ease-out; 
+}
+
+.title-left { font-size: 32px; color: #FFFFFF; text-shadow: 2px 2px 0 #000; } 
+.title-vs { font-size: 24px; color: #FF4444; padding-bottom: 3px; }
+/* ★ 디자인 반영: 보스 이름 텍스트 색상을 위더 테마(회색)로 변경 */
+.title-right { font-size: 32px; color: #CCCCCC; text-shadow: 2px 2px 0 #000; } 
+
+#canvasWrapper {
+    position: relative; width: 550px; height: 550px;
+    background-color: #000; border: 2px solid #FFF; 
+    box-shadow: 0 0 15px rgba(255,255,255,0.2); overflow: hidden;
+    
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cline x1='16' y1='2' x2='16' y2='30' stroke='%2300ff00' stroke-width='2'/%3E%3Cline x1='2' y1='16' x2='30' y2='16' stroke='%2300ff00' stroke-width='2'/%3E%3C/svg%3E") 16 16, crosshair;
+}
+
+canvas { position: absolute; left: 0; top: 0; background-color: transparent; }
+#bgCanvas { z-index: 1; background-color: #000; }
+#fgCanvas { z-index: 3; } 
+
+#statusBar {
+    width: 100%; margin-top: 10px; font-family: 'Courier New', Courier, monospace;
+    color: #FFF; text-align: center; letter-spacing: 0.5px;
+    height: 50px; display: flex; flex-direction: column; 
+    align-items: center; justify-content: flex-start; 
+    background: transparent; border-radius: 0px; 
+    overflow: hidden;
+}
+
+.status-hp { font-size: 13px; font-weight: bold; margin-bottom: 4px; line-height: 1.4; white-space: nowrap; }
+.status-effects { font-size: 11px; font-family: sans-serif; color: #CCC; line-height: 1.2; white-space: nowrap; }
+
+/* ★ 디자인 반영: 하단 상태창의 보스 텍스트 강조색을 위더 테마(회색)로 변경 */
+.boss-text { color: #CCCCCC; font-weight: bold; text-decoration: underline; }
+
+#startOverlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column; 
+    align-items: center; justify-content: center; z-index: 10;
+}
+.start-text { color: #FFF; font-size: 28px; letter-spacing: 1px; animation: blink 1s infinite; }
+.start-sub { color: #AAA; font-size: 14px; margin-top: 10px; font-family: sans-serif; text-align: center; line-height: 1.5; }
+.hint-text { color: #CCCCCC; font-size: 16px; margin-top: 20px; font-weight: bold; }
+
+@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+/* ★ 변경: 맵 왼쪽 하단 방향키 및 DASH 인터페이스 전체 컨테이너 */
+#keyContainer {
+    position: absolute;
+    bottom: 15px;
+    left: 15px;
+    z-index: 5; 
+    display: block;
+    pointer-events: none; 
+}
+
+.key-row {
+    display: block;
+    text-align: left; /* ★ 변경: 정밀한 수직 축 정렬을 위해 center에서 left 정렬로 최적화 */
+    margin-bottom: 4px;
+    white-space: nowrap; 
+}
+
+.key-cap {
+    display: inline-block;
+    vertical-align: middle;
+    width: 32px;
+    height: 32px;
+    line-height: 28px;
+    margin: 0 2px;
+    background-color: rgba(20, 20, 20, 0.85);
+    border: 2px solid #888;
+    border-radius: 4px;
+    color: #FFF;
+    font-family: 'Arial Black', sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    box-sizing: border-box;
+    opacity: 0.35; /* 평소에는 연하게 반투명 상태 유지 */
+    transition: opacity 0.05s;
+}
+
+/* ★ 추가: 첫 번째 행에 있는 W 키캡을 아래 행의 S 키 바로 위로 수직 정렬시키는 마진값 */
+.key-row:first-child .key-cap {
+    margin-left: 38px; /* A 키의 넓이와 마진을 계산하여 S 위에 완벽하게 안착 */
+}
+
+/* D 키의 오른쪽 옆으로 밀려난 형태에 맞추어 레이아웃 마진 세밀 조율 */
+.key-cap.dash-cap {
+    width: 58px;
+    font-size: 11px;
+    line-height: 28px;
+    margin-left: 6px; /* 왼쪽의 D 키와의 깔끔한 고정 여백 확보 */
+    margin-right: 0px;
+}
+
+/* WASD 및 DASH 키를 누르면 투명도가 완전히 제거되어 선명해짐 */
+.key-cap.active {
+    opacity: 1.0; 
+}
