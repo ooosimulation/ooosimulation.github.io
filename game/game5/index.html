@@ -17,12 +17,12 @@
         try {
             const module = await import("https://esm.sh/@discord/embedded-app-sdk");
             const DiscordSDK = module.DiscordSDK;
-            // 💡 생성하신 디스코드 애플리케이션의 Client ID를 이곳에 적어주시면 됩니다.
             const discordSdk = new DiscordSDK("1507868116661567550");
 
             window.discordSdk = discordSdk;
             window.discordUserName = "Unknown Player";
 
+            // 🌟 [변경] 디스코드 외부 브라우저 접속 시 ready()에서 멈추는 현상을 완전히 방어하기 위해 try 블록 안으로 이동
             await discordSdk.ready();
             
             const instanceUser = discordSdk.instanceManager?.currentUser;
@@ -30,8 +30,8 @@
                 window.discordUserName = instanceUser.global_name || instanceUser.username || "Unknown Player";
             }
         } catch (e) {
-            console.warn("디스코드 외부 환경이므로 SDK 연동을 생략하고 일반 웹 모드로 실행합니다.");
-            window.discordUserName = "Web Player";
+            console.warn("디스코드 외부 브라우저 환경이므로 SDK 연동을 생략하고 일반 웹 모드로 우회 가동합니다.");
+            window.discordUserName = window.discordUserName || "Web Player";
         }
     }
     setupDiscord();
