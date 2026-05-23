@@ -37,6 +37,9 @@ export default class Bow extends BaseWeapon {
 
         // 공 위에 배율을 표시해 줄 부유 텍스트 배열 유지
         this.floatingTexts = [];
+
+        // 🌟 [추가]: 위더 및 스켈레톤 공격 피격 감지용 이전 체력 기록 변수
+        this.lastOwnerHp = null;
     }
 
     // main.js에서 마우스 좌표를 실시간 동기화하기 위한 메서드 유지
@@ -84,6 +87,39 @@ export default class Bow extends BaseWeapon {
     }
 
     update(owner, enemies, target, canvas) {
+        // 🌟 [추가]: 최초 실행 시 현재 체력을 백업
+        if (this.lastOwnerHp === null) {
+            this.lastOwnerHp = owner.hp;
+        }
+
+        // 🌟 [추가]: 보스(Wither)나 쫄몹(Skeleton)에게 맞아서 체력이 깎였을 때 연사속도 감속 패널티 부여
+        if (owner.hp < this.lastOwnerHp) {
+            let hpDecreased = this.lastOwnerHp - owner.hp;
+            
+            // 데미지를 입었을 때 현재 장전 배율에서 패널티 차감 (최하 1.0 제한)
+            let bowLoss = this.chargeSpeedMultiplier * 0.25; // 피격 시 공속 배율 25% 급감
+            let prevMult = this.chargeSpeedMultiplier;
+            this.chargeSpeedMultiplier = Math.max(1.0, this.chargeSpeedMultiplier - bowLoss);
+
+            // 실제로 공속 배율이 깎였다면 머리 위에 빨간색 수치로 시각화 알림
+            if (prevMult > 1.0) {
+                this.floatingTexts.push({
+                    text: `-${(prevMult - this.chargeSpeedMultiplier).toFixed(2)} Slowed`,
+                    relX: 0,
+                    relY: -owner.radius - 15,
+                    alpha: 1.0,
+                    color: "#FF4444", // 패널티 빨간색
+                    life: 50
+                });
+            }
+
+            // 피격 시 쿨타임 패널티 추가 및 장전 한계치 원복 조율
+            this.cooldownTimer = Math.min(this.maxCooldown, this.cooldownTimer + 30);
+            this.maxCooldown = Math.min(288, this.maxCooldown + 12);
+        }
+        // 다음 프레임 비교를 위해 실시간 체력 갱신 동기화
+        this.lastOwnerHp = owner.hp;
+
         // 본체 상태 이상 적용 시 차징 강제 취소 유지
         if (owner.freezeTimer > 0 || owner.timeStopFreeze > 0 || owner.paralysisTimer > 0) {
             if (this.isCharging) {
@@ -287,5 +323,6 @@ export default class Bow extends BaseWeapon {
         this.chargeSpeedMultiplier = 1.0; 
         this.maxCooldown = 288;
         this.floatingTexts = [];
+        this.lastOwnerHp = null;
     }
 }
