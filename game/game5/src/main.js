@@ -163,18 +163,18 @@ async function shareRecordToDiscord() {
     shareStatusTimer = 240;
 }
 
-// 🌟 [변경] R키 리셋 시 위더 무기 인스턴스의 파란색 아우라 제어 플래그 변수들까지 완벽히 초기화합니다.
+// 🌟 [변경] R키 재시작 시 위더 무기 및 활 무기 내부의 모든 기믹 변수들을 정밀 타격하여 초기화합니다.
 function resetGame() {
     if (witherWeapon) {
         witherWeapon.witherState = 'spawning';
         witherWeapon.spawnTimer = 288;
         witherWeapon.burstCount = 0;
         witherWeapon.attackCooldown = 0;
-        witherWeapon.hasTransformed = false;
         witherWeapon.skulls = [];            
         witherWeapon.skeletons = [];         
         
-        // 🌟 [추가]: 위더 보호막 그래픽 상태를 끄기 위해 예상되는 아우라 플래그 변수들을 강제로 리셋합니다.
+        // 🌟 [추가]: 위더 보호막 실시간 각성 조건 변수군 강제 청소 (파란색 오라 무력화)
+        witherWeapon.hasTransformed = false; 
         if (witherWeapon.isBlueAura !== undefined) witherWeapon.isBlueAura = false;
         if (witherWeapon.blueAura !== undefined) witherWeapon.blueAura = false;
         if (witherWeapon.shieldActive !== undefined) witherWeapon.shieldActive = false;
@@ -184,9 +184,14 @@ function resetGame() {
         bowWeapon.cooldownTimer = 0;
         bowWeapon.chargeTimer = 0;
         bowWeapon.isCharging = false;
+        
+        // 🌟 [추가]: 대문자/소문자 예외 케이스를 모두 고려하여 활의 날아가던 모든 투사체를 완벽 정화합니다.
         bowWeapon.arrows = [];               
-        bowWeapon.floatingTexts = [];        
+        if (bowWeapon.Arrows !== undefined) bowWeapon.Arrows = []; 
+        
+        // 🌟 [추가]: 누적되었던 활 장전 속도 배율 및 피드백 데미지 텍스트를 공장 초기화 상태로 환원합니다.
         bowWeapon.chargeSpeedMultiplier = 1.0;
+        if (bowWeapon.floatingTexts !== undefined) bowWeapon.floatingTexts = [];
     }
 
     player1 = new GameBall(275, 400, "#22CC44", "#0A3311", 'player', bowWeapon); 
