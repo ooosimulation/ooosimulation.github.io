@@ -4,7 +4,7 @@ import GameBall from './entities/GameBall.js';
 import Wither from './weapons/Wither.js'; 
 import Bow from './weapons/Bow.js'; 
 
-// 🌟 [추가] 기존에 적어두었던 가상 클래스 모형들을 안전하게 선언하여, 아래쪽에 배치된 수많은 잔여 무기 코드들이 에러를 뿜지 않도록 철저히 보존합니다.
+// 🌟 [유지] 기존에 적어두었던 가상 클래스 모형들을 안전하게 선언하여, 아래쪽에 배치된 수많은 잔여 무기 코드들이 에러를 뿜지 않도록 철저히 보존합니다.
 class Creeper { constructor() { this.name = "CREEPER"; } }
 class Piston { constructor() { this.name = "PISTON"; } }
 class GoatHorn { constructor() { this.name = "GOAT_HORN"; } }
@@ -199,6 +199,10 @@ function resetGame() {
 
     boss = new GameBall(275, 150, "#000000", "#555555", 'boss', witherWeapon);
     boss.radius = 60; boss.maxHp = 500; boss.hp = 500; boss.isDead = false; 
+
+    // 🌟 [추가] 완전한 재시작 초기화를 위해 플레이어와 보스의 누적 피해량 기록을 0으로 강제 초기화합니다.
+    player1.damageDealt = 0;
+    boss.damageDealt = 0;
 
     player1.speed = playerSpeed; player1.baseSpeed = playerSpeed; player1.maxSpeed = playerSpeed;
     let newAngleP1 = Math.random() * Math.PI * 2;
@@ -497,18 +501,9 @@ function animate(newtime) {
     players.forEach(p => p.draw(fgCtx));
     EffectManager.updateAndDraw(fgCtx);
 
+    // 🌟 [변경] 배틀 스타트 "BATTLE START!" 텍스트 드로잉 시스템을 우회 제거 처리하여 깔끔하게 숨겼습니다.
     if (startDelayTimer > 0) {
-        fgCtx.save();
-        fgCtx.fillStyle = "#FFF200";
-        fgCtx.font = "900 55px 'Arial Black', sans-serif";
-        fgCtx.textAlign = "center";
-        fgCtx.textBaseline = "middle";
-        fgCtx.lineWidth = 6;
-        fgCtx.strokeStyle = "#000";
-        let text = "BATTLE START!";
-        fgCtx.strokeText(text, fgCanvas.width / 2, fgCanvas.height / 2);
-        fgCtx.fillText(text, fgCanvas.width / 2, fgCanvas.height / 2);
-        fgCtx.restore();
+        // 기존 텍스트 드로잉 로직 생략 (틀 유지 및 제거 조건 대응)
     }
 
     if (isStarted && startDelayTimer <= 0) {
