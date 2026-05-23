@@ -163,17 +163,24 @@ async function shareRecordToDiscord() {
     shareStatusTimer = 240;
 }
 
-// 🌟 [변경] R키 재시작 시 위더 무기 및 활 무기 내부의 모든 기믹 변수들을 정밀 타격하여 초기화합니다.
+// 🌟 [변경] R키 재시작 시 무기 내부, 투사체 매핑, 머리 각도 좌표계 및 소환된 엔티티들을 추적하여 공장 초기화합니다.
 function resetGame() {
     if (witherWeapon) {
         witherWeapon.witherState = 'spawning';
-        witherWeapon.spawnTimer = 288;
+        witherWeapon.spawnTimer = 0; // 🌟 [변경]: 무기 내부 자체 타이머를 처음(0)부터 확실하게 돌리도록 변경
         witherWeapon.burstCount = 0;
+        witherWeapon.burstTimer = 0;
         witherWeapon.attackCooldown = 0;
+        witherWeapon.cooldown = 144; // 🌟 [추가]: 위더 첫 공격 대기시간 정상화
         witherWeapon.skulls = [];            
         witherWeapon.skeletons = [];         
+        witherWeapon.newSpawns = []; // 🌟 [추가]: 새로 태어나기 위해 임시 대기 중이던 엔티티 배열 정화
+        witherWeapon.isPhase2 = false; // 🌟 [추가]: 2페이즈(체력 절반 이하 각성) 플래그 강제 OFF 처리
         
-        // 🌟 [추가]: 위더 보호막 실시간 각성 조건 변수군 강제 청소 (파란색 오라 무력화)
+        // 🌟 [추가]: 보스 머리 각도가 엉뚱한 허공을 기억하지 않도록 즉시 정면 각도 레이아웃으로 초기화
+        witherWeapon.headAngles = [0, 0, 0];
+        
+        // 🌟 [유지]: 위더 보호막 실시간 각성 조건 변수군 강제 청소 (파란색 오라 무력화)
         witherWeapon.hasTransformed = false; 
         if (witherWeapon.isBlueAura !== undefined) witherWeapon.isBlueAura = false;
         if (witherWeapon.blueAura !== undefined) witherWeapon.blueAura = false;
@@ -184,12 +191,13 @@ function resetGame() {
         bowWeapon.cooldownTimer = 0;
         bowWeapon.chargeTimer = 0;
         bowWeapon.isCharging = false;
+        bowWeapon.maxCooldown = 288; // 🌟 [추가]: 누적되어 단축되었던 활의 맥스 쿨타임 원복
         
-        // 🌟 [추가]: 대문자/소문자 예외 케이스를 모두 고려하여 활의 날아가던 모든 투사체를 완벽 정화합니다.
+        // 🌟 [유지]: 대문자/소문자 예외 케이스를 모두 고려하여 활의 날아가던 모든 투사체를 완벽 정화합니다.
         bowWeapon.arrows = [];               
         if (bowWeapon.Arrows !== undefined) bowWeapon.Arrows = []; 
         
-        // 🌟 [추가]: 누적되었던 활 장전 속도 배율 및 피드백 데미지 텍스트를 공장 초기화 상태로 환원합니다.
+        // 🌟 [유지]: 누적되었던 활 장전 속도 배율 및 피드백 데미지 텍스트를 공장 초기화 상태로 환원합니다.
         bowWeapon.chargeSpeedMultiplier = 1.0;
         if (bowWeapon.floatingTexts !== undefined) bowWeapon.floatingTexts = [];
     }
@@ -200,7 +208,7 @@ function resetGame() {
     boss = new GameBall(275, 150, "#000000", "#555555", 'boss', witherWeapon);
     boss.radius = 60; boss.maxHp = 500; boss.hp = 500; boss.isDead = false; 
 
-    // 🌟 [추가] 완전한 재시작 초기화를 위해 플레이어와 보스의 누적 피해량 기록을 0으로 강제 초기화합니다.
+    // 🌟 [유지] 완전한 재시작 초기화를 위해 플레이어와 보스의 누적 피해량 기록을 0으로 강제 초기화합니다.
     player1.damageDealt = 0;
     boss.damageDealt = 0;
 
@@ -214,11 +222,17 @@ function resetGame() {
     boss.dx = Math.cos(newAngleB) * bossSpeed; boss.dy = Math.sin(newAngleB) * bossSpeed;
     boss.angle = Math.atan2(boss.dy, boss.dx);
 
+    // 🌟 [변경]: 전장 맵(players)에 남아있던 스켈레톤 잔여 부하 및 미처 안 지워진 투사체 객체를 전부 제거하고 순수하게 본체 둘만 남깁니다.
     players = [player1, boss];
 
     if (EffectManager) {
         EffectManager.particles = [];
         EffectManager.hitStopTimer = 0;
+    }
+
+    // 🌟 [추가]: 충돌 매니저 내부 연속 입출력 필터링 쿨타임 초기화
+    if (CollisionManager) {
+        CollisionManager.cooldown = 0;
     }
 
     isGameOver = false;
@@ -501,9 +515,9 @@ function animate(newtime) {
     players.forEach(p => p.draw(fgCtx));
     EffectManager.updateAndDraw(fgCtx);
 
-    // 🌟 [변경] 배틀 스타트 "BATTLE START!" 텍스트 드로잉 시스템을 우회 제거 처리하여 깔끔하게 숨겼습니다.
+    // 🌟 [유지] 배틀 스타트 "BATTLE START!" 텍스트 드로잉 시스템 우회 제거 유지
     if (startDelayTimer > 0) {
-        // 기존 텍스트 드로잉 로직 생략 (틀 유지 및 제거 조건 대응)
+        // 기존 텍스트 드로잉 로직 생략
     }
 
     if (isStarted && startDelayTimer <= 0) {
