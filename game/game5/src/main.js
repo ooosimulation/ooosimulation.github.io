@@ -46,7 +46,6 @@ const keyElements = {
 // ==========================================
 // 무기 인스턴스 생성 순서 정돈 (오류 방지 및 웹 우회 가동 안전장치 추가)
 // ==========================================
-// 🌟 [변경] 특정 무기 파일이 서버에 없더라도 전체 스크립트가 마비되는 현상을 완벽히 방어합니다.
 let goatHornWeapon, lightningRodWeapon, enderDragonWeapon, tridentWeapon, pistonWeapon;
 let pickaxeWeapon, snowballWeapon, witherWeapon, wardenWeapon, boatWeapon, bowWeapon;
 
@@ -62,8 +61,6 @@ try { wardenWeapon = new Warden(); } catch(e) { console.warn("Warden 로드 생�
 try { boatWeapon = new Boat(); } catch(e) { console.warn("Boat 로드 생략"); }
 try { bowWeapon = new Bow(); } catch(e) { console.warn("Bow 로드 완화"); }
 
-// 🌟 [추가] 일반 웹 브라우저 테스트 중 타 무기 파일이 온전히 없는 상황이어도, 
-// 시뮬레이션 기본 틀이 절대 터지지 않도록 예비 인스턴스를 바인딩하여 스타트를 보장합니다.
 if (!witherWeapon) witherWeapon = { name: "WITHER", update: () => {}, drawForeground: () => {}, drawBackground: () => {} };
 if (!bowWeapon) bowWeapon = { name: "BOW", update: () => {}, drawForeground: () => {}, drawBackground: () => {}, updateMousePosition: () => {} };
 
@@ -93,7 +90,6 @@ player1.dx = Math.cos(randomAngleP1) * playerSpeed;
 player1.dy = Math.sin(randomAngleP1) * playerSpeed;
 player1.angle = Math.atan2(player1.dy, player1.dx);
 
-// 보스 기본 무빙 스피드를 플레이어의 1.5배 수치로 대폭 상향 주입합니다.
 let bossSpeed = playerSpeed * 1.5;
 boss.speed = bossSpeed;
 boss.baseSpeed = bossSpeed;
@@ -108,15 +104,12 @@ let isStarted = false;
 let animationId;
 let startDelayTimer = 0; 
 
-// 🌟 [변경] 모니터 가변 주사율 성능 보정 공식의 핵심이 되는 고정 주사율 타겟 세팅
 const fps = 144;
 const fpsInterval = 1000 / fps;
 let then = performance.now();
 
-// 🌟 [추가] 모니터 프레임과 물리 속도를 완벽히 동격으로 동기화하기 위한 현실 시간 누적 변수
 let accumulator = 0;
 
-// 디스코드 기록 연동 및 타임 트래킹용 글로벌 변수군 생성
 let isGameOver = false;
 let isWin = false;
 let gameStartTime = 0;
@@ -126,7 +119,6 @@ let shareStatusMessage = '';
 let shareStatusTimer = 0;
 let shareButtonBounds = null;
 
-// 밀리초 단위를 mm:s.SS 형태의 깔끔한 문자열로 포맷팅하는 함수
 const formatTime = ms => {
     let t = Math.floor(ms);
     let m = Math.floor(t / 60000).toString().padStart(2, '0');
@@ -135,7 +127,6 @@ const formatTime = ms => {
     return `${m}:${s}.${msPart}`;
 };
 
-// Node.js 멀티플레이어 서버 서버의 API로 기록을 전송하는 비동기 함수
 async function shareRecordToDiscord() {
     if (!isGameOver || !isWin || hasSharedRecord) return;
     hasSharedRecord = true;
@@ -172,16 +163,13 @@ async function shareRecordToDiscord() {
     shareStatusTimer = 240;
 }
 
-// 🌟 [추가] R 키 입력을 감지했을 때 모든 개체 데이터 및 기록 스탬프를 완벽하게 재생성하는 함수
 function resetGame() {
-    // 1. 캐릭터 핵심 엔티티 재배치 및 무기 인스턴스 초기 연동
     player1 = new GameBall(275, 400, "#22CC44", "#0A3311", 'player', bowWeapon); 
     player1.radius = 45; player1.maxHp = 100; player1.hp = 100; 
 
     boss = new GameBall(275, 150, "#000000", "#555555", 'boss', witherWeapon);
     boss.radius = 60; boss.maxHp = 500; boss.hp = 500; boss.isDead = false; 
 
-    // 2. 물리 팩터(속도, 불규칙 각도, 방향 벡터) 완전 복구
     player1.speed = playerSpeed; player1.baseSpeed = playerSpeed; player1.maxSpeed = playerSpeed;
     let newAngleP1 = Math.random() * Math.PI * 2;
     player1.dx = Math.cos(newAngleP1) * playerSpeed; player1.dy = Math.sin(newAngleP1) * playerSpeed;
@@ -194,13 +182,11 @@ function resetGame() {
 
     players = [player1, boss];
 
-    // 3. 잔여 화면 진동 및 파티클 전량 소거
     if (EffectManager) {
         EffectManager.particles = [];
         EffectManager.hitStopTimer = 0;
     }
 
-    // 4. 타이머 및 디스코드 기록 연동 변수 정밀 초기화
     isGameOver = false;
     isWin = false;
     hasSharedRecord = false;
@@ -208,15 +194,11 @@ function resetGame() {
     shareStatusTimer = 0;
     shareButtonBounds = null;
 
-    // 5. 즉시 READY 상태(120프레임 카운트다운) 재진입
     startDelayTimer = 120; 
     then = performance.now();
     accumulator = 0;
 }
 
-// ==========================================
-// WASD 키보드 입력 및 대시 마우스 클릭 입력 감지용 상태 변수와 독립 리스너
-// ==========================================
 const keysPressed = { w: false, a: false, s: false, d: false };
 
 window.addEventListener('keydown', function(e) {
@@ -224,8 +206,6 @@ window.addEventListener('keydown', function(e) {
     const key = e.key.toLowerCase();
     if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
         keysPressed[key] = true;
-        
-        // 키가 눌렸을 때 해당 방향키 인터페이스 요소에 'active' 클래스를 붙여 불을 켭니다.
         if (keyElements[key]) {
             keyElements[key].classList.add("active");
         }
@@ -236,19 +216,18 @@ window.addEventListener('keyup', function(e) {
     const key = e.key.toLowerCase();
     if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
         keysPressed[key] = false;
-        
-        // 키를 뗐을 때 해당 방향키 인터페이스 요소에서 'active' 클래스를 제거해 불을 끕니다.
         if (keyElements[key]) {
             keyElements[key].classList.remove("active");
         }
     }
 });
 
-// 마우스 왼쪽 클릭 시 대시 기능 연결 및 결과창 버튼 클릭 감지 통합
 fgCanvas.addEventListener('mousedown', function(e) {
     if (!isStarted || e.button !== 0) return;
 
-    // 게임 종료 후 클리어 상태일 때 버튼 클릭 좌표 판정
+    // 🌟 [추가] READY 카운트다운(startDelayTimer) 중에는 마우스 클릭 대시 입력을 막아 정지 상태를 유지합니다.
+    if (startDelayTimer > 0) return;
+
     if (isGameOver && isWin && shareButtonBounds && !hasSharedRecord) {
         const rect = fgCanvas.getBoundingClientRect();
         const scaleX = fgCanvas.width / rect.width;
@@ -259,7 +238,7 @@ fgCanvas.addEventListener('mousedown', function(e) {
         if (mx >= shareButtonBounds.x && mx <= shareButtonBounds.x + shareButtonBounds.w &&
             my >= shareButtonBounds.y && my <= shareButtonBounds.y + shareButtonBounds.h) {
             shareRecordToDiscord();
-            return; // 클릭 처리가 완료되면 아래 대시 로직을 바이패스
+            return;
         }
     }
 
@@ -269,9 +248,6 @@ fgCanvas.addEventListener('mousedown', function(e) {
     }
 });
 
-// ==========================================
-// 수동 마우스 클릭 트리거를 제거하고 실시간 조준 좌표 추적 기능만 보존
-// ==========================================
 fgCanvas.addEventListener('mousemove', function(e) {
     if (!isStarted || player1.isDead) return;
     const rect = fgCanvas.getBoundingClientRect();
@@ -387,20 +363,23 @@ function animate(newtime) {
     let elapsed = now - then;
     then = now;
 
-    // 🌟 [추가] 과도한 비정상 연산 버퍼 현상을 막기 위해 최대 보정치를 제한 (예제 코드의 if (deltaTime > 250)과 동일 역할)
     if (elapsed > 250) elapsed = 250;
     
-    // 🌟 [추가] 현실 세계에서 흘러간 실제 시간을 누적 타이머 버퍼에 계속 더함
     accumulator += elapsed;
 
-    // 🌟 [변경] 모니터 주사율에 상관없이 고정된 물리 루프를 독립적으로 성립시키는 'while' 루프 처리 구조 주입
     while (accumulator >= fpsInterval) {
 
         if (EffectManager.hitStopTimer > 0) {
             EffectManager.hitStopTimer--;
         } else {
             if (startDelayTimer > 0) {
+                // 🌟 [변경] READY 카운트다운 동안은 플레이어와 보스가 시작 위치에 고정되도록 강제 고정 락(Lock)을 켭니다.
+                // 이로 인해 시작하자마자 공들이 맵 구석으로 텔레포트하거나 잔상이 남는 버그가 완벽하게 교정됩니다.
                 startDelayTimer--;
+                
+                player1.x = 275; player1.y = 400;
+                boss.x = 275; boss.y = 150;
+                
                 if (startDelayTimer === 0) gameStartTime = performance.now();
             } else if (!isGameOver) {
                 if (boss.isDead || player1.isDead) {
@@ -409,7 +388,6 @@ function animate(newtime) {
                     finalClearTime = performance.now() - gameStartTime;
                 }
 
-                // 보스 실시간 물리 가속 수치를 플레이어의 1.5배 속도(playerSpeed * 1.5)로 확실히 갱신 및 보존합니다.
                 if (boss && !boss.isDead) {
                     let updatedBossSpeed = playerSpeed * 1.5;
                     boss.speed = updatedBossSpeed;
@@ -438,17 +416,15 @@ function animate(newtime) {
 
         if (shareStatusTimer > 0) shareStatusTimer--;
 
-        // 🌟 [추가] 고정 프레임 공식 한 판이 돌 때마다 누적 버퍼에서 타겟 간격만큼 정확하게 차감
         accumulator -= fpsInterval;
     }
 
     // =========================================================================
-    // 🌟 여기서부터는 물리 연산과 완벽히 분리되어 모니터 주사율에 부드럽게 맞춰지는 화면 드로잉(Render) 영역입니다.
+    // 🌟 렌더링 영역: 이제 물리 락과 완벽히 연동되어 READY 상태일 때도 공들이 정지 상태로 화면에 선명히 보입니다.
     // =========================================================================
     bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
     fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
 
-    // 화면 흔들림 제어 (드로잉 전용 갱신)
     if (EffectManager.hitStopTimer > 0) {
         let shakeAmt = Math.min(EffectManager.hitStopTimer, 12) * 1.5;
         let sx = (Math.random() - 0.5) * shakeAmt;
@@ -458,7 +434,6 @@ function animate(newtime) {
         wrapperDom.style.transform = `translate(0px, 0px)`;
     }
 
-    // 플레이어가 실제 대시 스킬 사용 중일 때 DASH 키캡의 불을 실시간으로 켬 (반투명 해제)
     if (keyElements.dash) {
         if (player1 && !player1.isDead && player1.dashTimer > 0) {
             keyElements.dash.classList.add("active");
@@ -467,6 +442,7 @@ function animate(newtime) {
         }
     }
 
+    // 🌟 [변경] 배경 요소 드로잉 판정 완화: READY 상태일 때도 보스의 어둠 연출이 정상 표현되도록 보정
     players.forEach(p => {
         if (p && !p.isDead && p.weapon && p.weapon.drawBackground) {
             bgCtx.save();
@@ -494,7 +470,6 @@ function animate(newtime) {
         fgCtx.restore();
     }
 
-    // 인게임 화면 내부 상단에 실시간 경과 타임 레이아웃 드로잉
     if (isStarted && startDelayTimer <= 0) {
         let timeText = formatTime(!isGameOver ? performance.now() - gameStartTime : finalClearTime);
         fgCtx.save();
@@ -509,7 +484,6 @@ function animate(newtime) {
         fgCtx.restore();
     }
 
-    // 게임 종료 조건(클리어/게임오버) 만족 시 화면에 오버레이 및 상호작용 UI 생성
     if (isGameOver) {
         fgCtx.save();
         fgCtx.fillStyle = "rgba(0, 0, 0, 0.7)";
@@ -530,7 +504,6 @@ function animate(newtime) {
             fgCtx.strokeText(`CLEAR TIME: ${formatTime(finalClearTime)}`, fgCanvas.width / 2, fgCanvas.height / 2 - 2);
             fgCtx.fillText(`CLEAR TIME: ${formatTime(finalClearTime)}`, fgCanvas.width / 2, fgCanvas.height / 2 - 2);
 
-            // 디스코드 기록 전송 전용 그래픽 인터랙티브 박스 좌표 설정
             const btnW = 210, btnH = 36;
             const btnX = fgCanvas.width / 2 - btnW / 2, btnY = fgCanvas.height / 2 + 35;
             shareButtonBounds = { x: btnX, y: btnY, w: btnW, h: btnH };
@@ -564,7 +537,6 @@ function animate(newtime) {
     updateStatusBar();
 }
 
-// 🌟 [변경] 최초 가동 스페이스바 감지 리스너에 'R' 키 리셋 분기점을 유연하게 추가 결합
 window.addEventListener('keydown', function(e) {
     if (e.code === 'Space' && !isStarted) {
         e.preventDefault(); 
@@ -578,7 +550,6 @@ window.addEventListener('keydown', function(e) {
         return;
     }
 
-    // 🌟 [추가] 인게임 가동 중(isStarted)일 때 'R' 키를 누르면 언제든지 리셋 연쇄 반응 가동
     if (e.key.toLowerCase() === 'r') {
         if (isStarted) {
             if (startOverlay) startOverlay.style.display = "none";
@@ -588,7 +559,6 @@ window.addEventListener('keydown', function(e) {
     }
 });
 
-// 시작 오버레이 클릭 시 마우스 인터랙션으로도 가동할 수 있도록 이벤트 추가 바인딩
 startOverlay.addEventListener('click', function() {
     if (!isStarted) {
         startOverlay.style.display = "none";
