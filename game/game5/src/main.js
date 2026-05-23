@@ -163,13 +163,36 @@ async function shareRecordToDiscord() {
     shareStatusTimer = 240;
 }
 
+// 🌟 [변경] R 키 리셋 시 무기 인스턴스의 변수 데이터까지 완벽하게 태초 상태로 초기화합니다.
 function resetGame() {
+    // 1. 무기 모듈 자체 변수값 완벽 타일 청소 (Wither 내부 실드 오라 메모리 소거)
+    if (witherWeapon) {
+        witherWeapon.witherState = 'spawning';
+        witherWeapon.spawnTimer = 288;
+        witherWeapon.burstCount = 0;
+        witherWeapon.attackCooldown = 0;
+        witherWeapon.hasTransformed = false; // 절반 이하 기믹 기억 상실 처리
+        witherWeapon.skulls = [];            // 화면상 잔여 머리 유도탄 제거
+        witherWeapon.skeletons = [];         // 소환되어 있던 위더 스켈레톤 부하들 소멸
+    }
+
+    if (bowWeapon) {
+        bowWeapon.cooldownTimer = 0;
+        bowWeapon.chargeTimer = 0;
+        bowWeapon.isCharging = false;
+        bowWeapon.arrows = [];               // 날아가던 화살 오브젝트 완전 회수
+        bowWeapon.floatingTexts = [];        // 화면에 떠있던 가속/감속 피드백 텍스트 제거
+        bowWeapon.chargeSpeedMultiplier = 1.0;
+    }
+
+    // 2. 캐릭터 개체 데이터 완전히 새로 정의
     player1 = new GameBall(275, 400, "#22CC44", "#0A3311", 'player', bowWeapon); 
     player1.radius = 45; player1.maxHp = 100; player1.hp = 100; 
 
     boss = new GameBall(275, 150, "#000000", "#555555", 'boss', witherWeapon);
     boss.radius = 60; boss.maxHp = 500; boss.hp = 500; boss.isDead = false; 
 
+    // 3. 방향 벡터 및 속도 스펙 완전 원상 복구
     player1.speed = playerSpeed; player1.baseSpeed = playerSpeed; player1.maxSpeed = playerSpeed;
     let newAngleP1 = Math.random() * Math.PI * 2;
     player1.dx = Math.cos(newAngleP1) * playerSpeed; player1.dy = Math.sin(newAngleP1) * playerSpeed;
@@ -182,11 +205,13 @@ function resetGame() {
 
     players = [player1, boss];
 
+    // 4. 화면 잔여 파티클 효과 완전 정돈
     if (EffectManager) {
         EffectManager.particles = [];
         EffectManager.hitStopTimer = 0;
     }
 
+    // 5. 스탬프 변수군 정밀 리셋
     isGameOver = false;
     isWin = false;
     hasSharedRecord = false;
@@ -374,11 +399,8 @@ function animate(newtime) {
             if (startDelayTimer > 0) {
                 startDelayTimer--;
                 
-                // 🌟 [변경 및 보정]: READY 도중에도 공 내부 무기의 프레임 카운트가 정상 업데이트되도록 하되,
-                // 플레이어가 키 입력으로 무빙하거나 보스가 마음대로 돌아다니지 못하게 '위치 좌표'만 완벽하게 고정 락(Lock)을 걸어둡니다.
                 players.forEach(p => {
                     let enemies = players.filter(e => e !== p);
-                    // 강제로 패시브/공격 키 프레임을 흘려보내어 활 투명화 현상 및 위더 무한 대기 현상을 차단합니다.
                     p.update(enemies, fgCanvas, null); 
                 });
 
