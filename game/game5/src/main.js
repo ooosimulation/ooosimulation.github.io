@@ -225,7 +225,6 @@ window.addEventListener('keyup', function(e) {
 fgCanvas.addEventListener('mousedown', function(e) {
     if (!isStarted || e.button !== 0) return;
 
-    // 🌟 [유지] READY 카운트다운 중에는 마우스 클릭 입력을 완전히 비활성화합니다.
     if (startDelayTimer > 0) return;
 
     if (isGameOver && isWin && shareButtonBounds && !hasSharedRecord) {
@@ -373,8 +372,6 @@ function animate(newtime) {
             EffectManager.hitStopTimer--;
         } else {
             if (startDelayTimer > 0) {
-                // 🌟 [변경 및 보정]: READY 카운트다운(2초) 동안 물리 계산 및 속도 업데이트 조작을 일체 잠그고,
-                // 지정된 고정 격전 포지션에 완벽하게 묶어둡니다. 이로 인해 공들이 정지 상태를 견고히 유지합니다.
                 startDelayTimer--;
                 
                 player1.x = 275; player1.y = 400;
@@ -383,7 +380,6 @@ function animate(newtime) {
                 boss.x = 275; boss.y = 150;
                 boss.dx = 0; boss.dy = 0;
                 
-                // 보스의 변신 대기 시간을 READY 카운트다운 동안 강제 고정하여 드로잉 잔상을 완벽 차단합니다.
                 if (boss.weapon && boss.weapon.name === 'WITHER') {
                     boss.weapon.witherState = 'spawning';
                     boss.weapon.spawnTimer = 288;
@@ -391,7 +387,6 @@ function animate(newtime) {
 
                 if (startDelayTimer === 0) {
                     gameStartTime = performance.now();
-                    // 🌟 [추가]: 카운트다운이 종료되는 바로 그 프레임(BATTLE START!)에 자유 무빙용 최초 각도와 속도 벡터를 실시간 주입합니다.
                     let initAngleP1 = Math.random() * Math.PI * 2;
                     let initAngleB = Math.random() * Math.PI * 2;
                     
@@ -441,9 +436,6 @@ function animate(newtime) {
         accumulator -= fpsInterval;
     }
 
-    // =========================================================================
-    // 🌟 렌더링 영역: 이제 보스의 입체 무기 레이아웃이 물리 잠금과 매칭되어 화면 중앙에 흔들림 없이 선명하게 보입니다.
-    // =========================================================================
     bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
     fgCtx.clearRect(0, 0, fgCanvas.width, fgCanvas.height);
 
@@ -477,8 +469,7 @@ function animate(newtime) {
 
     if (startDelayTimer > 0) {
         fgCtx.save();
-        fgCtx.fillStyle = "rgba(0, 0, 0, 0.4)";
-        fgCtx.fillRect(0, 0, fgCanvas.width, fgCanvas.height);
+        // 🌟 [변경]: 기존 투명도 0.4(rgba(0,0,0,0.4)) 사각형 채우기 구문이 맵 전체 레이아웃을 덮어 검게 변하는 현상을 막기 위해 제거 및 텍스트 알파 분리
         fgCtx.fillStyle = "#FFF200";
         fgCtx.font = "900 55px 'Arial Black', sans-serif";
         fgCtx.textAlign = "center";
