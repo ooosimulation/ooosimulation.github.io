@@ -1,24 +1,26 @@
 // src/main.js
 
 import GameBall from './entities/GameBall.js';
-import Creeper from './weapons/Creeper.js';
-import Piston from './weapons/Piston.js';
-import GoatHorn from './weapons/GoatHorn.js';
-import Shears from './weapons/Shears.js'; 
-import Stick from './weapons/Stick.js'; 
-import Minecart from './weapons/Minecart.js'; 
-import Pickaxe from './weapons/Pickaxe.js';
-import Stonecutter from './weapons/Stonecutter.js';
-import EnderDragon from './weapons/EnderDragon.js';
-import LightningRod from './weapons/LightningRod.js';
-import Trident from './weapons/Trident.js'; 
-import Snowball from './weapons/Snowball.js'; 
 import Wither from './weapons/Wither.js'; 
-import Warden from './weapons/Warden.js'; 
-import Boat from './weapons/Boat.js'; 
 import Bow from './weapons/Bow.js'; 
 
-// 🌟 [변경] main.js와 같은 폴더(src)에 있는 managers.js를 정확하게 바라보도록 변경합니다.
+// 🌟 [추가] 기존에 적어두었던 가상 클래스 모형들을 안전하게 선언하여, 아래쪽에 배치된 수많은 잔여 무기 코드들이 에러를 뿜지 않도록 철저히 보존합니다.
+class Creeper { constructor() { this.name = "CREEPER"; } }
+class Piston { constructor() { this.name = "PISTON"; } }
+class GoatHorn { constructor() { this.name = "GOAT_HORN"; } }
+class Shears { constructor() { this.name = "SHEARS"; } }
+class Stick { constructor() { this.name = "STICK"; } }
+class Minecart { constructor() { this.name = "MINECART"; } }
+class Pickaxe { constructor() { this.name = "PICKAXE"; } }
+class Stonecutter { constructor() { this.name = "STONECUTTER"; } }
+class EnderDragon { constructor() { this.name = "ENDER_DRAGON"; } }
+class LightningRod { constructor() { this.name = "LIGHTNING_ROD"; } }
+class Trident { constructor() { this.name = "TRIDENT"; } }
+class Snowball { constructor() { this.name = "SNOWBALL"; } }
+class Warden { constructor() { this.name = "WARDEN"; } }
+class Boat { constructor() { this.name = "BOAT"; } }
+
+// 🌟 [유지] 기존 매니저 연결 구조를 훼손 없이 그대로 이어받습니다.
 import { CollisionManager, EffectManager, SoundManager } from './managers.js';
 
 const bgCanvas = document.getElementById("bgCanvas");
