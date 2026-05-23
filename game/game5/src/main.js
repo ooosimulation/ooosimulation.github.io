@@ -172,6 +172,48 @@ async function shareRecordToDiscord() {
     shareStatusTimer = 240;
 }
 
+// 🌟 [추가] R 키 입력을 감지했을 때 모든 개체 데이터 및 기록 스탬프를 완벽하게 재생성하는 함수
+function resetGame() {
+    // 1. 캐릭터 핵심 엔티티 재배치 및 무기 인스턴스 초기 연동
+    player1 = new GameBall(275, 400, "#22CC44", "#0A3311", 'player', bowWeapon); 
+    player1.radius = 45; player1.maxHp = 100; player1.hp = 100; 
+
+    boss = new GameBall(275, 150, "#000000", "#555555", 'boss', witherWeapon);
+    boss.radius = 60; boss.maxHp = 500; boss.hp = 500; boss.isDead = false; 
+
+    // 2. 물리 팩터(속도, 불규칙 각도, 방향 벡터) 완전 복구
+    player1.speed = playerSpeed; player1.baseSpeed = playerSpeed; player1.maxSpeed = playerSpeed;
+    let newAngleP1 = Math.random() * Math.PI * 2;
+    player1.dx = Math.cos(newAngleP1) * playerSpeed; player1.dy = Math.sin(newAngleP1) * playerSpeed;
+    player1.angle = Math.atan2(player1.dy, player1.dx);
+
+    boss.speed = bossSpeed; boss.baseSpeed = bossSpeed; boss.maxSpeed = bossSpeed;
+    let newAngleB = Math.random() * Math.PI * 2;
+    boss.dx = Math.cos(newAngleB) * bossSpeed; boss.dy = Math.sin(newAngleB) * bossSpeed;
+    boss.angle = Math.atan2(boss.dy, boss.dx);
+
+    players = [player1, boss];
+
+    // 3. 잔여 화면 진동 및 파티클 전량 소거
+    if (EffectManager) {
+        EffectManager.particles = [];
+        EffectManager.hitStopTimer = 0;
+    }
+
+    // 4. 타이머 및 디스코드 기록 연동 변수 정밀 초기화
+    isGameOver = false;
+    isWin = false;
+    hasSharedRecord = false;
+    shareStatusMessage = '';
+    shareStatusTimer = 0;
+    shareButtonBounds = null;
+
+    // 5. 즉시 READY 상태(120프레임 카운트다운) 재진입
+    startDelayTimer = 120; 
+    then = performance.now();
+    accumulator = 0;
+}
+
 // ==========================================
 // WASD 키보드 입력 및 대시 마우스 클릭 입력 감지용 상태 변수와 독립 리스너
 // ==========================================
@@ -522,6 +564,7 @@ function animate(newtime) {
     updateStatusBar();
 }
 
+// 🌟 [변경] 최초 가동 스페이스바 감지 리스너에 'R' 키 리셋 분기점을 유연하게 추가 결합
 window.addEventListener('keydown', function(e) {
     if (e.code === 'Space' && !isStarted) {
         e.preventDefault(); 
@@ -532,6 +575,16 @@ window.addEventListener('keydown', function(e) {
         
         then = performance.now(); 
         animate(performance.now()); 
+        return;
+    }
+
+    // 🌟 [추가] 인게임 가동 중(isStarted)일 때 'R' 키를 누르면 언제든지 리셋 연쇄 반응 가동
+    if (e.key.toLowerCase() === 'r') {
+        if (isStarted) {
+            if (startOverlay) startOverlay.style.display = "none";
+            SoundManager.init();
+            resetGame();
+        }
     }
 });
 
