@@ -178,6 +178,8 @@ export default class Wither extends BaseWeapon {
                     owner.angle = Math.atan2(owner.dy, owner.dx);
                     owner.angleToEnemy = owner.angle;
 
+                    // 🌟 [변경] 시작 시 주변 플레이어를 밀쳐내던 충격 파동 데미지/넉백 로직 제거 처리
+                    /*
                     for (let e of enemies) {
                         if (e.isDead || e.team === owner.team) continue;
                         
@@ -190,6 +192,7 @@ export default class Wither extends BaseWeapon {
                         
                         EffectManager.createHitEffect(e.x, e.y, "#FFFFFF", 4);
                     }
+                    */
                 }
             } 
             else if (this.witherState === 'idle') {
@@ -201,6 +204,8 @@ export default class Wither extends BaseWeapon {
                     EffectManager.createHighQualityExplosion(owner.x, owner.y);
                     EffectManager.triggerHitStop(25); 
 
+                    // 🌟 [변경] 파란색 위더 각성(2페이즈) 시 주변 플레이어를 밀쳐내던 파동 데미지/넉백 로직 제거 처리
+                    /*
                     for (let e of enemies) {
                         if (e.isDead || e.team === owner.team) continue;
                         
@@ -215,6 +220,7 @@ export default class Wither extends BaseWeapon {
                         
                         EffectManager.createHitEffect(e.x, e.y, "#FFFFFF", 4);
                     }
+                    */
 
                     for (let i = 0; i < 4; i++) {
                         let angle = (Math.PI / 2) * i + Math.PI / 4; 
