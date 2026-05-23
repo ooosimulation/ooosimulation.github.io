@@ -18,6 +18,7 @@ import Warden from './weapons/Warden.js';
 import Boat from './weapons/Boat.js'; 
 import Bow from './weapons/Bow.js'; 
 
+// 🌟 [변경] main.js와 같은 폴더(src)에 있는 managers.js를 정확하게 바라보도록 변경합니다.
 import { CollisionManager, EffectManager, SoundManager } from './managers.js';
 
 const bgCanvas = document.getElementById("bgCanvas");
