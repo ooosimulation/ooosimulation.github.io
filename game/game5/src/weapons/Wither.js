@@ -38,6 +38,10 @@ class WitherSkeletonWeapon extends BaseWeapon {
                     this.attackCooldown = 86; 
                     
                     target.hp -= 1.25; 
+                    
+                    // 🌟 [추가]: 플레이어의 활 무기에서 공격 주체가 누구인지 명확히 걸러낼 수 있도록, 나를 때린 마지막 타격자 객체를 위더 스켈레톤 본체(owner)로 완벽하게 기록해 둡니다.
+                    target.lastAttacker = owner;
+
                     target.knockbackBounces += 1;
                     let kbAngle = Math.atan2(target.y - owner.y, target.x - owner.x);
                     target.dx += Math.cos(kbAngle) * 15.0;
@@ -179,20 +183,6 @@ export default class Wither extends BaseWeapon {
                     owner.angleToEnemy = owner.angle;
 
                     // 🌟 [유지] 시작 시 주변 플레이어를 밀쳐내던 충격 파동 데미지/넉백 로직 제거 유지
-                    /*
-                    for (let e of enemies) {
-                        if (e.isDead || e.team === owner.team) continue;
-                        
-                        e.hp -= 3.75; 
-                        e.knockbackBounces += 3; 
-                        
-                        let kbAngle = Math.atan2(e.y - owner.y, e.x - owner.x);
-                        e.dx = Math.cos(kbAngle) * 55.0; 
-                        e.dy = Math.sin(kbAngle) * 55.0;
-                        
-                        EffectManager.createHitEffect(e.x, e.y, "#FFFFFF", 4);
-                    }
-                    */
                 }
             } 
             else if (this.witherState === 'idle') {
@@ -205,22 +195,6 @@ export default class Wither extends BaseWeapon {
                     EffectManager.triggerHitStop(25); 
 
                     // 🌟 [유지] 파란색 위더 각성(2페이즈) 시 주변 플레이어를 밀쳐내던 파동 데미지/넉백 로직 제거 유지
-                    /*
-                    for (let e of enemies) {
-                        if (e.isDead || e.team === owner.team) continue;
-                        
-                        e.hp -= 3.75; 
-                        owner.knockbackBounces = Math.max(owner.knockbackBounces, 1);
-                        
-                        e.knockbackBounces += 3; 
-                        
-                        let kbAngle = Math.atan2(e.y - owner.y, e.x - owner.x);
-                        e.dx = Math.cos(kbAngle) * 55.0; 
-                        e.dy = Math.sin(kbAngle) * 55.0;
-                        
-                        EffectManager.createHitEffect(e.x, e.y, "#FFFFFF", 4);
-                    }
-                    */
 
                     for (let i = 0; i < 4; i++) {
                         let angle = (Math.PI / 2) * i + Math.PI / 4; 
@@ -229,9 +203,11 @@ export default class Wither extends BaseWeapon {
                         
                         let skelWeapon = new WitherSkeletonWeapon();
                         let skel = new GameBall(sx, sy, "#333333", "#222222", owner.team, skelWeapon);
+                        
+                        // 🌟 [변경]: 위더 스켈레톤의 체력을 기존 30에서 절반인 15로 하향 조정합니다.
                         skel.radius = 20; 
-                        skel.maxHp = 30;
-                        skel.hp = 30;
+                        skel.maxHp = 15;
+                        skel.hp = 15;
                         skel.speed = 2.5;
                         skel.baseSpeed = 2.5;
                         skel.maxSpeed = 2.5;
@@ -343,7 +319,6 @@ export default class Wither extends BaseWeapon {
                 if (skull.trail.length > 5) skull.trail.shift();
             }
 
-            // ★ 변경: 안전하게 바인딩된 가상 캔버스 크기 변수 활용
             let hitWall = (skull.x < 0 || skull.x > canvasW || skull.y < 0 || skull.y > canvasH);
             let hitEnemy = null;
             
@@ -353,7 +328,7 @@ export default class Wither extends BaseWeapon {
                 for (let e of enemies) {
                     if (e.isDead || e.team === owner.team) continue;
                     
-                    // 🌟 [추가]: 해골 투사체가 날아갈 때 타겟 플레이어가 대시 중(e.dashTimer > 0)이라면 고스트 상태처럼 피격 처리를 건너뜁니다.
+                    // 🌟 [유지]: 해골 투사체 대시 중인 플레이어 유령 통과 유지
                     if (e.dashTimer > 0) continue;
 
                     let dist = Math.hypot(e.x - skull.x, e.y - skull.y);
@@ -370,13 +345,17 @@ export default class Wither extends BaseWeapon {
                 for (let e of enemies) {
                     if (e.isDead || e.team === owner.team) continue;
                     
-                    // 🌟 [추가]: 폭발 범위 피해 계산 시에도 대시 중인 타겟은 스플래시 대미지 및 넉백 피해를 무시합니다.
+                    // 🌟 [유지]: 폭발 스플래시 대시 관통 유지
                     if (e.dashTimer > 0) continue;
 
                     let dist = Math.hypot(e.x - skull.x, e.y - skull.y);
                     
                     if (dist <= blastRadius + e.radius) {
                         e.hp -= skull.isBlue ? 3.5 : 2.5; 
+                        
+                        // 🌟 [추가]: 해골 투사체 폭발 대미지 피격 시 나를 때린 마지막 주체를 위더 보스 본체(owner)로 기록
+                        e.lastAttacker = owner;
+
                         e.knockbackBounces += 2;
                         
                         e.dx = Math.cos(skull.angle) * (skull.isBlue ? 30.0 : 25.0);
@@ -441,7 +420,6 @@ export default class Wither extends BaseWeapon {
             ctx.rotate(skull.angle);
             
             let s = skull.isBlue ? 55 : 45; 
-            // ★ 오류 교정: witherFaceImg와 naturalWidth 사이에 고장 났던 공백 제거 후 온점(.) 결합 완료
             if (witherFaceImg.complete && witherFaceImg.naturalWidth > 0) {
                 ctx.rotate(Math.PI / 2);
                 ctx.shadowColor = skull.isBlue ? "#6699FF" : "#FFFFFF"; 
