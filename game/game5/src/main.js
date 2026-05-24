@@ -163,7 +163,7 @@ async function shareRecordToDiscord() {
     shareStatusTimer = 240;
 }
 
-// 🌟 [유지] R키 재시작 시 모든 기믹 변수들을 공장 초기화합니다.
+// [유지] R키 재시작 시 모든 기믹 변수들을 공장 초기화합니다.
 function resetGame() {
     if (witherWeapon) {
         witherWeapon.witherState = 'spawning';
@@ -201,7 +201,6 @@ function resetGame() {
     player1 = new GameBall(275, 400, "#22CC44", "#0A3311", 'player', bowWeapon); 
     player1.radius = 45; player1.maxHp = 100; player1.hp = 100; 
 
-    // 🌟 [추가]: 완전한 리셋을 위해 플레이어의 대시 스택과 프레임 타이머도 완충 상태로 복원합니다.
     player1.dashStacks = 3;
     player1.dashChargeFrame = 0;
 
@@ -288,7 +287,6 @@ fgCanvas.addEventListener('mousedown', function(e) {
 
     if (player1.isDead) return;
     if (player1.triggerDash) {
-        // 🌟 [변경]: 마우스 클릭으로 대시 발사 시 현재 키보드 방향(keysPressed)을 정상 주입합니다.
         player1.triggerDash(keysPressed);
     }
 });
@@ -307,7 +305,6 @@ fgCanvas.addEventListener('mousemove', function(e) {
 
 function updateStatusBar() {
     let hpFormat = p => (!p || p.isDead) ? "<span style='color:#555'>DEAD</span>" : Math.ceil(Math.max(p.hp, 0));
-    let dmgFormat = p => p ? Math.floor(p.damageDealt || 0) : 0;
     
     let getStatusTags = p => {
         if (!p) return "";
@@ -376,16 +373,13 @@ function updateStatusBar() {
         return tags !== "" ? tags : "<span style='color:#FFF'>[NORMAL]</span>"; 
     };
 
+    // 🌟 [변경]: 하단의 누적 DMG 카운터 텍스트 라인을 완전히 없애 깔끔하게 제거했습니다.
     statusBar.innerHTML = 
         `<div class="status-hp" style="font-size: 11px;">
             <span style="color:#22CC44">Bow Player: ${hpFormat(player1)}</span> &nbsp;|&nbsp; 
             <span style="color:#CCCCCC">Wither: ${hpFormat(boss)}</span>
         </div>
-        <div class="status-effects" style="margin-bottom: 2px;">
-            <span style="color:#22CC44">DMG: ${dmgFormat(player1)}</span> &nbsp;|&nbsp; 
-            <span style="color:#CCCCCC">DMG: ${dmgFormat(boss)}</span>
-        </div>
-        <div class="status-effects">
+        <div class="status-effects" style="margin-top: 2px;">
             <span style="color:#22CC44">${getStatusTags(player1)}</span> &nbsp;|&nbsp; 
             <span style="color:#CCCCCC">${getStatusTags(boss)}</span>
         </div>`;
@@ -494,7 +488,6 @@ function animate(newtime) {
         wrapperDom.style.transform = `translate(0px, 0px)`;
     }
 
-    // 🌟 [변경]: 대시 잔여 쿨타임 대신 dashStacks 분기 검사 후 키캡 인터페이스 active 불 켜기 조율
     if (keyElements.dash) {
         if (player1 && !player1.isDead && (player1.dashTimer > 0 || player1.dashStacks < player1.maxDashStacks)) {
             keyElements.dash.classList.add("active");
@@ -514,7 +507,6 @@ function animate(newtime) {
     players.forEach(p => p.draw(fgCtx));
     EffectManager.updateAndDraw(fgCtx);
 
-    // 🌟 [유지] 배틀 스타트 "BATTLE START!" 텍스트 드로잉 시스템 우회 제거 유지
     if (startDelayTimer > 0) {
         // 기존 텍스트 드로잉 로직 생략
     }
