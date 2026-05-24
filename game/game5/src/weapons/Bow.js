@@ -92,30 +92,34 @@ export default class Bow extends BaseWeapon {
             this.lastOwnerHp = owner.hp;
         }
 
-        // 🌟 [변경]: 보스나 쫄몹에게 피격 시 공격속도 감소 패널티 수치를 적당히 줄어들게 완화 조율
+        // 🌟 [변경]: 체력이 감소했을 때, 나를 때린 주체가 위더 스켈레톤이 아닐 때만(보스 위더 본체일 때만) 속도 저하 적용
         if (owner.hp < this.lastOwnerHp) {
             let hpDecreased = this.lastOwnerHp - owner.hp;
             
-            // 🌟 [변경]: 기존 25% 급감에서 10% 감소(0.10)로 수치를 크게 낮춰 완화했습니다.
-            let bowLoss = this.chargeSpeedMultiplier * 0.10; 
-            let prevMult = this.chargeSpeedMultiplier;
-            this.chargeSpeedMultiplier = Math.max(1.0, this.chargeSpeedMultiplier - bowLoss);
+            // 때린 주체가 존재하고, 그 주체의 무기 이름이 'WITHER_SKELETON' 이라면 패널티 연산을 건너뜁니다.
+            let isHitBySkeleton = owner.lastAttacker && owner.lastAttacker.weapon && owner.lastAttacker.weapon.name === "WITHER_SKELETON";
 
-            // 실제로 공속 배율이 깎였다면 머리 위에 빨간색 수치로 시각화 알림
-            if (prevMult > 1.0) {
-                this.floatingTexts.push({
-                    text: `-${(prevMult - this.chargeSpeedMultiplier).toFixed(2)} Slowed`,
-                    relX: 0,
-                    relY: -owner.radius - 15,
-                    alpha: 1.0,
-                    color: "#FF4444", // 패널티 빨간색
-                    life: 50
-                });
+            if (!isHitBySkeleton) {
+                // 🌟 [유지]: 보스 위더에게 맞았을 때의 적당히 완화된 10% 감속 패널티 작동
+                let bowLoss = this.chargeSpeedMultiplier * 0.10; 
+                let prevMult = this.chargeSpeedMultiplier;
+                this.chargeSpeedMultiplier = Math.max(1.0, this.chargeSpeedMultiplier - bowLoss);
+
+                // 실제로 공속 배율이 깎였다면 머리 위에 빨간색 수치로 시각화 알림
+                if (prevMult > 1.0) {
+                    this.floatingTexts.push({
+                        text: `-${(prevMult - this.chargeSpeedMultiplier).toFixed(2)} Slowed`,
+                        relX: 0,
+                        relY: -owner.radius - 15,
+                        alpha: 1.0,
+                        color: "#FF4444", 
+                        life: 50
+                    });
+                }
+
+                this.cooldownTimer = Math.min(this.maxCooldown, this.cooldownTimer + 12); 
+                this.maxCooldown = Math.min(288, this.maxCooldown + 4);                  
             }
-
-            // 🌟 [변경]: 피격 시 추가되는 쿨타임 가중치 및 한계치 복원량도 절반 이하로 줄여 패널티를 완화했습니다.
-            this.cooldownTimer = Math.min(this.maxCooldown, this.cooldownTimer + 12); // 기존 +30에서 완화
-            this.maxCooldown = Math.min(288, this.maxCooldown + 4);                  // 기존 +12에서 완화
         }
         // 다음 프레임 비교를 위해 실시간 체력 갱신 동기화
         this.lastOwnerHp = owner.hp;
@@ -184,7 +188,7 @@ export default class Bow extends BaseWeapon {
                     // 연사 속도 한계치 단축 메커니즘 유지
                     this.maxCooldown = Math.max(20, this.maxCooldown - 24);
 
-                    // 상대방을 적중 시 빨라지는 수치를 기존 0.30에서 0.5배 감소한 0.15 증가로 조율합니다.
+                    // 상대방을 적중 시 빨라지는 수치 증가 조율 유지
                     this.chargeSpeedMultiplier += 0.15;
 
                     // 머리 위 가속도 상승 수치 시각화 부유 텍스트 푸시 유지
@@ -193,7 +197,7 @@ export default class Bow extends BaseWeapon {
                         relX: 0,
                         relY: -owner.radius - 15,
                         alpha: 1.0,
-                        color: "#FFDD00", // 노란색 (가속)
+                        color: "#FFDD00", 
                         life: 45 
                     });
 
@@ -202,7 +206,7 @@ export default class Bow extends BaseWeapon {
                     EffectManager.createHitEffect(arrow.x, arrow.y, "#999999", 0.8);
                     SoundManager.playSynth('bounce');
 
-                    // ★ 변경: 현재 쌓여있는 총 공격속도 배율의 6분의 1만큼 정확하게 연산하여 차감
+                    // 현재 쌓여있는 총 공격속도 배율의 6분의 1만큼 정확하게 연산하여 차감
                     let loss = this.chargeSpeedMultiplier / 6;
                     
                     let prevMultiplier = this.chargeSpeedMultiplier;
@@ -215,7 +219,7 @@ export default class Bow extends BaseWeapon {
                             relX: 0,
                             relY: -owner.radius - 15,
                             alpha: 1.0,
-                            color: "#FF4444", // 빨간색 (감속 패널티)
+                            color: "#FF4444", 
                             life: 45
                         });
                     }
