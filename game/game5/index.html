@@ -22,7 +22,7 @@
             window.discordSdk = discordSdk;
             window.discordUserName = "Unknown Player";
 
-            // 🌟 [변경] 디스코드 외부 브라우저 접속 시 ready()에서 멈추는 현상을 완전히 방어하기 위해 try 블록 안으로 이동
+            // 🌟 [유지] 디스코드 외부 브라우저 접속 시 ready()에서 멈추는 현상을 완전히 방어하기 위해 try 블록 안으로 이동
             await discordSdk.ready();
             
             const instanceUser = discordSdk.instanceManager?.currentUser;
@@ -62,9 +62,12 @@
             </div>
 
             <div id="startOverlay">
-                <div class="start-text">PRESS SPACE OR CLICK TO START</div>
-                <div class="start-sub">Bow VS Wither</div>
-                <div class="hint-text">Ultimate 1vs1 Boss Raid Battle!</div>
+                <div class="start-text" style="font-size: 32px; color: #22CC44; margin-bottom: 20px;">HOW TO PLAY</div>
+                <div class="start-sub" style="font-size: 16px; color: #FFF; font-weight: bold;">[ MOVE ] : W, A, S, D Keys</div>
+                <div class="start-sub" style="font-size: 16px; color: #00FFFF; font-weight: bold; margin-top: 5px;">[ DASH / INVINCIBLE ] : Left Click (Uses 1 Stack)</div>
+                <div class="start-sub" style="font-size: 16px; color: #FFFF55; font-weight: bold; margin-top: 5px;">[ AIM / ATTACK ] : Move Mouse Cursor (Auto Charging)</div>
+                <div class="start-sub" style="font-size: 14px; color: #777; font-weight: bold; margin-top: 5px;">[ RESTART ] : Press 'R' Key during the battle</div>
+                <div class="hint-text" style="margin-top: 35px; color: #66FFAA; animation: blink 1s infinite;">PRESS SPACE OR CLICK ANYWHERE TO START</div>
             </div>
         </div>
         
